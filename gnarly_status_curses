@@ -1,0 +1,365 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import time
+import curses
+import signal
+import logging
+import argparse
+import threading
+
+from libs.messaging import Messaging
+
+logger = logging.getLogger(__name__)
+# set default log level to WARNING but if environment variable is available use that
+# LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
+# logging.basicConfig(format='%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s', level=LOGLEVEL)
+
+# ----------------------------------------------------------------------------
+
+BLOCK_SIZE = 1024 * 1024 * 1024
+ONE_MINUTE = 60
+
+TIME_BOX = 1
+COPY_BOX = 2
+DISK_BOX = 3
+MSG_BOX = 4
+
+TIME_WIDTH = 80
+BOX_WIDTH = 80
+
+TIME_HEIGHT = 3
+COPY_HEIGHT = 4
+DISK_HEIGHT = 4
+MSG_HEIGHT = 7
+
+TIME_X = 0
+COPY_X = 0
+DISK_X = 0
+MSG_X = 0
+
+# need 1 line between them all
+BOX_V_SPACE = 1
+TIME_Y = 0
+COPY_Y = BOX_V_SPACE + TIME_HEIGHT
+DISK_Y = BOX_V_SPACE + COPY_Y + COPY_HEIGHT
+MSG_Y = BOX_V_SPACE + DISK_Y + DISK_HEIGHT
+MSG_TEXT_WIDTH = BOX_WIDTH - 2
+
+# ----------------------------------------------------------------------------
+def empty_line(width=MSG_TEXT_WIDTH):
+    return " ".center(width, " ")
+
+
+# ----------------------------------------------------------------------------
+# Initialize variables, these need to be globals where used
+gStdscr = None
+time_area = empty_line()  # single line
+file_copy_area = [empty_line(), empty_line()]  # individual file, all files
+disk_status_area = [empty_line(), empty_line()]  # SD, HD
+msg_area = [
+    empty_line(),
+    empty_line(),
+    empty_line(),
+    empty_line(),
+    empty_line(),
+]  # 5 lines
+last_status_time = 0
+
+
+# ----------------------------------------------------------------------------
+def setLogLevel(loglevel):
+    logging.basicConfig(
+        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
+        level=loglevel,
+    )
+
+
+# ----------------------------------------------------------------------------
+def progressBar (prefix, iteration, total, length = 50, suffix = '', decimals = 0, fill = '█'):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        prefix      - Optional  : prefix string (Str)
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        length      - Optional  : character length of bar (Int)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        fill        - Optional  : bar fill character (Str)
+    """
+    percent = "0"
+    try:
+        percent = ("{0:>3." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+    except:
+        percent = "  0"    # right justify :)
+        filledLength = 0
+    bar = fill * filledLength + ' ' * (length - filledLength)
+    return f'{prefix} [{bar}] {percent}% {suffix}'
+
+# ----------------------------------------------------------------------------
+def draw_box(x, y, width, height, title, color_pair):
+    gStdscr.addstr(y, x, "┌" + "─" * (width - 2) + "┐", curses.color_pair(color_pair))
+    for i in range(y + 1, y + height - 1):
+        gStdscr.addstr(
+            i, x, "│" + " " * (width - 2) + "│", curses.color_pair(color_pair)
+        )
+    gStdscr.addstr(
+        y + height - 1, x, "└" + "─" * (width - 2) + "┘", curses.color_pair(color_pair)
+    )
+    gStdscr.addstr(y, x + 1, title, curses.color_pair(color_pair))
+
+
+# ----------------------------------------------------------------------------
+def update_display():
+    gStdscr.clear()
+
+    # Draw boxes for each area with different colors
+    draw_box(TIME_X, TIME_Y, TIME_WIDTH, TIME_HEIGHT, "Time", TIME_BOX)
+    draw_box(COPY_X, COPY_Y, BOX_WIDTH, COPY_HEIGHT, "File Copy Progress", COPY_BOX)
+    draw_box(DISK_X, DISK_Y, BOX_WIDTH, DISK_HEIGHT, "Disk Status", DISK_BOX)
+    draw_box(MSG_X, MSG_Y, BOX_WIDTH, MSG_HEIGHT, "Messages", MSG_BOX)
+
+    gStdscr.addstr(TIME_Y + 1, 1, time_area, curses.color_pair(TIME_BOX))
+
+    for i, line in enumerate(file_copy_area):
+        gStdscr.addstr(COPY_Y + 1 + i, 1, line, curses.color_pair(COPY_BOX))
+    for i, line in enumerate(disk_status_area):
+        gStdscr.addstr(DISK_Y + 1 + i, 1, line, curses.color_pair(DISK_BOX))
+    for i, line in enumerate(msg_area):
+        gStdscr.addstr(MSG_Y + 1 + i, 1, line, curses.color_pair(MSG_BOX))
+
+    gStdscr.refresh()
+
+
+# ----------------------------------------------------------------------------
+
+
+def signal_handler(sig, frame):
+    print("You pressed Ctrl+C!")
+    logger.info( 'Exit due to CTRL+C')
+    sys.exit(0)
+
+
+# ----------------------------------------------------------------------------
+
+
+def cls():
+    global msg_area
+    for i, line in enumerate(msg_area):
+        msg_area[i] = empty_line()
+    update_display()
+
+
+def clr_line(line=0):
+    global msg_area
+    msg_area[line] = empty_line()
+    update_display()
+
+
+def print_msg(txt, line=2):
+    global msg_area
+    msg_area[line] = txt
+    update_display()
+
+
+def show_time():
+    global time_area
+    time_area = time.strftime("%X").rjust(TIME_WIDTH-2, ' ')
+    update_display()
+
+
+def status_error(topic, data):
+    """status_error"""
+    cls()
+    if data:
+        msg = data['msg']
+        if 'msg2' in data and len( data['msg2']):
+           msg += f", {data['msg2']}"
+
+        print_msg(f"Error: {msg}, level {data['level']}")
+
+
+# ----------------------------------------------------------------------------
+def status_ready(topic, data):
+    """status_ready"""
+    global last_status_time
+
+    cls()
+    if data:
+        if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
+            print_msg("..waiting for SD", 2)
+            last_status_time = data["_epoch"]
+
+
+# ----------------------------------------------------------------------------
+def status_startcopy(topic, data):
+    """status_startcopy"""
+    cls()
+    print_msg("Starting copy process", 0)
+
+
+# ----------------------------------------------------------------------------
+def status_endcopy(topic, data):
+    """status_endcopy"""
+    cls()
+    print_msg("Copy process completed", 0)
+
+
+# ----------------------------------------------------------------------------
+def status_copydata(topic, data):
+    """status_copydata"""
+    global file_copy_area
+
+    if data:
+        file_copy_area = [
+            progressBar("File ", data["copied"], data["size"], 50),
+            progressBar("All  ", data["files_copied"], data["files_total"], 50, f'{data["files_copied"]}/{data["files_total"]}'),
+
+        ]
+        update_display()
+
+# ----------------------------------------------------------------------------
+def status_waitremove(topic, data):
+    """status_waitremove"""
+    if data:
+        print_msg("Waiting for SD card removal", 2)
+
+
+# ----------------------------------------------------------------------------
+def status_devicedata(topic, data):
+    """status_devicedata"""
+    global disk_status_area
+
+    logger.info("devicedata: " + json.dumps( data ))
+
+    if data:
+        sd_used = int((data["sd_size"] - data["sd_free"]) / BLOCK_SIZE)
+        sd_total = int(data["sd_size"] / BLOCK_SIZE)
+        hd_used = int((data["hd_size"] - data["hd_free"]) / BLOCK_SIZE)
+        hd_total = int(data["hd_size"] / BLOCK_SIZE)
+        logger.info(
+            f"GB used on drives SD: {sd_used}/{sd_total}, target: {hd_used}/{hd_total}")
+
+        disk_status_area = [
+            progressBar("SD   ", sd_used, sd_total, 50, f'{sd_used}/{sd_total} GB'),
+            progressBar("HD   ", hd_used, hd_total, 50, f'{hd_used}/{hd_total} GB')
+        ]
+        update_display()
+
+
+# ----------------------------------------------------------------------------
+def status_diskfull(topic, data):
+    """status_devicedata"""
+    print_msg(f"the disk {data['diskname']} is full ", 4)
+
+
+# ----------------------------------------------------------------------------
+# we only get keep alives when the system is not doing anything else, so
+#  we can track an amount of these, lets try for one in 30
+last_keep_alive = time.time()
+
+
+def status_keepalive(topic, data):
+    """status_devicedata"""
+    global last_keep_alive
+    if not int(data["_epoch"] - last_keep_alive) % 30:
+        print_msg("system still working", 4)
+        last_keep_alive = data["_epoch"]
+
+
+# ----------------------------------------------------------------------------
+
+
+def thread_subscriptions():
+    msg = Messaging()
+
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/error": status_error,
+        "/photos/ready": status_ready,
+        "/photos/startcopy": status_startcopy,
+        "/photos/endcopy": status_endcopy,
+        "/photos/copydata": status_copydata,
+        "/photos/waitremove": status_waitremove,
+        "/photos/devicedata": status_devicedata,
+        "/photos/diskfull": status_diskfull,
+        "/photos/keepalive": status_keepalive,
+    }
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
+
+
+# ----------------------------------------------------------------------------
+def curses_display(stdscr):
+    global gStdscr
+    gStdscr = stdscr
+    # Initialize color pairs
+    curses.init_pair(TIME_BOX, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(COPY_BOX, curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(DISK_BOX, curses.COLOR_BLACK, curses.COLOR_BLUE)
+    curses.init_pair(MSG_BOX, curses.COLOR_WHITE, curses.COLOR_RED)
+
+    status_copydata(
+        "",
+        {
+            "fromfile": "",
+            "tofile": "",
+            "size": 0,
+            "copied": 0,
+            "files_copied": 0,
+            "files_total": 0,
+        },
+    )
+    status_devicedata(
+        "",
+        {
+            "sd_size": 10,
+            "sd_free": 1,
+            "hd_size": 100,
+            "hd_free": 50,
+        },
+    )
+
+    while True:
+        show_time()
+        time.sleep(1)
+
+
+# ----------------------------------------------------------------------------
+def thread_curses():
+    curses.wrapper(curses_display)
+
+
+# ----------------------------------------------------------------------------
+
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGHUP, signal_handler)
+
+    parser = argparse.ArgumentParser(
+        description=f"Display gnarlypi status using curses"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        # the following makes it a boolean flag
+        action="store_true",
+        help="Increase level of logging",
+    )
+    args = parser.parse_args()
+    LOGLEVEL = os.environ.get("LOGLEVEL", "WARNING").upper()
+    logLevel = "INFO" if (args.verbose) else LOGLEVEL
+    setLogLevel(logLevel)
+
+    main = threading.Thread(target=thread_curses)
+    main.start()
+    sub = threading.Thread(target=thread_subscriptions)
+    sub.start()
+
+    # thread_curses()

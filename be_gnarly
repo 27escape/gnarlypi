@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ----------------------------------------------------------------------------
+
+# for your user, create an entry in your crontab
+# @reboot /home/$USER/gnarlypi/be_gnarly
+
+# ----------------------------------------------------------------------------
+
+FULL_PATH="$HOME/gnarlypi"
+export GNARLY_LOG="/tmp/gnarly.log"
+
+cd "$FULL_PATH" || (echo "cannot find dir $FULL_PATH" && exit 1)
+
+SELF=$(basename "$0")
+processes_to_kill=$(ps ax | grep "gnarly" | grep -v grep | grep -v "$SELF")
+
+# bash 4 and later map text into array
+mapfile -t lines <<< "$processes_to_kill"
+
+for line in "${lines[@]}"; do
+  # Process the line here
+  pid=$(echo "$line" | awk '{print $1}')
+  kill $pid 2>/dev/null
+done
+
+./start_displays.sh
+
+# the main program that does the reading of the SD card etc
+# give the status programs time to start up and connect to MQTT
+sleep 1
+
+# default startup location
+nohup "./gnarlypi" "$HOME/usb_data" >> $GNARLY_LOG 2>&1 &

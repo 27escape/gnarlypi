@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+# based on the blinkt code
+
+import signal
+import sys
+import math
+import ledshim
+from libs.messaging import Messaging
+
+NUM_PIXELS = 28
+# msut make it an INT, python will assume a float otherwise
+HALF_PIXELS = int(NUM_PIXELS / 2)
+
+# ----------------------------------------------------------------------------
+def init_ledshim():
+  try:
+    ledshim.set_clear_on_exit()
+    ledshim.set_brightness(0.7)  # 1 = 100%
+    ledshim.clear()
+    ledshim.show()
+  except:
+    print( 'failed to connect to ledshim')
+    sys.exit( 1)
+
+
+# ----------------------------------------------------------------------------
+def status_pixels(r, g, b):
+    # print(f"{r} {g} {b}")
+
+    for i in range(0, NUM_PIXELS, 1):
+        ledshim.set_pixel(i, r, g, b)
+    ledshim.show()
+
+
+# ----------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    # print("You pressed Ctrl+C!")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
+# ----------------------------------------------------------------------------
+def status_error(topic, data):
+    """status_error"""
+    # print("error ")
+    status_pixels(128, 128, 0)
+
+
+# ----------------------------------------------------------------------------
+def status_ready(topic, data):
+    """status_ready"""
+    # print("ready")
+    status_pixels(0, 255, 0)
+
+
+# ----------------------------------------------------------------------------
+def status_startcopy(topic, data):
+    """status_startcopy"""
+    # print("start copy")
+    status_pixels(255, 255, 0)
+
+
+# ----------------------------------------------------------------------------
+def status_endcopy(topic, data):
+    """status_endcopy"""
+    # print("end copy ")
+    status_pixels(0, 255, 255)
+
+
+# ----------------------------------------------------------------------------
+def percent_block(start, count, r, g, b, value, max):
+    max |= 1
+    percent = (value * 100) / max
+    if percent > 100:
+        percent = 100
+    step = 100 / count
+    # this is the number of pixels that need to be switched on
+    lit = math.floor(percent / step)
+
+    for i in range(start, start + lit, 1):
+        ledshim.set_pixel(i, r, g, b)
+    # clear remaining in count
+    for i in range(start + lit, start + count, 1):
+        ledshim.set_pixel(i, 0, 0, 0)
+    ledshim.show()
+
+
+# ----------------------------------------------------------------------------
+def status_copydata(topic, data):
+    """status_copydata"""
+
+    data["size"] != 1
+    percent = "{:.0%}".format(data["copied"] / data["size"])
+    # print(
+    #     f"copy {data['fromfile']} to {data['tofile']}, {percent}, overall {data['files_copied']}/{data['files_total']}",
+    #     end="\r",
+    # )
+
+    # cyan for single file
+    percent_block(0, HALF_PIXELS, 0, 255, 255, data["copied"], data["size"])
+    # magenta for all files
+    percent_block(
+        HALF_PIXELS, HALF_PIXELS, 255, 0, 255, data["files_copied"], data["files_total"]
+    )
+    # if percent == '100%':
+    #   print( "")
+
+
+# ----------------------------------------------------------------------------
+def status_waitremove(topic, data):
+    """status_waitremove"""
+    # print("wait remove")
+
+    status_pixels(255, 128, 0)
+
+
+# ----------------------------------------------------------------------------
+def status_devicedata(topic, data):
+    """status_devicedata"""
+
+    # get the used sizes from the size and free values
+    # print(
+    #     f"SD data: {data['sd_size']-data['sd_free']}/{data['sd_size']}, target: {data['hd_size']}-data['hd_free']/{data['hd_size']}"
+    # )
+    # percent_block(0, NUM_PIXELS, 255, 255, 255, data["hd_size"]-data["hd_free"], data["hd_size"])
+
+
+# ----------------------------------------------------------------------------
+def general_status(topic, data):
+    """status_devicedata"""
+    # message_queue.put({topic: topic, data: data})
+    # print("general status blue ")
+    status_pixels(0, 0, 255)
+
+
+# ----------------------------------------------------------------------------
+def status_diskfull(topic, data):
+    """status_devicedata"""
+    # message_queue.put({topic: topic, data: data})
+    print("diskfull ")
+    ledshim.clear()
+    step = 3 if NUM_PIXELS >= 12 else 2
+    # every other third on
+    for i in range(0, NUM_PIXELS, step):
+        ledshim.set_pixel(i, 255, 0, 0)
+
+    ledshim.show()
+
+# ----------------------------------------------------------------------------
+# we only get keep alives when the system is not doing anything else, so
+#  we can toggle a pixel on an off
+last_keep_alive = False ;
+def status_keepalive(topic, data):
+    """status_devicedata"""
+    global last_keep_alive
+    if last_keep_alive:
+        ledshim.set_pixel(NUM_PIXELS-1, 255, 0, 255)
+    else:
+      ledshim.set_pixel(NUM_PIXELS-1, 0, 0, 0)
+    last_keep_alive = not last_keep_alive
+    ledshim.show()
+
+# ----------------------------------------------------------------------------
+def mqtt_listener():
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/error": status_error,
+        "/photos/ready": status_ready,
+        "/photos/startcopy": status_startcopy,
+        "/photos/endcopy": status_endcopy,
+        "/photos/copydata": status_copydata,
+        "/photos/waitremove": status_waitremove,
+        "/photos/devicedata": status_devicedata,
+        "/photos/diskfull": status_diskfull,
+        "/photos/keepalive": status_keepalive,
+    }
+
+    msg = Messaging()
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
+
+
+# ----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    init_ledshim()
+    mqtt_listener()

@@ -1,0 +1,486 @@
+#!/usr/bin/env python3
+
+import argparse
+import logging
+import os
+import re
+import signal
+from stat import *
+import subprocess
+import sys
+import time
+import shutil
+# import copy
+
+# from libs.disksize import get_disk_size
+from libs.status import Status
+
+VERSION = "v0.1"
+APP_NAME = os.path.basename(__file__) + " " + VERSION
+CREATOR = "27escape"
+COPYRIGHT = "©️2024"
+
+logger = logging.getLogger(__name__)
+# set default log level to WARNING but if environment variable is available use that
+# LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
+# logging.basicConfig(format='%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s', level=LOGLEVEL)
+
+# ----------------------------------------------------------------------------
+
+ONE_MB = 1024 * 1024 * 1024
+READ_SIZE = 64 * 1024 * 1024
+# time between checks for card mounted
+WAIT_TIME = 1
+
+# ----------------------------------------------------------------------------
+
+DISK_BY_LABEL = "/dev/disk/by-label"
+USER = os.getenv("USER")
+HOME = os.getenv("HOME")
+
+# Replace with your desired destination directory
+TARGET_DIR = os.path.join(HOME, "photos")
+last_mount = ""
+
+status = None
+
+# ----------------------------------------------------------------------------
+
+
+def signal_handler(sig, frame):
+    """ """
+
+    logger.info("You pressed Ctrl+C!")
+    if len(last_mount):
+        umount_drive(last_mount)
+
+    status.fivelines(("", "gnarlypi", "", "offline", ""))
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGHUP, signal_handler)
+
+
+def abort_handler(sig, frame):
+    """ """
+
+    logger.info("You pressed Ctrl+C!")
+    if len(last_mount):
+        umount_drive(last_mount)
+
+    status.fivelines(("", "gnarlypi", "", "crashed", ""))
+    sys.exit(0)
+
+
+signal.signal(signal.SIGHUP, abort_handler)
+
+
+# ----------------------------------------------------------------------------
+def setLogLevel(loglevel):
+    logging.basicConfig(
+        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
+        level=loglevel,
+    )
+
+
+# ----------------------------------------------------------------------------
+# wait for some time but send keep alives
+def wait_time(sleeptime):
+    count = 0
+    while True:
+        # send keep alive every 10s
+        if not count % 10:
+            status.keepalive()
+            # reset the counter so it does not get huge
+            count = 0
+        time.sleep(1)
+        count += 1
+        if count >= sleeptime:
+            break
+
+
+# ----------------------------------------------------------------------------
+def check_freespace(target, required):
+    while True:
+        total, used, free = shutil.disk_usage(os.path.dirname(target))
+        if free > required:
+            break
+        else:
+            status.diskfull()
+            logger.error(f"cannot store {target}, device is full")
+            wait_time(60)
+
+
+# ----------------------------------------------------------------------------
+def update_drive_stats():
+    # shutil.disk_usage should be in bytes but I think its in KBs
+    hd_total, hd_used, hd_free = shutil.disk_usage(TARGET_DIR)
+    if last_mount:
+        sd_total, sd_used, sd_free = shutil.disk_usage(last_mount)
+    else:
+        sd_total = 0
+        sd_free = 0
+    status.devicedata(sd_total, sd_free, hd_total, hd_free)
+
+
+# ----------------------------------------------------------------------------
+
+
+def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total": 0}):
+    """
+    Copies a file from source to destination, checking existence, size, and modification time.
+
+    Args:
+        src_path: Path to the source file.
+        dst_path: Path to the destination file.
+        force: force the overwrite of an existing destination file, default False
+
+    Returns:
+        True if the file is copied successfully or already exists, False otherwise.
+    """
+    logger.debug(f"copy {src_path} to {dst_path} with force as {force}")
+    # Check if source file exists
+    if not os.path.isfile(src_path):
+        logger.warning(f"Error: Source file '{src_path}' does not exist.")
+        return False
+
+    # Get source file stats
+    src_stat = os.stat(src_path)
+    # Check if destination file exists
+    if not force and os.path.exists(dst_path):
+        # Check if destination is a regular file
+        if not S_ISREG(src_stat.st_mode):
+            logger.error(f"Error: Destination '{dst_path}' is not a regular file.")
+            return False
+
+        # if mtime and file size match, assume same file
+        if src_stat.st_mtime == os.stat(
+            dst_path
+        ).st_mtime and src_stat.st_size == os.path.getsize(dst_path):
+            return True
+
+    # use a temp file in case of failure, so would not overwrite an existing file
+    tmpdest = f"{dst_path}.tmp"
+    # Copy the file
+    try:
+        copied = 0
+        total = src_stat.st_size
+
+        # will return if there is enough space, assumed to be 1.5 of file size
+        check_freespace(dst_path, int(total * 1.5))
+
+        with open(src_path, "rb") as f_in, open(tmpdest, "wb") as f_out:
+            status.copydata(
+                src_path,
+                dst_path,
+                total,
+                copied,
+                copy_stats["copied"],
+                copy_stats["total"],
+            )
+
+            while chunk := f_in.read(READ_SIZE):
+                f_out.write(chunk)
+                copied += len(chunk)
+                status.copydata(
+                    src_path,
+                    dst_path,
+                    total,
+                    copied,
+                    copy_stats["copied"],
+                    copy_stats["total"],
+                )
+                # logger.info(f"copied {copied} of {total}")
+
+        # move to dst_path to make it atomic
+        os.rename(tmpdest, dst_path)
+        # Set destination file modification time
+        os.utime(dst_path, (src_stat.st_mtime, src_stat.st_mtime))
+
+        logger.debug(f"{src_path} -> {dst_path}")
+    except Exception as e:
+        # remove any part copied file
+        os.remove(tmpdest)
+        logger.error(f"Error copying file: {e}")
+        update_drive_stats()
+        return False
+
+    update_drive_stats()
+    return True
+
+
+# ----------------------------------------------------------------------------
+
+
+def rCopy(src, dst, force):
+    """
+    Recursively copies files from source directory to destination directory.
+
+    Args:
+      src: Source directory path.
+      dst: Destination directory path.
+      total_files: Total number of files to be copied (optional).
+    """
+    copied = 0
+    fails = 0
+    total = 0
+    logger.info(f"copying {total} files from {src} to {dst} with force {force}")
+
+    update_drive_stats()
+    # count files that we need to copy
+    for dirpath, dirnames, filenames in os.walk(src):
+        for filename in filenames:
+            src_path = os.path.join(dirpath, filename)
+            dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+            if force or not os.path.exists(dst_path):
+                total += 1
+
+    status.startcopy(file_count=total)
+
+    for dirpath, dirnames, filenames in os.walk(src):
+        for filename in filenames:
+            src_path = os.path.join(dirpath, filename)
+            dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+            # Create destination directory structure if needed
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            update = 0
+            if force or not os.path.exists(dst_path):
+                update = 1
+
+            if copy_file(
+                src_path, dst_path, force, copy_stats={"copied": copied, "total": total}
+            ):
+                # only update the copy count if there was a file to copy
+                copied += update
+            else:
+                fails += 1
+            logger.debug(f"({copied}/{total})")
+    if fails:
+        logger.error(f"failed to copy {fails} files in {total}")
+    update_drive_stats()
+    status.endcopy( files_copied=copied, file_count=total)
+
+
+# ----------------------------------------------------------------------------
+
+
+def mount_drive(device_path, mount):
+    """
+    Attempts to mount the USB drive at device_path to mount_point.
+    """
+    global last_mount
+    mounted = False
+    try:
+        logger.info(f"mounting {device_path}  to {mount}")
+        subprocess.run(["sudo", "mount", device_path, mount])
+        logger.debug(f"{device_path} drive mounted at {mount}")
+        last_mount = mount
+        mounted = True
+    except subprocess.CalledProcessError as e:
+        # TODO: check if drive actually mounted, show error if not
+        logger.error(f"Failed to mount drive: {e}")
+    return mounted
+
+
+# ----------------------------------------------------------------------------
+def umount_drive(mount):
+    """ """
+    global last_mount
+
+    try:
+        if os.path.ismount(mount):
+            # lazy force umount
+            subprocess.run(["sudo", "umount", "-l", mount])
+            if not os.path.ismount(mount):
+                logger.debug(f"unmounted {mount}")
+                last_mount = ""
+            else:
+                logger.info("unmount failed")
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to umount drive: {e}")
+
+
+# ----------------------------------------------------------------------------
+
+
+def make_dest(dest):
+    """
+    make destination directory set ownership to that of parent directory
+    """
+    logger.info(f"making {dest}")
+    os.makedirs(dest, exist_ok=True)
+    parent = os.path.dirname(dest)
+    stat = os.stat(parent)
+    os.chown(dest, stat.st_uid, stat.st_gid)
+
+
+# ----------------------------------------------------------------------------
+# find attached devices
+def getDevices():
+    """Runs the lsblk command and returns the output as a list of lines."""
+    devices = []
+
+    try:
+
+        # output = subprocess.check_output(["blkid"], text=True)
+        # for dev in output.splitlines():
+        #     # ignore the root and boot devices
+        #     match = re.search(r"LABEL=\"[b|r]ootfs\"", dev)
+        #     if not match:
+        #       devices.append( dev)
+
+        output = subprocess.check_output(["lsblk", "-ln"], text=True)
+        for dev in output.splitlines():
+            parts = dev.split()
+            # there must be a partition number
+            if re.match(r".*\d$", parts[0]):
+                # there may be a nicer way to represent this conditional
+                # but for now, it works and is readable
+                if parts[5] == "part":
+                    if len(parts) != 7:
+                        # currently unmounted so assume OK
+                        devices.append("/dev/" + parts[0])
+                    else:
+                        # can't use the root or boot drives
+                        if parts[6] != "/" and not parts[6].startswith("/boot/"):
+                            devices.append("/dev/" + parts[0])
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error running lsblk: {e}")
+
+    return devices
+
+
+# ----------------------------------------------------------------------------
+# loop with a small delay until all devices are no longer registered
+def wait_remove_all_devices():
+    update_drive_stats()
+    status.waitremove()
+    while True:
+        devices = getDevices()
+        if not len(devices):
+            break
+        wait_time(1)
+
+
+# ----------------------------------------------------------------------------
+
+
+def copyFromDevice(device, useTheForce):
+    """Copy all suitable files from the named device
+    mount the device, copy the files, unmount the device
+    """
+    # Get list of currently mounted devices under /dev/disk/by-label
+    mount_point = os.path.join(HOME, "mounts", os.path.basename(device))
+    if not os.path.exists(mount_point):
+        logger.info(f"make mount point {mount_point}")
+        make_dest(mount_point)
+
+    # Check if device isn't already mounted
+    if not os.path.ismount(mount_point):
+        if mount_drive(device, mount_point):
+
+        # if os.path.ismount(mount_point):
+            logger.info(f"is mounted {mount_point}")
+            camera_dir = os.path.join(mount_point, "DCIM")
+            logger.info(f"checking {camera_dir}")
+            # test if we have a camera related folder structure
+            # Copy files only if its a photo drive
+            if os.path.isdir(camera_dir):
+                # and we only copy the DCIM files
+                rCopy(camera_dir, TARGET_DIR, useTheForce)
+            else:
+                logger.debug("drive does not contain photo files")
+                logger.info("no files")
+            # Unmount the drive
+            update_drive_stats()
+            umount_drive(mount_point)
+        else:
+            logger.error(f"could not mount {device} to {mount_point}")
+            status.error( "mount fail", 5, "remove device")
+            time.sleep( 60)
+    else:
+        logger.warning(f"no mount point {mount_point}")
+
+
+# ----------------------------------------------------------------------------
+def wait_drive_inserted():
+    while True:
+        devices = getDevices()
+        if len(devices) != 0:
+            break
+        wait_time(1)
+
+
+# ----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    if USER == "root":
+        logger.info(
+            f"Do not run this script as root, run is as one of your users, give a user permisison to mount drives with this command:  sudo usermod -aG disk {os.getenv('SUDO_USER')}"
+        )
+        sys.exit(1)
+
+    LOGLEVEL = os.environ.get("LOGLEVEL", "WARNING").upper()
+    logger.info("Started")
+
+    status = Status()
+
+    parser = argparse.ArgumentParser(
+        description=f"Watch for USB drive insertions and copy any photo files from them to {TARGET_DIR}"
+    )
+    parser.add_argument(
+      "photodir",
+      type=str,
+      default=TARGET_DIR,
+      help="Full path to directory to store imported photos",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        # the following makes it a boolean flag
+        action="store_true",
+        help="Increase level of logging",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        # the following makes it a boolean flag
+        action="store_true",
+        help="Force overwrite when destination file already exists",
+    )
+    args = parser.parse_args()
+    logLevel = "INFO" if (args.verbose) else LOGLEVEL
+    setLogLevel(logLevel)
+    # redo in case passed as an argument
+    TARGET_DIR = args.photodir
+
+    if not TARGET_DIR or not len(TARGET_DIR):
+      status.error( "Missing photo dir", 2, "Fix and reboot")
+
+
+    status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
+    time.sleep(3)
+
+    make_dest(TARGET_DIR)
+
+    if not os.path.isdir(TARGET_DIR):
+      status.error( "Bad photo dir", 3, "Fix and reboot")
+      while True:
+        time.sleep(1)
+
+    status.clear()
+    # Loop to continuously monitor for USB drives
+    while True:
+        status.ready()
+        update_drive_stats()
+
+        wait_drive_inserted()
+
+        # Get list of devices via blkid
+        for device in getDevices():
+            copyFromDevice(device, args.force)
+        wait_remove_all_devices()

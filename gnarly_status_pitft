@@ -1,0 +1,406 @@
+#!/usr/bin/env python3
+# based on the blinkt code
+
+import signal
+import sys
+import time
+
+import digitalio
+import board
+from PIL import Image, ImageDraw, ImageFont
+from adafruit_rgb_display import st7789
+
+from libs.messaging import Messaging
+
+# ----------------------------------------------------------------------------
+FONT_SIZE = 24
+DISPLAY_HEIGHT = 240
+DISPLAY_WIDTH = 240
+X_OFFSET = 0
+Y_OFFSET = 80
+ROTATION = 180
+# Config for display baudrate (default max is 24mhz):
+BAUDRATE = 64000000
+
+BLACK = "#000000"
+WHITE = "#FFFFFF"
+ORANGE = "#FFA500"
+MAGENTA = "#FF00FF"
+CYAN = "#00FFFF"
+RED = "#FF0000"
+GREEN = "#00FF00"
+BLUE = "#0000FF"
+YELLOW = "#FFFF00"
+LIGHT_GREEN = "#20A020"
+PURPLE = "#800080"
+
+TIME_COLOR = WHITE
+FILE_COLOR = YELLOW
+COPY_COLOR = RED
+SD_COLOR = MAGENTA
+HD_COLOR = CYAN
+NEW_LINE = FONT_SIZE + 4
+
+
+# ----------------------------------------------------------------------------
+# this is the board hardware
+def init_board():
+    # Configuration for CS and DC pins (these are FeatherWing defaults on M0/M4):
+    cs_pin = digitalio.DigitalInOut(board.CE0)
+    dc_pin = digitalio.DigitalInOut(board.D25)
+    reset_pin = None
+
+    # Setup SPI bus using hardware SPI:
+    spi = board.SPI()
+
+    # Create the ST7789 display:
+    disp = st7789.ST7789(
+        spi,
+        cs=cs_pin,
+        dc=dc_pin,
+        rst=reset_pin,
+        baudrate=BAUDRATE,
+        # display is rotated so this is why these are the wrong way around
+        width=DISPLAY_HEIGHT,
+        height=DISPLAY_WIDTH,
+        x_offset=X_OFFSET,
+        y_offset=Y_OFFSET,
+    )
+    # Turn on the backlight
+    backlight = digitalio.DigitalInOut(board.D22)
+    backlight.switch_to_output()
+    backlight.value = True
+    # enable the buttons    #
+    buttonA = digitalio.DigitalInOut(board.D23)
+    buttonB = digitalio.DigitalInOut(board.D24)
+    buttonA.switch_to_input()
+    buttonB.switch_to_input()
+
+    # Create blank image for drawing.
+    # Make sure to create image with mode 'RGB' for full color.
+    height = disp.width  # we swap height/width to rotate it to landscape!
+    width = disp.height
+    image = Image.new("RGB", (width, height))
+
+    # Get drawing object to draw on image.
+    draw = ImageDraw.Draw(image)
+
+    # Draw a black filled box to clear the image.
+    draw.rectangle((0, 0, width, height), outline=0, fill=(0, 0, 0))
+    disp.image(image, ROTATION)
+
+    # Create blank image for drawing.
+    # Make sure to create image with mode 'RGB' for full color.
+    height = disp.width  # we swap height/width to rotate it to landscape!
+    width = disp.height
+    image = Image.new("RGB", (width, height))
+
+    # Get drawing object to draw on image.
+    draw = ImageDraw.Draw(image)
+
+    # Draw a black filled box to clear the image.
+    draw.rectangle((0, 0, width, height), outline=0, fill=(0, 0, 0))
+    disp.image(image, ROTATION)
+
+    # load a TTF font
+    font = ImageFont.truetype(
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", FONT_SIZE
+    )
+
+    return {
+        "font": font,
+        "draw": draw,
+        "disp": disp,
+        "image": image,
+        "font": font,
+        "height": height,
+        "width": width,
+    }
+
+
+# ----------------------------------------------------------------------------
+def button_actions():
+    if buttonA.value and buttonB.value:
+        backlight.value = False  # turn off backlight
+    else:
+        backlight.value = True  # turn on backlight
+    if buttonB.value and not buttonA.value:  # just button A pressed
+        display.fill(color565(255, 0, 0))  # red
+    if buttonA.value and not buttonB.value:  # just button B pressed
+        display.fill(color565(0, 0, 255))  # blue
+    if not buttonA.value and not buttonB.value:  # none pressed
+        display.fill(color565(0, 255, 0))  # green
+
+
+# ----------------------------------------------------------------------------
+# version of https://stackoverflow.com/questions/71773998/how-to-draw-a-progress-bar-with-pillow
+def progress_bar(x, y, width, height, progress, fg=WHITE, bg=BLACK):
+    # Draw the background for the full width
+    draw.rectangle((x, y, x + width, y + height), fill=bg)
+    width = int(width * progress)
+    draw.rounded_rectangle((x, y, x + width, y + height), fill=fg, radius=5)
+
+
+def show_progress_bar(text, y, progress, color=WHITE, bg=BLACK):
+    draw.text((0, y), text, font=font, fill=color)
+    offset=FONT_SIZE/2
+    progress_bar(70, y+(offset/2), 170, FONT_SIZE-offset, progress, color)
+
+
+# ----------------------------------------------------------------------------
+
+
+def cls():
+    # Draw a black filled box to clear the image.
+    draw.rectangle((0, 0, tft["width"], tft["height"]), outline=0, fill=0)
+    # Display image
+    disp.image(image, ROTATION)
+
+
+def clr_line(line=0, fill='#000000'):
+    y = line * NEW_LINE
+    # Draw the background for the full width
+    draw.rectangle((0, y, DISPLAY_WIDTH, y + NEW_LINE), fill=fill)
+
+
+
+
+# center text on the middle of the display
+# see https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html
+# for centering and justification of text
+# ordering of the anchor letters is important!
+def display_center_text(txt, color=WHITE):
+    cls()
+    draw.text(
+        (DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2), txt, font=font, fill=color, anchor="mm"
+    )
+    disp.image(image, ROTATION)
+
+
+# center text on the middle of the given line
+def center_line(txt, line=2, color=WHITE, bg=BLACK):
+    clr_line(line, bg)
+    draw.text(
+        (DISPLAY_WIDTH / 2, (line * NEW_LINE) + (FONT_SIZE / 2)+2),
+        txt,
+        font=font,
+        fill=color,
+
+        anchor="mm",
+    )
+    disp.image(image, ROTATION)
+
+
+def print_line(txt, line=2, color=WHITE, txt2=""):
+    clr_line(line)
+    # print( f"print_line {txt}")
+    draw.text((0, line * NEW_LINE), txt, font=font, fill=color)
+    if txt2 != "":
+          draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
+    disp.image(image, ROTATION)
+
+
+def show_time(line=0):
+    clr_line(line)
+    now = time.strftime("%X")
+    center_line(now, 0)
+
+
+def show_copy(percent, line=1):
+    show_progress_bar("Copy", line * NEW_LINE, percent, COPY_COLOR)
+    disp.image(image, ROTATION)
+
+
+def show_files(percent, line=2):
+    show_progress_bar("Files", line * NEW_LINE, percent, FILE_COLOR)
+    disp.image(image, ROTATION)
+
+
+def show_sd(percent, line=3):
+    show_progress_bar("SD", line * NEW_LINE, percent, SD_COLOR)
+    disp.image(image, ROTATION)
+
+
+def show_hd(percent, line=4):
+    show_progress_bar("HD", line * NEW_LINE, percent, HD_COLOR)
+    disp.image(image, ROTATION)
+
+def show_file_stats(filenum, total):
+    print_line( "File", 6, WHITE, f"{filenum}/{total}")
+
+def show_tx_stats(mbs):
+    center_line( f"{mbs} Mb/s", 7, WHITE, BLUE)
+
+# ----------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    # print("You pressed Ctrl+C!")
+    cls()
+    display_center_text("display offline", PURPLE)
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
+# ----------------------------------------------------------------------------
+def status_error(topic, data):
+    """status_error"""
+    cls()
+    show_time()
+    msg = "Error"
+    if "level" in data:
+      msg += f":{data['level']}"
+    center_line(msg, 0, WHITE, RED)
+    center_line( data['msg'], 1, WHITE)
+    if 'msg2' in data and len( data['msg2']):
+      center_line( data['msg2'],3, RED)
+
+# ----------------------------------------------------------------------------
+def status_ready(topic, data):
+    """status_ready"""
+    show_time()
+    clr_line(3)
+    center_line("Insert SD card", 2, GREEN)
+
+
+# ----------------------------------------------------------------------------
+def status_startcopy(topic, data):
+    """status_startcopy"""
+    # print_line("start copy")
+    cls()
+    show_time()
+
+
+# ----------------------------------------------------------------------------
+def status_endcopy(topic, data):
+    """status_endcopy"""
+    # print_line("end copy ")
+    cls()
+
+
+start_copy_time = 0
+# ----------------------------------------------------------------------------
+def status_copydata(topic, data):
+    """status_copydata"""
+    global start_copy_time
+
+    data["size"] != 1
+    show_time()
+
+    show_copy(data["copied"] / data["size"])
+    show_files(data["files_copied"] / data["files_total"])
+    show_file_stats(data["files_copied"], data["files_total"])
+    if not data["copied"]:
+       start_copy_time = time.time()
+       last_copy_size = 0
+    else:
+      elapsed = time.time() - start_copy_time
+      bps = int( data["copied"] / elapsed)
+      show_tx_stats( int(bps / (1024*1024)))
+
+
+# ----------------------------------------------------------------------------
+def status_waitremove(topic, data):
+    """status_waitremove"""
+    center_line("Remove SD Card", 2, ORANGE)
+
+
+# ----------------------------------------------------------------------------
+def quick_perc(free, size):
+    return (size - free) / size
+
+
+# ----------------------------------------------------------------------------
+def status_devicedata(topic, data):
+    """status_devicedata"""
+
+    # get the used sizes from the size and free values
+    # get used (size-free) over size
+    if data["sd_size"]:
+        show_sd(quick_perc(data["sd_free"], data["sd_size"]))
+
+    if data["hd_size"]:
+        show_hd(quick_perc(data["hd_free"], data["hd_size"]))
+
+
+# ----------------------------------------------------------------------------
+def general_status(topic, data):
+    """status_devicedata"""
+    cls()
+    print_line("general status blue ")
+
+
+# ----------------------------------------------------------------------------
+def status_diskfull(topic, data):
+    """status_devicedata"""
+    cls()
+    center_line("HD disk full", 2, '#FFFFFF', '#FF0000')
+
+
+# display a small message
+def status_fivelines(topic, data):
+    """status_fivelines"""
+    color = LIGHT_GREEN
+    cls()
+    # exists and is valid
+    if "color" in data and data["color"]:
+        color = data["color"]
+
+    # get index and the array value, max 5 lines
+    for line, txt in enumerate(data["lines"][:5]):
+        center_line(txt, line, color)
+
+
+# ----------------------------------------------------------------------------
+# we only get keep alives when the system is not doing anything else, so
+# we can update the time
+def status_keepalive(topic, data):
+    """status_devicedata"""
+    show_time(0)
+
+
+# ----------------------------------------------------------------------------
+# clea the display
+def status_cls(topic, data):
+    """status_devicedata"""
+    cls()
+
+
+# ----------------------------------------------------------------------------
+def mqtt_listener():
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/error": status_error,
+        "/photos/ready": status_ready,
+        "/photos/startcopy": status_startcopy,
+        "/photos/endcopy": status_endcopy,
+        "/photos/copydata": status_copydata,
+        "/photos/waitremove": status_waitremove,
+        "/photos/devicedata": status_devicedata,
+        "/photos/diskfull": status_diskfull,
+        "/photos/keepalive": status_keepalive,
+        "/photos/fivelines": status_fivelines,
+        "/photos/cls": status_cls,
+    }
+
+    msg = Messaging()
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
+
+
+# ----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    # setup hardware
+    tft = init_board()
+
+    # make these globals for ease of use
+    draw = tft["draw"]
+    font = tft["font"]
+    image = tft["image"]
+    disp = tft["disp"]
+
+    cls()
+
+    mqtt_listener()

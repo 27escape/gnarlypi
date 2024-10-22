@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+
+import json
+import signal
+import sys
+import time
+
+from libs.messaging import Messaging
+
+BLOCK_SIZE = 1024 * 1024 * 1024
+ONE_MINUTE = 60
+
+# ----------------------------------------------------------------------------
+
+
+def signal_handler(sig, frame):
+    print("You pressed Ctrl+C!")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGHUP, signal_handler)
+
+
+# ----------------------------------------------------------------------------
+def status_error(topic, data):
+    """status_error"""
+    if data:
+        msg = data['msg']
+        if 'msg2' in data and len( data['msg2']):
+           msg += f", {data['msg2']}"
+        print(f"Error: {msg}, level {data['level']}")
+
+
+
+last_status_time = 0
+# ----------------------------------------------------------------------------
+def status_ready(topic, data):
+    """status_ready"""
+    global last_status_time
+    if data:
+        if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
+          print("System is ready and waiting for SD card")
+          last_status_time = data["_epoch"]
+
+
+# ----------------------------------------------------------------------------
+def status_startcopy(topic, data):
+    """status_startcopy"""
+    print("Starting copy process")
+
+
+# ----------------------------------------------------------------------------
+def status_endcopy(topic, data):
+    """status_endcopy"""
+    print("Copy process completed")
+
+
+# ----------------------------------------------------------------------------
+def status_copydata(topic, data):
+    """status_copydata"""
+    if data:
+        data["size"] |= 1
+        percent = "{:.0%}".format(data["copied"] / data["size"])
+
+        # print on same line
+        print(
+            f"copy {data['fromfile']} to {data['tofile']}, {percent}, overall {data['files_copied']}/{data['files_total']}",
+            end="\r",
+        )
+        if percent == '100%':
+          print( "")
+
+
+# ----------------------------------------------------------------------------
+def status_waitremove(topic, data):
+    """status_waitremove"""
+    if data:
+        print("Waiting for SD card removal")
+
+
+# ----------------------------------------------------------------------------
+def status_devicedata(topic, data):
+    """status_devicedata"""
+    if data:
+        sd_used = int( (data["sd_size"]-data['sd_free'])/BLOCK_SIZE)
+        sd_total = int(data['sd_size']/BLOCK_SIZE)
+        hd_used = int((data['hd_size']-data["hd_free"])/BLOCK_SIZE)
+        hd_total = int(data['hd_size']/BLOCK_SIZE)
+        print(
+            f"GB used on drives SD: {sd_used}/{sd_total}, HD: {hd_used}/{hd_total}"
+        )
+
+
+# ----------------------------------------------------------------------------
+def status_diskfull(topic, data):
+    """status_devicedata"""
+    print(f"the disk {data['diskname']} is full ")
+
+
+# ----------------------------------------------------------------------------
+# we only get keep alives when the system is not doing anything else, so
+#  we can track an amount of these, lets try for one in 30
+last_keep_alive = time.time() ;
+def status_keepalive(topic, data):
+    """status_devicedata"""
+    global last_keep_alive
+    if not int(data['_epoch'] - last_keep_alive) % 30:
+      print( 'system still working')
+      last_keep_alive = data['_epoch']
+
+
+if __name__ == "__main__":
+
+    msg = Messaging()
+
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/error": status_error,
+        "/photos/ready": status_ready,
+        "/photos/startcopy": status_startcopy,
+        "/photos/endcopy": status_endcopy,
+        "/photos/copydata": status_copydata,
+        "/photos/waitremove": status_waitremove,
+        "/photos/devicedata": status_devicedata,
+        "/photos/diskfull": status_diskfull,
+        "/photos/keepalive": status_keepalive,
+    }
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
