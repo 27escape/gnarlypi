@@ -1,26 +1,24 @@
 #!/usr/bin/env python3
 
-import argparse
-import logging
 import os
 import re
-import signal
-from stat import *
-import subprocess
 import sys
 import time
 import shutil
-# import copy
+import signal
+import logging
+import argparse
+import subprocess
+from stat import *
 
-# from libs.disksize import get_disk_size
 from libs.status import Status
 
-VERSION = "v0.1"
+VERSION = "0.2.0"
 APP_NAME = os.path.basename(__file__) + " " + VERSION
 CREATOR = "27escape"
 COPYRIGHT = "©️2024"
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 # set default log level to WARNING but if environment variable is available use that
 # LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
 # logging.basicConfig(format='%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s', level=LOGLEVEL)
@@ -54,7 +52,7 @@ def signal_handler(sig, frame):
     if len(last_mount):
         umount_drive(last_mount)
 
-    status.fivelines(("", "gnarlypi", "", "offline", ""))
+    status.fivelines(("", APP_NAME, "", "offline", ""))
     sys.exit(0)
 
 
@@ -69,7 +67,7 @@ def abort_handler(sig, frame):
     if len(last_mount):
         umount_drive(last_mount)
 
-    status.fivelines(("", "gnarlypi", "", "crashed", ""))
+    status.fivelines(("", APP_NAME, "", "crashed", ""))
     sys.exit(0)
 
 
@@ -462,7 +460,7 @@ if __name__ == "__main__":
       status.error( "Missing photo dir", 2, "Fix and reboot")
 
 
-    status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
+    status.fivelines(( f"{APP_NAME} v{VERSION}, "", CREATOR, COPYRIGHT, ""))
     time.sleep(3)
 
     make_dest(TARGET_DIR)
