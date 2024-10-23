@@ -130,7 +130,7 @@ function install_samba() {
 
   if [ ! -f "$SAMBA_ORIG" ] ; then
     sudo cp $SAMBA_CFG "$SAMBA_CFG.orig"
-    sudo echo "$smbconf" > "$SAMBA_CFG"
+    echo "$smbconf" | sudo tee "$SAMBA_CFG" > /dev/null
 
     sudo systemctl restart smbd
   else
@@ -150,7 +150,7 @@ function install_crontab() {
   # test if we already have a crontab file, as if we are doing this from scratch
   # crontab -l may fail as it wants to setup an editor first :(
 
-  if [ $(sudo ls /var/spool/cron/crontabs/kevinmu 2>/dev/null) == "0" ; then
+  if [ $(sudo ls "/var/spool/cron/crontabs/kevinmu" 2>/dev/null) == "0" ] ; then
     echo "" > "$TMP"
   else
     crontab -l > "$TMP"
