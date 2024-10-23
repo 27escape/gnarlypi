@@ -228,8 +228,14 @@ def show_hd(percent, line=4):
 def show_file_stats(filenum, total):
     print_line( "File", 6, WHITE, f"{filenum}/{total}")
 
-def show_tx_stats(mbs):
-    center_line( f"{mbs} Mb/s", 7, WHITE, BLUE)
+def show_tx_stats(bps):
+    bps = int(bps)
+    if bps >= 1024*1024:
+      bps = f"{int( bps / (1024*1024))}M"
+    elif bps >= 1024:
+      bps = f"{int( bps / 1024)}K"
+
+    center_line( f"{bps}b/s", 7, WHITE, BLUE)
 
 # ----------------------------------------------------------------------------
 def signal_handler(sig, frame):
@@ -295,8 +301,8 @@ def status_copydata(topic, data):
        last_copy_size = 0
     else:
       elapsed = time.time() - start_copy_time
-      bps = int( data["copied"] / elapsed)
-      show_tx_stats( int(bps / (1024*1024)))
+      bps = data["copied"] or int( data["copied"] / elapsed)
+      show_tx_stats( bps)
 
 
 # ----------------------------------------------------------------------------
