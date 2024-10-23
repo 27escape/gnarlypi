@@ -56,7 +56,7 @@ class Status:
     # ----------------------------------------------------------------------------
     # status device may choose to ignore this
     # info about individual file copy and the overall file copy data
-    def copydata(self,fromfile, tofile, filesize=0, bytes_copied=0, files_copied=0, file_count=0):
+    def copydata(self,fromfile, tofile, filesize=0, bytes_copied=0, files_copied=0, file_count=0, bps=0):
         """ """
         self.msg.publish(
             "/photos/copydata",
@@ -67,6 +67,7 @@ class Status:
                 "copied": bytes_copied,
                 "files_copied": files_copied,
                 "files_total": file_count,
+                "bps": bps
             },
         )
 
