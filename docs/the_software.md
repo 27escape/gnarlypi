@@ -8,6 +8,7 @@ I decided from the start to use a messaging system for the displays, this way I 
 
 - **be_gnarly** - this is called from cron and starts up all the required scripts to run the system
 - **display_config.sh** - choose which of the display options you wish to use
+- **gnarly_rsync** - copy files to a remote rsync system, will be triggered via a button press notification from **gnarlypi**
 - **gnarly_status_basic** - mostly for testing, displays MQTT messages in the terminal
 - **gnarly_status_blinkt** - simple LED only status display 
 - **gnarly_status_curses** - more advanced terminal display, needs work to tidy it up and stop screen flashes/tearing
