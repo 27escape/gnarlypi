@@ -69,7 +69,10 @@ def status_copydata(topic, data):
             end="\r",
         )
         if percent == '100%':
-          print( "")
+          if data["bps"]:
+            print( f" {data['bps']}B/s")
+          else:
+            print( "")
 
 
 # ----------------------------------------------------------------------------
