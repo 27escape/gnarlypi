@@ -22,10 +22,13 @@ logger = logging.getLogger(__name__)
 BLOCK_SIZE = 1024 * 1024 * 1024
 ONE_MINUTE = 60
 
+PAGE_HEIGHT = 24 ;
+
 TIME_BOX = 1
 COPY_BOX = 2
 DISK_BOX = 3
 MSG_BOX = 4
+
 
 TIME_WIDTH = 80
 BOX_WIDTH = 80
@@ -218,7 +221,6 @@ def status_copydata(topic, data):
         file_copy_area = [
             progressBar("File ", data["copied"], data["size"], 50),
             progressBar("All  ", data["files_copied"], data["files_total"], 50, f'{data["files_copied"]}/{data["files_total"]}'),
-
         ]
         update_display()
 
@@ -273,9 +275,9 @@ def status_keepalive(topic, data):
 
 # ----------------------------------------------------------------------------
 
+msg = Messaging()
 
 def thread_subscriptions():
-    msg = Messaging()
 
     # Define a dictionary to map topics to handling functions
     handlers = {
@@ -298,6 +300,20 @@ def thread_subscriptions():
 def curses_display(stdscr):
     global gStdscr
     gStdscr = stdscr
+
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
+
+    rows, cols = gStdscr.getmaxyx()
+    if cols < BOX_WIDTH or rows < PAGE_HEIGHT:
+      # restore usual display
+      curses.nocbreak()
+      curses.echo()
+      curses.endwin()
+      print( f"Error: The terminal must have a minimum size of {BOX_WIDTH}x{PAGE_HEIGHT}, you have {cols}x{rows}, CTRL-C may be required to end all threads")
+      sys.exit( 2)
+
     # Initialize color pairs
     curses.init_pair(TIME_BOX, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(COPY_BOX, curses.COLOR_BLACK, curses.COLOR_GREEN)
@@ -328,7 +344,6 @@ def curses_display(stdscr):
     while True:
         show_time()
         time.sleep(1)
-
 
 # ----------------------------------------------------------------------------
 def thread_curses():
@@ -361,5 +376,3 @@ if __name__ == "__main__":
     main.start()
     sub = threading.Thread(target=thread_subscriptions)
     sub.start()
-
-    # thread_curses()
