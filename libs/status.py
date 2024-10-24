@@ -166,4 +166,11 @@ class Status:
         self.msg.publish("/photos/cls")
 
 
+    def buttonpress( self, button):
+        """send a single button press
 
+        Args:
+            button (str)   single button character to send
+        """
+        # slice to a single character
+        self.msg.publish("/photos/cls", {"button": button[:1]})
