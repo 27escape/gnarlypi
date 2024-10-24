@@ -59,6 +59,8 @@ def run_rsync_with_progress(source, destination):
 
     logger.info( f"running [{' '.join( rsync_cmd)}]")
 
+    status.fivelines(( "", "RSYNC", "", "", ""))
+
     try:
         current_file = ""
         total = 0
@@ -92,17 +94,18 @@ def run_rsync_with_progress(source, destination):
                   bps = value * 1024
                 else:
                   bps = value
-
+              logger.info( f"{total - left}/{total} {int(bps)} {current_file}")
               status.copydata(
                 current_file,
                 current_file,
-                1,
-                1,
+                0,
+                0,
                 (total - left),
                 total,
                 int(bps)
             )
         logger.info( f"backed up {total} files/folders")
+        status.fivelines(( "", "Completed", "", f"{total} files", ""))
 
 
     except subprocess.CalledProcessError as e:
