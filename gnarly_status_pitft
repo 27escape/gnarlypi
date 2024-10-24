@@ -228,8 +228,14 @@ def show_hd(percent, line=4):
 def show_file_stats(filenum, total):
     print_line( "File", 6, WHITE, f"{filenum}/{total}")
 
-def show_tx_stats(mbs):
-    center_line( f"{mbs} Mb/s", 7, WHITE, BLUE)
+def show_tx_stats(bps):
+    bps = int(bps)
+    if bps >= 1024*1024:
+      bps = f"{int( bps / (1024*1024))}M"
+    elif bps >= 1024:
+      bps = f"{int( bps / 1024)}K"
+
+    center_line( f"{bps}b/s", 7, WHITE, BLUE)
 
 # ----------------------------------------------------------------------------
 def signal_handler(sig, frame):
@@ -284,19 +290,23 @@ def status_copydata(topic, data):
     """status_copydata"""
     global start_copy_time
 
-    data["size"] != 1
     show_time()
 
-    show_copy(data["copied"] / data["size"])
+    # assumption is that if size is 0, then rsync or similar is happening
+    # and we are not getting per file copy updates, so we won't show it
+    if data["size"]:
+      show_copy(data["copied"] / data["size"])
+
     show_files(data["files_copied"] / data["files_total"])
     show_file_stats(data["files_copied"], data["files_total"])
+
     if not data["copied"]:
        start_copy_time = time.time()
        last_copy_size = 0
     else:
       elapsed = time.time() - start_copy_time
-      bps = int( data["copied"] / elapsed)
-      show_tx_stats( int(bps / (1024*1024)))
+      bps = data["bps"] or int( data["copied"] / elapsed)
+      show_tx_stats( bps)
 
 
 # ----------------------------------------------------------------------------
