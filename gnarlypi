@@ -14,7 +14,7 @@ from stat import *
 from libs.status import Status
 
 VERSION = "0.2.0"
-APP_NAME = os.path.basename(__file__) + " " + VERSION
+APP_NAME = os.path.basename(__file__) + " v" + VERSION
 CREATOR = "27escape"
 COPYRIGHT = "©️2024"
 
@@ -460,7 +460,7 @@ if __name__ == "__main__":
       status.error( "Missing photo dir", 2, "Fix and reboot")
 
 
-    status.fivelines(( f"{APP_NAME} v{VERSION}, "", CREATOR, COPYRIGHT, ""))
+    status.fivelines(( APP_NAME, "", CREATOR, COPYRIGHT, ""))
     time.sleep(3)
 
     make_dest(TARGET_DIR)
