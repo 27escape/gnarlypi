@@ -186,12 +186,12 @@ def show_time():
 # ----------------------------------------------------------------------------
 def show_tx_stats(filename, bps):
     bps = int(bps)
-    if bps >= 1024*1024:
+    if bps >= (1024*1024):
       bps = f"{int( bps / (1024*1024))}M"
     elif bps >= 1024:
       bps = f"{int( bps / 1024)}K"
 
-    print_msg( f"{filename} {bps}b/s", 6)
+    print_msg( f"{bps}B/s {filename}", 6)
 
 # ----------------------------------------------------------------------------
 def status_error(topic, data):
