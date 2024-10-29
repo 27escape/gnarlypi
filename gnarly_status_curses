@@ -36,7 +36,7 @@ BOX_WIDTH = 80
 TIME_HEIGHT = 3
 COPY_HEIGHT = 4
 DISK_HEIGHT = 4
-MSG_HEIGHT = 7
+MSG_HEIGHT = 9
 
 TIME_X = 0
 COPY_X = 0
@@ -63,6 +63,8 @@ time_area = empty_line()  # single line
 file_copy_area = [empty_line(), empty_line()]  # individual file, all files
 disk_status_area = [empty_line(), empty_line()]  # SD, HD
 msg_area = [
+    empty_line(),
+    empty_line(),
     empty_line(),
     empty_line(),
     empty_line(),
@@ -118,7 +120,7 @@ def draw_box(x, y, width, height, title, color_pair):
 
 # ----------------------------------------------------------------------------
 def update_display():
-    gStdscr.clear()
+    # gStdscr.clear()
 
     # Draw boxes for each area with different colors
     draw_box(TIME_X, TIME_Y, TIME_WIDTH, TIME_HEIGHT, "Time", TIME_BOX)
@@ -157,24 +159,41 @@ def cls():
     update_display()
 
 
+# ----------------------------------------------------------------------------
 def clr_line(line=0):
-    global msg_area
-    msg_area[line] = empty_line()
-    update_display()
+    # global msg_area
+    if line < (MSG_HEIGHT-2):
+      msg_area[line] = empty_line()
+      update_display()
 
 
+# ----------------------------------------------------------------------------
 def print_msg(txt, line=2):
-    global msg_area
-    msg_area[line] = txt
-    update_display()
+    # global msg_area
+    if line < (MSG_HEIGHT-2):
+      msg_area[line] = txt
+      update_display()
 
 
+# ----------------------------------------------------------------------------
 def show_time():
     global time_area
     time_area = time.strftime("%X").rjust(TIME_WIDTH-2, ' ')
     update_display()
 
+# ----------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------
+def show_tx_stats(filename, bps):
+    bps = int(bps)
+    if bps >= (1024*1024):
+      bps = f"{int( bps / (1024*1024))}M"
+    elif bps >= 1024:
+      bps = f"{int( bps / 1024)}K"
+
+    print_msg( f"{bps}B/s {filename}", 6)
+
+# ----------------------------------------------------------------------------
 def status_error(topic, data):
     """status_error"""
     cls()
@@ -222,6 +241,9 @@ def status_copydata(topic, data):
             progressBar("File ", data["copied"], data["size"], 50),
             progressBar("All  ", data["files_copied"], data["files_total"], 50, f'{data["files_copied"]}/{data["files_total"]}'),
         ]
+        if "bps" in data and data["bps"]:
+          filename = os.path.basename(data['fromfile'])[:20]
+          show_tx_stats( filename, data["bps"])
         update_display()
 
 # ----------------------------------------------------------------------------
@@ -255,7 +277,7 @@ def status_devicedata(topic, data):
 
 # ----------------------------------------------------------------------------
 def status_diskfull(topic, data):
-    """status_devicedata"""
+    """status_diskfull"""
     print_msg(f"the disk {data['diskname']} is full ", 4)
 
 
@@ -266,11 +288,28 @@ last_keep_alive = time.time()
 
 
 def status_keepalive(topic, data):
-    """status_devicedata"""
+    """status_keepalive"""
     global last_keep_alive
     if not int(data["_epoch"] - last_keep_alive) % 30:
         print_msg("system still working", 4)
         last_keep_alive = data["_epoch"]
+
+
+# display a small message
+def status_fivelines(topic, data):
+    """status_fivelines"""
+    cls()
+    # get index and the array value, max 5 lines
+    for line, txt in enumerate(data["lines"][:5]):
+        print_msg(txt, line)
+
+
+# ----------------------------------------------------------------------------
+# clea the display
+def status_cls(topic, data):
+    """status_cls"""
+    cls()
+
 
 
 # ----------------------------------------------------------------------------
@@ -290,6 +329,8 @@ def thread_subscriptions():
         "/photos/devicedata": status_devicedata,
         "/photos/diskfull": status_diskfull,
         "/photos/keepalive": status_keepalive,
+        "/photos/fivelines": status_fivelines,
+        "/photos/cls": status_cls,
     }
 
     # if we pass handlers, then we will also kickoff the loop

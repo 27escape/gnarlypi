@@ -60,19 +60,24 @@ def status_endcopy(topic, data):
 def status_copydata(topic, data):
     """status_copydata"""
     if data:
-        data["size"] |= 1
-        percent = "{:.0%}".format(data["copied"] / data["size"])
+        percent = "0%"
+        if data["size"]:
+          percent = "{:.0%}".format(data["copied"] / data["size"])
 
         # print on same line
         print(
             f"copy {data['fromfile']} to {data['tofile']}, {percent}, overall {data['files_copied']}/{data['files_total']}",
             end="\r",
         )
-        if percent == '100%':
-          if data["bps"]:
-            print( f" {data['bps']}B/s")
-          else:
-            print( "")
+        if data["bps"]:
+          bps = data["bps"]
+          if bps >= (1024*1024):
+            bps = f"{int( bps / (1024*1024))}M"
+          elif bps >= 1024:
+            bps = f"{int( bps / 1024)}K"
+          print( f"\n{bps}B/s")
+        else:
+          print( "")
 
 
 # ----------------------------------------------------------------------------

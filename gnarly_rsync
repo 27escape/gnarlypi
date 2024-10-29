@@ -6,6 +6,7 @@ import sys
 import signal
 import logging
 import argparse
+import contextlib
 import subprocess
 
 from libs.status import Status
@@ -19,7 +20,7 @@ APP_NAME = os.path.basename(__file__)
 # Replace with your desired source directory
 SOURCE_DIR = os.path.join(HOME, "photos")
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_NAME)
 
 # ----------------------------------------------------------------------------
 
@@ -29,7 +30,7 @@ def signal_handler(sig, frame):
 
     logger.info("You pressed Ctrl+C!")
 
-    status.fivelines(("", __name__, "", "cancelled", ""))
+    status.fivelines(("", APP_NAME, "", "cancelled", ""))
     sys.exit(3)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -43,6 +44,28 @@ def setLogLevel(loglevel):
         format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
         level=loglevel,
     )
+
+# taken from https://stackoverflow.com/questions/803265/getting-realtime-output-using-subprocess
+# Unix, Windows and old Macintosh end-of-line
+newlines = ['\n', '\r\n', '\r']
+def unbuffered(proc, stream='stdout'):
+    stream = getattr(proc, stream)
+    with contextlib.closing(stream):
+        while True:
+            out = []
+            last = stream.read(1)
+            # Don't loop forever
+            if last == '' and proc.poll() is not None:
+                break
+            while last not in newlines:
+                # Don't loop forever
+                if last == '' and proc.poll() is not None:
+                    break
+                out.append(last)
+                last = stream.read(1)
+            out = ''.join(out)
+            yield out
+
 
 # ----------------------------------------------------------------------------
 
@@ -63,47 +86,67 @@ def run_rsync_with_progress(source, destination):
 
     try:
         current_file = ""
+        filesize = 0
+        left = 0
         total = 0
-        proc = subprocess.Popen(rsync_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # universal_newlines -  Make all end-of-lines '\n'
+        # this means we will also get line updates during copy process that would have ended with \r
+        # also assumes output is text
+        proc = subprocess.Popen(rsync_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         while proc.poll() is None:
-            line = proc.stdout.readline().decode("utf-8").strip()
-            # find new filenames
-            if file_match := re.search(r"^>f.*?\s(.*)$", line):
-                # 1 is the match itself
-                current_file = file_match.group(1)
-            # find file counts
-            elif count_match := re.search(r"to-chk\=([0-9]+)\/([0-9]+)", line):
-              # the number of files known that are still around to process
-              left = int(count_match.group(1))
-              total = int(count_match.group(2))
-              # total is a combination of files and dirs locally
-              # we are really only using it as a guide
-              # print( f"____{total - left}/{total} {current_file}")
+            # line = proc.stdout.readline().decode("utf-8").strip()
+            line = proc.stdout.readline().strip()
+            logger.info( line)
+            if file_match := re.search(r"^.f.*?\s(.*)$", line):
+                current_file = os.path.join( os.path.dirname(source), file_match.group(1))
+                logger.info( f"current {current_file}")
+                filesize = os.path.getsize( current_file)
+                # log when we have a file, it may take some time to copy if remote
+                status.copydata(
+                  current_file,
+                  current_file,
+                  0,
+                  filesize,
+                  (total - left),
+                  total
+                )
 
-              bps=0
-              if bps_match := re.search( r"%\s+(.*?)B\/s\s", line):
-                value = bps_match.group(1)
+            # catch updates to file copy stats
+            elif count_match := re.search(r"([0-9,]+).*?%\s+(.*?)B\/s\s+", line):
+              # check end of file copy info
+                bytes_copied = int(count_match.group(1).replace(',', ''))
+                bps = 0
+                bps_str = count_match.group(2)
 
-                # print( f"match {value}")
-                if value.endswith( "M"):
-                  value = float(value[:-1])
-                  bps = value * 1024 * 1024
-                elif value.endswith( "K") or value.endswith( "k"):
-                  value = float(value[:-1])
-                  bps = value * 1024
+                # find file counts, this happens when the file is complete
+                if end_match := re.search(r"to-chk\=([0-9]+)\/([0-9]+)", line):
+                  # the number of files known that are still around to process
+                  left = int(end_match.group(1))
+                  # total is a combination of files and dirs locally
+                  # we are really only using it as a guide
+                  total = int(end_match.group(2))
+
+                if bps_str.endswith( "M"):
+                  bps_str = float(bps_str[:-1])
+                  bps = bps_str * 1024 * 1024
+                elif bps_str.endswith( "K") or bps_str.endswith( "k"):
+                  bps_str = float(bps_str[:-1])
+                  bps = bps_str * 1024
                 else:
-                  bps = value
-              logger.info( f"{total - left}/{total} {int(bps)} {current_file}")
-              status.copydata(
-                current_file,
-                current_file,
-                0,
-                0,
-                (total - left),
-                total,
-                int(bps)
-            )
+                  bps = bps_str
+
+                logger.info( f"{total - left}/{total} {int(bps)} {current_file}")
+                status.copydata(
+                  current_file,
+                  current_file,
+                  filesize,
+                  bytes_copied,
+                  (total - left),
+                  total,
+                  int(bps)
+                )
+
         logger.info( f"backed up {total} files/folders")
         status.fivelines(( "", "Completed", "", f"{total} files", ""))
 
