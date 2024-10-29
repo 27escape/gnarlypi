@@ -68,11 +68,10 @@ def status_copydata(topic, data):
             f"copy {data['fromfile']} to {data['tofile']}, {percent}, overall {data['files_copied']}/{data['files_total']}",
             end="\r",
         )
-        if percent == '100%':
-          if data["bps"]:
-            print( f" {data['bps']}B/s")
-          else:
-            print( "")
+        if data["bps"]:
+          print( f"\n {data['bps']}B/s")
+        else:
+          print( "")
 
 
 # ----------------------------------------------------------------------------
