@@ -60,8 +60,9 @@ def status_endcopy(topic, data):
 def status_copydata(topic, data):
     """status_copydata"""
     if data:
-        data["size"] |= 1
-        percent = "{:.0%}".format(data["copied"] / data["size"])
+        percent = "0%"
+        if data["size"]:
+          percent = "{:.0%}".format(data["copied"] / data["size"])
 
         # print on same line
         print(
@@ -69,7 +70,12 @@ def status_copydata(topic, data):
             end="\r",
         )
         if data["bps"]:
-          print( f"\n {data['bps']}B/s")
+          bps = data["bps"]
+          if bps >= (1024*1024):
+            bps = f"{int( bps / (1024*1024))}M"
+          elif bps >= 1024:
+            bps = f"{int( bps / 1024)}K"
+          print( f"\n{bps}B/s")
         else:
           print( "")
 
