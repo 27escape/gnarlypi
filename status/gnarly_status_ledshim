@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
+# based on the blinkt code
 
 import signal
 import sys
 import math
-import blinkt
+import ledshim
 
+sys.path.insert( 0, '../')
 from libs.messaging import Messaging
 
-NUM_PIXELS = 8
-# must make it an INT, python will assume a float otherwise
+NUM_PIXELS = 28
+# msut make it an INT, python will assume a float otherwise
 HALF_PIXELS = int(NUM_PIXELS / 2)
 
-
 # ----------------------------------------------------------------------------
-def init_blinkt():
+def init_ledshim():
   try:
-    blinkt.set_clear_on_exit()
-    blinkt.set_brightness(0.1)  # 10%
-    blinkt.clear()
-    blinkt.show()
+    ledshim.set_clear_on_exit()
+    ledshim.set_brightness(0.7)  # 1 = 100%
+    ledshim.clear()
+    ledshim.show()
   except:
-    print( 'failed to connect to blinkt')
+    print( 'failed to connect to ledshim')
     sys.exit( 1)
-
 
 
 # ----------------------------------------------------------------------------
@@ -30,13 +30,13 @@ def status_pixels(r, g, b):
     # print(f"{r} {g} {b}")
 
     for i in range(0, NUM_PIXELS, 1):
-        blinkt.set_pixel(i, r, g, b)
-    blinkt.show()
+        ledshim.set_pixel(i, r, g, b)
+    ledshim.show()
 
 
 # ----------------------------------------------------------------------------
 def signal_handler(sig, frame):
-    print("You pressed Ctrl+C!")
+    # print("You pressed Ctrl+C!")
     sys.exit(0)
 
 
@@ -82,18 +82,18 @@ def percent_block(start, count, r, g, b, value, max):
     lit = math.floor(percent / step)
 
     for i in range(start, start + lit, 1):
-        blinkt.set_pixel(i, r, g, b)
+        ledshim.set_pixel(i, r, g, b)
     # clear remaining in count
     for i in range(start + lit, start + count, 1):
-        blinkt.set_pixel(i, 0, 0, 0)
-    blinkt.show()
+        ledshim.set_pixel(i, 0, 0, 0)
+    ledshim.show()
 
 
 # ----------------------------------------------------------------------------
 def status_copydata(topic, data):
     """status_copydata"""
 
-    data["size"] |= 1
+    data["size"] != 1
     percent = "{:.0%}".format(data["copied"] / data["size"])
     # print(
     #     f"copy {data['fromfile']} to {data['tofile']}, {percent}, overall {data['files_copied']}/{data['files_total']}",
@@ -141,14 +141,14 @@ def general_status(topic, data):
 def status_diskfull(topic, data):
     """status_devicedata"""
     # message_queue.put({topic: topic, data: data})
-    # print("diskfull ")
-    blinkt.clear()
+    print("diskfull ")
+    ledshim.clear()
     step = 3 if NUM_PIXELS >= 12 else 2
+    # every other third on
     for i in range(0, NUM_PIXELS, step):
-        blinkt.set_pixel(i, 255, 0, 0)
+        ledshim.set_pixel(i, 255, 0, 0)
 
-    blinkt.show()
-
+    ledshim.show()
 
 # ----------------------------------------------------------------------------
 # we only get keep alives when the system is not doing anything else, so
@@ -158,11 +158,11 @@ def status_keepalive(topic, data):
     """status_devicedata"""
     global last_keep_alive
     if last_keep_alive:
-        blinkt.set_pixel(NUM_PIXELS-1, 255, 0, 255)
+        ledshim.set_pixel(NUM_PIXELS-1, 255, 0, 255)
     else:
-      blinkt.set_pixel(NUM_PIXELS-1, 0, 0, 0)
+      ledshim.set_pixel(NUM_PIXELS-1, 0, 0, 0)
     last_keep_alive = not last_keep_alive
-    blinkt.show()
+    ledshim.show()
 
 # ----------------------------------------------------------------------------
 def mqtt_listener():
@@ -188,5 +188,5 @@ def mqtt_listener():
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    init_blinkt()
+    init_ledshim()
     mqtt_listener()

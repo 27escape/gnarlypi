@@ -44,7 +44,6 @@ function override_system_python() {
   fi
 }
 
-
 # ----------------------------------------------------------------------------
 function install_device_blinkt() {
   # this should work, I may have broke my blinkt!
@@ -150,7 +149,7 @@ function install_crontab() {
   # test if we already have a crontab file, as if we are doing this from scratch
   # crontab -l may fail as it wants to setup an editor first :(
 
-  if [ $(sudo ls "/var/spool/cron/crontabs/kevinmu" 2>/dev/null) == "0" ] ; then
+  if [ $(sudo ls "/var/spool/cron/crontabs/$USER" 2>/dev/null) == "0" ] ; then
     echo "" > "$TMP"
   else
     crontab -l > "$TMP"
@@ -159,7 +158,7 @@ function install_crontab() {
   if [ "$?" == "1" ] ; then
       echo "installing reboot rule into crontab"
       echo "#start gnarlypi on bootup
-@reboot /home/$USER/gnarlypi/be_gnarly" >> "$TMP"
+@reboot /home/$USER/gnarlypi/bin/be_gnarly" >> "$TMP"
       # update crontab
       crontab "$TMP"
       rm "$TMP"
@@ -189,7 +188,7 @@ install_device_mini_pitft
 install_samba
 install_gnarly
 
-./display_config.sh
+./bin/display_config.sh
 
 if [ "$REBOOT_REQUIRED" == "1" ] ; then
   echo "rebooting"

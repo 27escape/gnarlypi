@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # choose which displays to use and create the start_displays.sh script
 
-DISPLAY_SCRIPT="./start_displays.sh"
+FULL_PATH="$HOME/gnarlypi/bin"
+cd "$FULL_PATH" || (echo "cannot find dir $FULL_PATH" && exit 1)
+
+DISPLAY_SCRIPT=".$FULL_PATH/start_displays.sh"
 
 # ----------------------------------------------------------------------------
 
@@ -26,15 +29,17 @@ if [ ! -f "$DISPLAY_SCRIPT" ] || prompt_yn "Do you wish to update the display ch
 # reconfigure with the display_config.sh script,
 # \$GNARLY_LOG comes from be_gnarly script
 # do not modify by hand
-  " > "$DISPLAY_SCRIPT"
+cd '$FULL_PATH'
+" > "$DISPLAY_SCRIPT"
   chmod a+x "$DISPLAY_SCRIPT"
 
   # "curses" and "basic" basic would need to be launched as an alternative
   # login program to display on the console, rather than the usual bash login
 
-  for display in gnarly_status_*  ; do
-    if prompt_yn "Do you wish to install $display" ; then
-      echo "nohup \"./$display\" >> \$GNARLY_LOG 2>&1 &" >> "$DISPLAY_SCRIPT"
+  for display in ../status/gnarly_status_*  ; do
+    display_name=$(basename "$display")
+    if prompt_yn "Do you wish to install $display_name" ; then
+      echo "nohup \"./$display_name\" >> \$GNARLY_LOG 2>&1 &" >> "$DISPLAY_SCRIPT"
     fi
   done
 fi

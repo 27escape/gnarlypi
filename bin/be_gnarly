@@ -6,7 +6,7 @@
 
 # ----------------------------------------------------------------------------
 
-FULL_PATH="$HOME/gnarlypi"
+FULL_PATH="$HOME/gnarlypi/bin"
 export GNARLY_LOG="/tmp/gnarly.log"
 
 cd "$FULL_PATH" || (echo "cannot find dir $FULL_PATH" && exit 1)

@@ -10,6 +10,7 @@ import logging
 import argparse
 import threading
 
+sys.path.insert( 0, '../')
 from libs.messaging import Messaging
 
 logger = logging.getLogger(__name__)
