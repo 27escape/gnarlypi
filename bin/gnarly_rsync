@@ -6,10 +6,15 @@ import sys
 import signal
 import logging
 import argparse
+import threading
 import contextlib
 import subprocess
+from dotwiz import DotWiz
 
+sys.path.insert( 0, '../')
 from libs.status import Status
+from libs.messaging import Messaging
+from libs.basic_state import BasicStateMachine
 
 # ----------------------------------------------------------------------------
 
@@ -21,6 +26,16 @@ APP_NAME = os.path.basename(__file__)
 SOURCE_DIR = os.path.join(HOME, "photos")
 
 logger = logging.getLogger(APP_NAME)
+
+copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
+
+state_table = [
+  "INIT",
+  "WAITING",
+  "ACCEPT BUTTON",
+  "RSYNC",
+
+]
 
 # ----------------------------------------------------------------------------
 
@@ -78,10 +93,6 @@ def run_rsync_with_progress(source, destination):
 
     """
 
-    rsync_cmd = ["rsync", "-aviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", source, destination]
-
-    logger.info( f"running [{' '.join( rsync_cmd)}]")
-
     status.fivelines(( "", "RSYNC", "", "", ""))
 
     try:
@@ -89,15 +100,22 @@ def run_rsync_with_progress(source, destination):
         filesize = 0
         left = 0
         total = 0
+
+        rsync_cmd = ["rsync", "-aviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", source, destination]
+        logger.info( f"running [{' '.join( rsync_cmd)}]")
+
         # universal_newlines -  Make all end-of-lines '\n'
         # this means we will also get line updates during copy process that would have ended with \r
         # also assumes output is text
         proc = subprocess.Popen(rsync_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         while proc.poll() is None:
+            if wantAbandon():
+              raise Exception( 'Abandon required')
+
             # line = proc.stdout.readline().decode("utf-8").strip()
             line = proc.stdout.readline().strip()
-            logger.info( line)
+            # logger.info( line)
             if file_match := re.search(r"^.f.*?\s(.*)$", line):
                 current_file = os.path.join( os.path.dirname(source), file_match.group(1))
                 logger.info( f"current {current_file}")
@@ -155,6 +173,51 @@ def run_rsync_with_progress(source, destination):
         print(f"Error running rsync: {e}")
         return 0, 0
 
+
+# ----------------------------------------------------------------------------
+def setStatusCopying(flag=True):
+    copy_status.in_copy_process = flag
+
+# ----------------------------------------------------------------------------
+def setAbandonCopying(flag=True):
+  copy_status.copy_abandon = flag
+
+# ----------------------------------------------------------------------------
+def wantAbandon():
+  return copy_status.copy_abandon
+
+
+# ----------------------------------------------------------------------------
+# handle a button press, we can allow A/B/C while waiting to copy
+# BUT just C (cancel) during the copy process
+def status_button(topic, dData):
+    data = DotWiz(dData)
+    if data.button == 'C':
+      setAbandonCopying()
+      logger.info(f"abandoning button '{data.button}'")
+      # end the listening loop
+      msg.client_disconnect()
+
+def status_error(topic, dData):
+  print("ignoreme")
+
+# ----------------------------------------------------------------------------
+# thread to listen for button press messages
+msg = Messaging()
+
+def thread_buttons():
+
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/button": status_button,
+        "/photos/error": status_error,
+    }
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
+
+
+
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -198,6 +261,11 @@ if __name__ == "__main__":
         logger.info(f"Error: Source '{args.source}' is not a directory.")
         sys.exit(2)
 
-    # we cannot check the target, this will be down to the user
+    thButtons = threading.Thread(target=thread_buttons)
+    thButtons.start()
 
+    # this will be the main thread
+    # we cannot check the target, this will be down to the user
     run_rsync_with_progress(args.source, args.target)
+
+    msg.client_disconnect()

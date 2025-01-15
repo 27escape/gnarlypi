@@ -9,6 +9,7 @@ Currently there is an alternative for the Gnarrbox doing the rounds on Kickstart
 This project then is to provide a _much_ cheaper alternative to that, though maybe without a nice box to put it in, and no battery either. But, we can create it with Raspberry PI's, storage and display options that fit in our budgets!
 
 To be clear, my intention is to create a small low cost device, that I can use to backup my photos and videos while travelling and then when returning home, can copy those photos either onto my computer or my NAS for editing. Everything else is a bonus. 
+
 I could carry a small laptop but I have enough weight in my bag with cameras/lenses, tablet etc and I also do not want to have to create an application that I can run on my phone/tablet to perform this function. TBH a pocket laptop like those created by GPD may be suitable if I could add 2TB of NVME storage to them but they are still pretty pricy as are the linux phones that are available.
 
 ## My Setup

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import time
-from libs.status import Status
+import sys
+sys.path.insert( 0, '../')
+from libs.status import Status  # type: ignore
 
 BLOCK_SIZE = 1024 * 1024 * 1024
 

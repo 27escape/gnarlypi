@@ -76,7 +76,8 @@ class Status:
     # status device may choose to ignore this
     # info about individual file copy and the overall file copy data
     def copydata(self,fromfile, tofile, filesize=0, bytes_copied=0, files_copied=0, file_count=0, bps=0):
-        """
+        """update data during a file copy process
+
         Args:
             fromfile        (str)   name of the file being copied
             tofile          (str)   name of the file at the destination
@@ -148,7 +149,7 @@ class Status:
 
     # ----------------------------------------------------------------------------
     def fivelines(self, lines, color=None):
-        """send five SHORT lines of information
+        """send five SHORT lines of information, target device may truncate
 
         Args:
             lines  (list of str)    array of 5 strings
@@ -166,6 +167,7 @@ class Status:
         self.msg.publish("/photos/cls")
 
 
+    # ----------------------------------------------------------------------------
     def buttonpress( self, button):
         """send a single button press
 
@@ -173,4 +175,4 @@ class Status:
             button (str)   single button character to send
         """
         # slice to a single character
-        self.msg.publish("/photos/cls", {"button": button[:1]})
+        self.msg.publish("/photos/button", {"button": button[:1]})

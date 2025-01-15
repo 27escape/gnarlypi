@@ -25,15 +25,14 @@ class Messaging:
 
 
     # ----------------------------------------------------------------------------
-    def on_disconnect(self, client, userdata, rc):
+    def on_disconnect(self, client, userdata, flags, rc, properties):
         """
         """
-        print("on disconnect")
-        if rc != 0:
+        if rc != "Normal disconnection":
             print("Unexpected MQTT disconnection. Will auto-reconnect")
 
 
-    def on_disconnect_retry(self, client, userdata, rc):
+    def on_disconnect_retry(self, client, userdata, flags, rc, properties):
         logger.info("Disconnected with result code: %s", rc)
         reconnect_count, reconnect_delay = 0, FIRST_RECONNECT_DELAY
         while reconnect_count < MAX_RECONNECT_COUNT:
@@ -100,9 +99,14 @@ class Messaging:
         # for this usecase not much else is needed
         topic = message.topic
         if topic in self.topic_handlers:
-            self.topic_handlers[topic](topic=message.topic, data=json.loads(message.payload.decode()))
-        else:
-            self.handle_all(client, userdata, message)
+
+            try:
+                self.topic_handlers[topic](topic=topic, data=json.loads(message.payload.decode()))
+            except Exception as e:
+                logger.info( f"likely message is not JSON topic:{topic}, message:{message.payload.decode()}")
+
+        # else:
+        #     self.handle_all(client, userdata, message)
 
 
     # ----------------------------------------------------------------------------

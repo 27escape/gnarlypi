@@ -8,10 +8,14 @@ import shutil
 import signal
 import logging
 import argparse
+import threading
 import subprocess
 from stat import *
+from dotwiz import DotWiz
 
+sys.path.insert( 0, '../')
 from libs.status import Status
+from libs.messaging import Messaging
 
 VERSION = "0.2.0"
 APP_NAME = os.path.basename(__file__) + " v" + VERSION
@@ -19,9 +23,6 @@ CREATOR = "27escape"
 COPYRIGHT = "©️2024"
 
 logger = logging.getLogger(APP_NAME)
-# set default log level to WARNING but if environment variable is available use that
-# LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
-# logging.basicConfig(format='%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s', level=LOGLEVEL)
 
 # ----------------------------------------------------------------------------
 
@@ -41,6 +42,8 @@ TARGET_DIR = os.path.join(HOME, "photos")
 last_mount = ""
 
 status = None
+
+copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
 
 # ----------------------------------------------------------------------------
 
@@ -179,6 +182,9 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
             )
 
             while chunk := f_in.read(READ_SIZE):
+                if wantAbandon():
+                  raise Exception( 'Abandon required')
+
                 f_out.write(chunk)
                 copied += len(chunk)
                 status.copydata(
@@ -189,7 +195,6 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
                     copy_stats["copied"],
                     copy_stats["total"],
                 )
-                # logger.info(f"copied {copied} of {total}")
 
         # move to dst_path to make it atomic
         os.rename(tmpdest, dst_path)
@@ -223,7 +228,7 @@ def rCopy(src, dst, force):
     copied = 0
     fails = 0
     total = 0
-    logger.info(f"copying {total} files from {src} to {dst} with force {force}")
+    logger.info(f"copying files from {src} to {dst} with force {force}")
 
     update_drive_stats()
     # count files that we need to copy
@@ -235,29 +240,34 @@ def rCopy(src, dst, force):
                 total += 1
 
     status.startcopy(file_count=total)
+    logger.info(f"copying {total} files from {src} to {dst}")
 
     for dirpath, dirnames, filenames in os.walk(src):
-        for filename in filenames:
-            src_path = os.path.join(dirpath, filename)
-            dst_path = os.path.join(dst, os.path.relpath(src_path, src))
-            # Create destination directory structure if needed
-            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            update = 0
-            if force or not os.path.exists(dst_path):
-                update = 1
+        if not wantAbandon():
+          for filename in filenames:
+              src_path = os.path.join(dirpath, filename)
+              dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+              # Create destination directory structure if needed
+              os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+              update = 0
+              if force or not os.path.exists(dst_path):
+                  update = 1
 
-            if copy_file(
-                src_path, dst_path, force, copy_stats={"copied": copied, "total": total}
-            ):
-                # only update the copy count if there was a file to copy
-                copied += update
-            else:
-                fails += 1
-            logger.debug(f"({copied}/{total})")
+              if copy_file(
+                  src_path, dst_path, force, copy_stats={"copied": copied, "total": total}
+              ):
+                  # only update the copy count if there was a file to copy
+                  copied += update
+              else:
+                  fails += 1
+                  if wantAbandon():
+                    logger.info( "abandon copying")
+                    break
+              logger.debug(f"({copied}/{total})")
     if fails:
         logger.error(f"failed to copy {fails} files in {total}")
     update_drive_stats()
-    status.endcopy( files_copied=copied, file_count=total)
+    status.endcopy(files_copied=copied, file_count=total)
 
 
 # ----------------------------------------------------------------------------
@@ -276,7 +286,6 @@ def mount_drive(device_path, mount):
         last_mount = mount
         mounted = True
     except subprocess.CalledProcessError as e:
-        # TODO: check if drive actually mounted, show error if not
         logger.error(f"Failed to mount drive: {e}")
     return mounted
 
@@ -293,6 +302,8 @@ def umount_drive(mount):
             if not os.path.ismount(mount):
                 logger.debug(f"unmounted {mount}")
                 last_mount = ""
+                # remove the mount point to keep the drive tidy, no other reason
+                os.rmdir( mount)
             else:
                 logger.info("unmount failed")
 
@@ -321,14 +332,6 @@ def getDevices():
     devices = []
 
     try:
-
-        # output = subprocess.check_output(["blkid"], text=True)
-        # for dev in output.splitlines():
-        #     # ignore the root and boot devices
-        #     match = re.search(r"LABEL=\"[b|r]ootfs\"", dev)
-        #     if not match:
-        #       devices.append( dev)
-
         output = subprocess.check_output(["lsblk", "-ln"], text=True)
         for dev in output.splitlines():
             parts = dev.split()
@@ -380,7 +383,7 @@ def copyFromDevice(device, useTheForce):
     if not os.path.ismount(mount_point):
         if mount_drive(device, mount_point):
 
-        # if os.path.ismount(mount_point):
+            # if os.path.ismount(mount_point):
             logger.info(f"is mounted {mount_point}")
             camera_dir = os.path.join(mount_point, "DCIM")
             logger.info(f"checking {camera_dir}")
@@ -397,8 +400,8 @@ def copyFromDevice(device, useTheForce):
             umount_drive(mount_point)
         else:
             logger.error(f"could not mount {device} to {mount_point}")
-            status.error( "mount fail", 5, "remove device")
-            time.sleep( 60)
+            status.error("mount fail", 5, "remove device")
+            time.sleep(60)
     else:
         logger.warning(f"no mount point {mount_point}")
 
@@ -410,6 +413,47 @@ def wait_drive_inserted():
         if len(devices) != 0:
             break
         wait_time(1)
+
+
+# ----------------------------------------------------------------------------
+def setStatusCopying(flag=True):
+    copy_status.in_copy_process = flag
+
+# ----------------------------------------------------------------------------
+def setAbandonCopying(flag=True):
+  copy_status.copy_abandon = flag
+
+# ----------------------------------------------------------------------------
+def wantAbandon():
+  return copy_status.copy_abandon
+
+# ----------------------------------------------------------------------------
+# handle a button press, we can allow A/B/C while waiting to copy
+# BUT just C (cancel) during the copy process
+def status_button(topic, dData):
+    data = DotWiz(dData)
+    if not copy_status.in_copy_process:
+        logger.info(f"button '{data.button}' received")
+    else:
+        if data.button == 'C':
+          setAbandonCopying()
+
+        logger.info(f"discarding button '{data.button}'")
+
+
+# ----------------------------------------------------------------------------
+# thread to listen for button press messages
+msg = Messaging()
+
+def thread_buttons():
+
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/button": status_button,
+    }
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
 
 
 # ----------------------------------------------------------------------------
@@ -431,10 +475,10 @@ if __name__ == "__main__":
         description=f"Watch for USB drive insertions and copy any photo files from them to {TARGET_DIR}"
     )
     parser.add_argument(
-      "photodir",
-      type=str,
-      default=TARGET_DIR,
-      help="Full path to directory to store imported photos",
+        "photodir",
+        type=str,
+        default=TARGET_DIR,
+        help="Full path to directory to store imported photos",
     )
     parser.add_argument(
         "-v",
@@ -457,28 +501,44 @@ if __name__ == "__main__":
     TARGET_DIR = args.photodir
 
     if not TARGET_DIR or not len(TARGET_DIR):
-      status.error( "Missing photo dir", 2, "Fix and reboot")
+        status.error("Missing photo dir", 2, "Fix and reboot")
 
-
-    status.fivelines(( APP_NAME, "", CREATOR, COPYRIGHT, ""))
+    status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
     time.sleep(3)
 
     make_dest(TARGET_DIR)
 
     if not os.path.isdir(TARGET_DIR):
-      status.error( "Bad photo dir", 3, "Fix and reboot")
-      while True:
-        time.sleep(1)
+        status.error("Bad photo dir", 3, "Fix and reboot")
+        while True:
+            time.sleep(1)
 
     status.clear()
+
+    thButtons = threading.Thread(target=thread_buttons)
+    thButtons.start()
+
+    # main thread performing file copies
     # Loop to continuously monitor for USB drives
     while True:
-        status.ready()
-        update_drive_stats()
+      if wantAbandon():
+        break
 
-        wait_drive_inserted()
+      status.ready()
+      update_drive_stats()
 
-        # Get list of devices via blkid
-        for device in getDevices():
-            copyFromDevice(device, args.force)
-        wait_remove_all_devices()
+      wait_drive_inserted()
+      # this will prevent any button presses from being actioned
+      setStatusCopying(True)
+
+      # Get list of devices via blkid
+      for device in getDevices():
+        if not wantAbandon():
+          copyFromDevice(device, args.force)
+
+      wait_remove_all_devices()
+      setStatusCopying(False)
+
+    status.fivelines( (APP_NAME, "", "Abandoned", "", "POWER OFF"))
+    # force the end of the messages
+    msg.client_disconnect()

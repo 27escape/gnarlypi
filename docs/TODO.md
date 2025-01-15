@@ -31,7 +31,7 @@ Device improvements:
 - [ ] CFexpress? My cameras don't use these cards, so this would only be added if anyone else needs it, ideally its just another USB device and should read and copy fine, without any code changes
 
 
-Alternative all in one solutions:
+## Alternative all in one solutions:
 
 There are interesting things over at [ClockworkPi](https://www.clockworkpi.com/shop) that seem to be based on the CM4 compute modules, which would mean external USB for storage, but that could be fine and things do not have to be super fast :)
 
@@ -44,3 +44,5 @@ Little Bird Electronics used to have a nice [PI 3 display/keyboard combo](https:
 Something like the [Micro Journal rev 2](https://liliputing.com/micro-journal-rev-2-revamp-is-a-compact-word-processor-with-a-mechanical-keyboard-and-a-clamshell-design/) could work _but needs storage and SD card capabilities_
 
 [Planet Computers](https://www.www3.planetcom.co.uk/) may have a suitable device but would need to a USB hub to have bigger external storage. The Gemini and Cosmo models are kinda at the top end of the price range for what I am trying to achieve. _Not sure if they are still in operation_
+
+For something that is not rPi based, then the linux based https://www.unihiker.com/, its around $80, so may be interesting, not as powerful but built in screen and memory, would still need to add an SD card reader, maybe something nice could be done with a 3D printer here
