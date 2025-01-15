@@ -228,7 +228,7 @@ def rCopy(src, dst, force):
     copied = 0
     fails = 0
     total = 0
-    logger.info(f"copying {total} files from {src} to {dst} with force {force}")
+    logger.info(f"copying files from {src} to {dst} with force {force}")
 
     update_drive_stats()
     # count files that we need to copy
@@ -240,6 +240,7 @@ def rCopy(src, dst, force):
                 total += 1
 
     status.startcopy(file_count=total)
+    logger.info(f"copying {total} files from {src} to {dst}")
 
     for dirpath, dirnames, filenames in os.walk(src):
         if not wantAbandon():
@@ -302,8 +303,7 @@ def umount_drive(mount):
                 logger.debug(f"unmounted {mount}")
                 last_mount = ""
                 # remove the mount point to keep the drive tidy, no other reason
-
-                os.unlink( mount)
+                os.rmdir( mount)
             else:
                 logger.info("unmount failed")
 
