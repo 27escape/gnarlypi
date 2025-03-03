@@ -28,8 +28,8 @@ clear
 if [ ! -f "$DISPLAY_SCRIPT" ] || prompt_yn "Do you wish to update the display choices"  ; then
   echo "#!/usr/bin/bash
 # reconfigure with the display_config.sh script,
-# \$GNARLY_LOG comes from be_gnarly script
 # do not modify by hand
+GNARLY_LOG='/tmp/gnarlypi-status.log'
 cd '$STATUS_DIR'
 " > "$DISPLAY_SCRIPT"
   chmod a+x "$DISPLAY_SCRIPT"
