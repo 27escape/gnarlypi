@@ -12,6 +12,7 @@ from adafruit_rgb_display import st7789
 
 sys.path.insert( 0, '../')
 from libs.messaging import Messaging
+from libs.config import Config
 
 # ----------------------------------------------------------------------------
 FONT_SIZE = 24
@@ -406,6 +407,10 @@ def mqtt_listener():
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    # get config from default location $GNARLYPI_CONFIG
+    config = Config()
+    # set rotation from config or default to 180
+    ROTATION = config.get("status.pitft.rotation", 180)
     # setup hardware
     tft = init_board()
 

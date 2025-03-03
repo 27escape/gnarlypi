@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# based on the blinkt code
 
-import signal
+import os
 import sys
 import time
+import signal
 
 import digitalio
 import board
@@ -12,9 +12,11 @@ from adafruit_rgb_display import st7789
 
 sys.path.insert( 0, '../')
 from libs.messaging import Messaging
+from libs.config import Config
+
 
 # ----------------------------------------------------------------------------
-FONT_SIZE = 24
+FONT_SIZE = 14
 DISPLAY_HEIGHT = 135
 DISPLAY_WIDTH = 240
 X_OFFSET = 53
@@ -29,8 +31,9 @@ ORANGE = "#FFA500"
 MAGENTA = "#FF00FF"
 CYAN = "#00FFFF"
 RED = "#FF0000"
-YELLOW = "#FFFF00"
 GREEN = "#00FF00"
+BLUE = "#0000FF"
+YELLOW = "#FFFF00"
 LIGHT_GREEN = "#20A020"
 PURPLE = "#800080"
 
@@ -39,7 +42,7 @@ FILE_COLOR = YELLOW
 COPY_COLOR = RED
 SD_COLOR = MAGENTA
 HD_COLOR = CYAN
-NEW_LINE = FONT_SIZE + 4
+NEW_LINE = FONT_SIZE + 2
 
 
 # ----------------------------------------------------------------------------
@@ -191,10 +194,12 @@ def center_line(txt, line=2, color=WHITE, bg=BLACK):
     disp.image(image, ROTATION)
 
 
-def print_line(txt, line=2, color=WHITE):
+def print_line(txt, line=2, color=WHITE, txt2=""):
     clr_line(line)
     # print( f"print_line {txt}")
     draw.text((0, line * NEW_LINE), txt, font=font, fill=color)
+    if txt2 != "":
+          draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
     disp.image(image, ROTATION)
 
 
@@ -223,6 +228,17 @@ def show_hd(percent, line=4):
     show_progress_bar("HD", line * NEW_LINE, percent, HD_COLOR)
     disp.image(image, ROTATION)
 
+def show_file_stats(filenum, total):
+    print_line( "File", 6, WHITE, f"{filenum}/{total}")
+
+def show_tx_stats(filename, bps):
+    bps = int(bps)
+    if bps >= 1024*1024:
+      bps = f"{int( bps / (1024*1024))}M"
+    elif bps >= 1024:
+      bps = f"{int( bps / 1024)}K"
+
+    center_line( f"{bps}b/s", 7, WHITE, BLUE)
 
 # ----------------------------------------------------------------------------
 def signal_handler(sig, frame):
@@ -271,14 +287,32 @@ def status_endcopy(topic, data):
     cls()
 
 
+start_copy_time = 0
 # ----------------------------------------------------------------------------
 def status_copydata(topic, data):
     """status_copydata"""
+    global start_copy_time
+    elapsed = 0
 
-    data["size"] != 1
     show_time()
-    show_copy(data["copied"] / data["size"])
+
+    # assumption is that if size is 0, then rsync or similar is happening
+    # and we are not getting per file copy updates, so we won't show it
+    if data["size"]:
+      show_copy(data["copied"] / data["size"])
+
     show_files(data["files_copied"] / data["files_total"])
+    show_file_stats(data["files_copied"], data["files_total"])
+
+    if not data["copied"]:
+       start_copy_time = time.time()
+       last_copy_size = 0
+    else:
+      elapsed = time.time() - start_copy_time
+    bps = data["bps"] or int( data["copied"] / elapsed)
+    # assuming photo filenames are 13 chars long
+    filename = os.path.basename(data['fromfile'])[:13]
+    show_tx_stats( filename, bps)
 
 
 # ----------------------------------------------------------------------------
@@ -374,6 +408,10 @@ def mqtt_listener():
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    # get config from default location $GNARLYPI_CONFIG
+    config = Config()
+    # set rotation from config or default to 180
+    ROTATION = config.get("status.mini_pitft.rotation", 180)
     # setup hardware
     tft = init_board()
 
