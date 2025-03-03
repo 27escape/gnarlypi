@@ -1,0 +1,32 @@
+status:
+  devices:
+    # - gnarly_status_basic
+    # - gnarly_status_blinkt
+    # - gnarly_status_curses
+    # - gnarly_status_ledshimrm
+    # - gnarly_status_mini_pitft
+    - gnarly_status_pitft
+  mini_pitft:
+    rotation: 90
+  pitft:
+    rotation: 0
+
+gnarlypi:
+  store: "${HOME}/usb_data/"
+  force: false
+  logfile: "/tmp/gnarlypi.log"
+  apps:
+    # - gnarly_indexer
+    - gnarly_rsync
+
+indexer:
+  trip_variance: 2
+  files: "${HOME}/Pictures"
+  index: "${HOME}/tmp/index"
+  files-o: "$(gnarlypi.store)/files"
+  index-o: "$(gnarlypi.store)/index"
+
+rsync:
+  sleep: 300
+  source: "$(indexer.index)"
+  target: ${USER}@homeassistant:/forSamba/NVME
