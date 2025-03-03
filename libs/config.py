@@ -18,7 +18,6 @@ from ruamel.yaml import YAML
 yaml=YAML(typ="safe")
 
 
-
 class Config:
     def __init__(self, filepath=None):
         self.filepath = filepath or os.getenv('GNARLYPI_CONFIG')
@@ -29,34 +28,48 @@ class Config:
         self._load()
 
     def _substitute_env_vars(self, content):
-        """Substitute environment variables and references to other fields in the YAML content."""
+        """Substitute environment variables in the YAML content."""
         # Environment variable pattern ${HOME}
         env_pattern = re.compile(r'\$\{([^}^{]+)\}')
-        # Reference pattern $(key.subkey)
-        ref_pattern = re.compile(r'\$\(([^)]+)\)')
-
         # Substitute environment variables
         content = env_pattern.sub(lambda match: os.getenv(match.group(1), match.group(0)), content)
-        #  partial update to ensure we can reference other fields
-        self.data = yaml.load(content) or {}
+        return content
 
-        # Substitute references to other fields
-        def replace_ref(match):
-            ref_key = match.group(1)
-            ref_value = self.get(ref_key)
-            return ref_value if ref_value is not None else match.group(0)
+    def _substitute_references(self):
+        """Substitute references to other fields in the loaded YAML data."""
+        ref_pattern = re.compile(r'\$\(([^)]+)\)')
 
-        content = ref_pattern.sub(replace_ref, content)
-        # final update with references resolved
-        self.data = yaml.load(content) or {}
+        def replace_ref(value):
+            if isinstance(value, str):
+                return ref_pattern.sub(lambda match: self.get(match.group(1), match.group(0)), value)
+            return value
+
+        def walk_and_substitute(data):
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    if isinstance(value, dict):
+                        walk_and_substitute(value)
+                    elif isinstance(value, list):
+                        data[key] = [replace_ref(item) if isinstance(item, str) else item for item in value]
+                    else:
+                        data[key] = replace_ref(value)
+            elif isinstance(data, list):
+                for index, item in enumerate(data):
+                    if isinstance(item, dict):
+                        walk_and_substitute(item)
+                    elif isinstance(item, str):
+                        data[index] = replace_ref(item)
+
+        walk_and_substitute(self.data)
 
     def _load(self):
         """Load the YAML file into the data dictionary and substitute environment variables."""
         if os.path.exists(self.filepath):
             with open(self.filepath, 'r') as file:
-                content = file.read()\
-                # this will also update the data dictionary
-                self._substitute_env_vars(content)
+                content = file.read()
+                content = self._substitute_env_vars(content)
+                self.data = yaml.load(content) or {}
+                self._substitute_references()
                 if not self.data:
                     raise ValueError(f"Invalid YAML content in configuration file {self.filepath}")
         else:
