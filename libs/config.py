@@ -13,16 +13,20 @@
 
 import os
 import re
+
 # import yaml
 from ruamel.yaml import YAML
-yaml=YAML(typ="safe")
+
+yaml = YAML(typ="safe")
 
 
 class Config:
     def __init__(self, filepath=None):
-        self.filepath = filepath or os.getenv('GNARLYPI_CONFIG')
+        self.filepath = filepath or os.getenv("GNARLYPI_CONFIG")
         if not self.filepath:
-            raise ValueError("No configuration file path provided and GNARLYPI_CONFIG environment variable is not set.")
+            raise ValueError(
+                "No configuration file path provided and GNARLYPI_CONFIG environment variable is not set."
+            )
         self.data = {}
         self.updated = False
         self._load()
@@ -30,18 +34,22 @@ class Config:
     def _substitute_env_vars(self, content):
         """Substitute environment variables in the YAML content."""
         # Environment variable pattern ${HOME}
-        env_pattern = re.compile(r'\$\{([^}^{]+)\}')
+        env_pattern = re.compile(r"\$\{([^}^{]+)\}")
         # Substitute environment variables
-        content = env_pattern.sub(lambda match: os.getenv(match.group(1), match.group(0)), content)
+        content = env_pattern.sub(
+            lambda match: os.getenv(match.group(1), match.group(0)), content
+        )
         return content
 
     def _substitute_references(self):
         """Substitute references to other fields in the loaded YAML data."""
-        ref_pattern = re.compile(r'\$\(([^)]+)\)')
+        ref_pattern = re.compile(r"\$\(([^)]+)\)")
 
         def replace_ref(value):
             if isinstance(value, str):
-                return ref_pattern.sub(lambda match: self.get(match.group(1), match.group(0)), value)
+                return ref_pattern.sub(
+                    lambda match: self.get(match.group(1), match.group(0)), value
+                )
             return value
 
         def walk_and_substitute(data):
@@ -50,7 +58,10 @@ class Config:
                     if isinstance(value, dict):
                         walk_and_substitute(value)
                     elif isinstance(value, list):
-                        data[key] = [replace_ref(item) if isinstance(item, str) else item for item in value]
+                        data[key] = [
+                            replace_ref(item) if isinstance(item, str) else item
+                            for item in value
+                        ]
                     else:
                         data[key] = replace_ref(value)
             elif isinstance(data, list):
@@ -65,13 +76,15 @@ class Config:
     def _load(self):
         """Load the YAML file into the data dictionary and substitute environment variables."""
         if os.path.exists(self.filepath):
-            with open(self.filepath, 'r') as file:
+            with open(self.filepath, "r") as file:
                 content = file.read()
                 content = self._substitute_env_vars(content)
                 self.data = yaml.load(content) or {}
                 self._substitute_references()
                 if not self.data:
-                    raise ValueError(f"Invalid YAML content in configuration file {self.filepath}")
+                    raise ValueError(
+                        f"Invalid YAML content in configuration file {self.filepath}"
+                    )
         else:
             raise ValueError(f"Invalid path to config file {self.filepath}")
 
@@ -96,17 +109,17 @@ class Config:
 
     def get(self, key, default=None):
         """Get a value from the configuration data."""
-        keys = key.split('.')
+        keys = key.split(".")
         return self._get_nested(keys, default)
 
     def set(self, key, value):
         """Set a value in the configuration data."""
-        keys = key.split('.')
+        keys = key.split(".")
         self._set_nested(keys, value)
         self.updated = True
 
     def save(self):
         """Save the configuration data back to the YAML file."""
         if self.updated:
-            with open(self.filepath, 'w') as file:
+            with open(self.filepath, "w") as file:
                 yaml.dump(self.data, file)

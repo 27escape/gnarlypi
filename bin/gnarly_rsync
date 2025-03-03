@@ -24,17 +24,21 @@ APP_NAME = os.path.basename(__file__)
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
-logfile = config.get('gnarlypi.logfile')
+logfile = config.get("gnarlypi.logfile")
 logger = logging.getLogger(APP_NAME)
 
 if logfile:
-  logging.basicConfig(filename=logfile,
-                      filemode='a',
-                      encoding='utf-8',
-                      format='%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s',
-                      datefmt='%Y-%m-%d %H:%M:%S',
-                      level=logging.INFO)
-  logger.info("Started")
+    logging.basicConfig(
+        filename=logfile,
+        filemode="a",
+        encoding="utf-8",
+        format="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=logging.INFO,
+    )
+    logger.info("Started")
+else:
+    print("no logfile set")
 
 
 copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
@@ -223,15 +227,15 @@ if __name__ == "__main__":
     # Check if source dierctory exists
     if not os.path.exists(source) or not os.path.isdir( source):
         logger.info(f"Error: Source '{source}' is not a directory.")
+        print(f"Error: Source '{source}' is not a directory.")
         sys.exit(2)
 
 
     while True:
-      time.sleep(config.get('rsync', 'sleep_time'))
+      time.sleep( int(config.get('rsync.sleep')))
 
       status = Status()
       lock = Lock()
-
 
       # we cannot check the target, this will be down to the user
       lock.waitLock()
