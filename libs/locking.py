@@ -21,11 +21,11 @@ class Lock:
 
     """wait for the gnarlypi lock file to be acquired"""
     def waitLock( self):
-        print( "waitlock")
+        # print( "waitlock")
         self.lock.acquire()
 
 
     """release for the gnarlypi lock file"""
     def releaseLock( self):
-        print( "releaselock")
+        # print( "releaselock")
         self.lock.release()
