@@ -4,7 +4,7 @@ A simple replacement for the Gnarbox (RIP).
 
 This is to replicate some of the functions of that device, ideally to run on different iterations of the Raspberry PI and to have output displayed on a range of modules, LEDs and displays as I have them and develop the code.
 
-Currently there is an alternative for the Gnarrbox doing the rounds on Kickstarter etc, this is the UnifyDrive UT2, earlybird price is 399 USD without any storage addded see [Kickstarter Campaign](https://www.kickstarter.com/projects/1945743381/ut2-redefining-portable-storage-solutions). A 2TB NVME drive is likely about 150 USD, so looking at 550 USD or possibly a lot more after launch.
+Currently there is an alternative for the [Gnarrbox 2.0](https://www.kickstarter.com/projects/gnarbox/gnarbox-20-ssd-rugged-backup-device-for-your-camer?ref=discovery&term=camera%20backup&total_hits=13&category_id=333) doing the rounds on Kickstarter etc, this is the UnifyDrive UT2, earlybird price is 399 USD without any storage addded see [UnifyDrive UT2 - Kickstarter](https://www.kickstarter.com/projects/1945743381/ut2-redefining-portable-storage-solutions). A 2TB NVME drive is likely about 150 USD, so looking at 550 USD or possibly a lot more after launch. Other alternative devices can be found in [docs/alternatives](./docs/alternatives.md)
 
 This project then is to provide a _much_ cheaper alternative to that, though maybe without a nice box to put it in, and no battery either. But, we can create it with Raspberry PI's, storage and display options that fit in our budgets!
 

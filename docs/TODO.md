@@ -5,7 +5,7 @@ Interaction:
   - maybe 2 buttons as default, to give 3 interactions: A (as Yes), B (as No) and A+B (as C/Cancel/Back)
   - [-] delete files from USB? Only allow if ONE connected device, to ensure correct choice - difficult for cameras with multiple card slots - user needs to remove each card, needs confirmation step
     - **decision**: do not implement, leave SD card/camera storage manage to user
-  - [ ] delete files from storage? could be done via Samba
+  - [ ] delete files from storage? could be done via Samba, could be done via web
   - [x] rsync to NAS/computer - target defined in some config file, check target available before attempt 
 
 During copy process:
@@ -18,8 +18,12 @@ During copy process:
 Management: 
 - [ ] Create web app for management
   - [ ] view/delete images or block wipe
+  - [ ] gnarlypi.yaml config management
   - [ ] investigate photo album software
 - [ ] investigate creating WiFi hotspot network, when away from home
+- initial startup QR code for access to initial hotspot to config system
+  - also default hotspot so devices that do not have big displays can still be configured
+
 
 
 
@@ -36,6 +40,8 @@ Device improvements:
 
 
 ## Investigate all in one solutions:
+
+The idea is that there may be something that is not specifically created to be a camera backup device but could be repurposed into being one. If you want something pre-made, checkout some [alternatives](./alternatives.md)
 
 There are interesting things over at [ClockworkPi](https://www.clockworkpi.com/shop) that seem to be based on the CM4 compute modules, which would mean external USB for storage, but that could be fine and things do not have to be super fast :)
 
