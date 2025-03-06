@@ -44,6 +44,7 @@ SD_COLOR = MAGENTA
 HD_COLOR = CYAN
 NEW_LINE = FONT_SIZE + 2
 
+current_mode = {}
 
 # ----------------------------------------------------------------------------
 # this is the board hardware
@@ -202,11 +203,28 @@ def print_line(txt, line=2, color=WHITE, txt2=""):
           draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
     disp.image(image, ROTATION)
 
+# ----------------------------------------------------------------------------
+# current mode flags
+# COPY, SYNC, INDEX, HOTSPOT, WIFI
+# it all happens on line 0
 
+mode_flags = [
+    "copy",
+    "sync",
+    "index",
+    "hotspot",
+    "wifi",
+]
+
+# ----------------------------------------------------------------------------
 def show_time(line=0):
-    clr_line(line)
-    now = time.strftime("%X")
-    center_line(now, 0)
+    mode_str = ""
+    for key in mode_flags:
+      mode_str += key[0].upper() if (current_mode and current_mode[key]) else " "
+
+    now = mode_str + time.strftime("     %X")
+    # center_line(now, 0)
+    print_line(now, 0)
 
 
 def show_copy(percent, line=1):
@@ -383,6 +401,14 @@ def status_cls(topic, data):
 
 
 # ----------------------------------------------------------------------------
+# set the current mode
+def show_mode( topic, data):
+  global current_mode
+
+  for key, value in data.items():
+      current_mode[key] = value
+
+# ----------------------------------------------------------------------------
 def mqtt_listener():
     # Define a dictionary to map topics to handling functions
     handlers = {
@@ -397,6 +423,7 @@ def mqtt_listener():
         "/photos/keepalive": status_keepalive,
         "/photos/fivelines": status_fivelines,
         "/photos/cls": status_cls,
+        "/photos/show_mode": show_mode,
     }
 
     msg = Messaging()

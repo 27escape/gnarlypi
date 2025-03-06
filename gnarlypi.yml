@@ -30,3 +30,11 @@ rsync:
   sleep: 300
   source: "$(indexer.index)"
   target: ${USER}@homeassistant:/forSamba/NVME
+
+hotspot:
+  name: "gnarly
+  password: "gnarlypassword"
+
+wifi:
+  name: "home"
+  password: "homepassword"

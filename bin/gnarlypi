@@ -140,11 +140,13 @@ def is_program_running(program_name, kill=False):
 def wait_time(sleeptime):
     count = 0
     while True:
+        status.keepalive()
         # send keep alive every 10s
-        if not count % 10:
-            status.keepalive()
-            # reset the counter so it does not get huge
-            count = 0
+        # if not (count % 10):
+        #     logger.debug(f"waiting {count}s")
+        #     # status.keepalive()
+        #     # reset the counter so it does not get huge
+        #     count = 0
         time.sleep(1)
         count += 1
         if count >= sleeptime:
@@ -483,6 +485,8 @@ def wait_drive_inserted():
 # ----------------------------------------------------------------------------
 def setStatusCopying(flag=True):
     copy_status.in_copy_process = flag
+    status.show_mode( {  "copy": flag })
+
 
 
 # ----------------------------------------------------------------------------
@@ -538,10 +542,11 @@ def thread_buttons():
 # start the status apps, assumes we are in bin dir
 def start_status():
     apps = config.get("status.devices")
-    for app in apps:
-        if not is_program_running(app, True):
-            logger.info(f"starting {app}")
-            subprocess.Popen([os.path.join("..", "status", app)])
+    if apps and len(apps) != 0:
+      for app in apps:
+          if not is_program_running(app, True):
+              logger.info(f"starting {app}")
+              subprocess.Popen([os.path.join("..", "status", app)])
 
     # give them a sec to start and settle
     time.sleep(1)
@@ -551,10 +556,11 @@ def start_status():
 # the apps currently are the photo indexer and the rsync
 def start_apps():
     apps = config.get("gnarlypi.apps")
-    for app in apps:
-        if not is_program_running(app, True):
-            logger.info(f"starting {app}")
-            subprocess.Popen([os.path.join("..", "bin", app)])
+    if apps and len(apps) != 0:
+      for app in apps:
+          if not is_program_running(app, True):
+              logger.info(f"starting {app}")
+              subprocess.Popen([os.path.join("..", "bin", app)])
 
 
 # ----------------------------------------------------------------------------
@@ -612,7 +618,7 @@ if __name__ == "__main__":
     # lets allow our apps time to settle in
     time.sleep(3)
 
-    print( "Starting gnarlypi" )
+    # print( "Starting gnarlypi" )
     # get the list of devices already mounted at startup
     # so we can ignore them later
     startup_devices = getDevices()
@@ -637,12 +643,12 @@ if __name__ == "__main__":
     thButtons = threading.Thread(target=thread_buttons)
     thButtons.start()
 
+    status.show_mode( {  "copy": True })
     # main thread performing file copies
     # Loop to continuously monitor for USB drives
     while True:
         if wantAbandon():
             break
-        print( "still running" )
 
         status.ready()
         update_drive_stats()

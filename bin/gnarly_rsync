@@ -99,7 +99,7 @@ def run_rsync_with_progress(source, destination):
     """
 
     status.clear()
-    status.fivelines(( "", "RSYNC", "", "", ""))
+    status.show_mode( { "sync" : True})
 
     try:
         current_file = ""
@@ -173,7 +173,8 @@ def run_rsync_with_progress(source, destination):
                 )
 
         logger.info( f"backed up {total} files/folders")
-        status.fivelines(( "", "Completed", "", f"{total} files", ""))
+        status.show_mode( { "sync" : False })
+        # status.fivelines(( "", "Completed", "", f"{total} files", ""))
 
 
     except subprocess.CalledProcessError as e:

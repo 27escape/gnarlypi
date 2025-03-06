@@ -17,11 +17,21 @@ def delay_action( txt, delay=1):
 
 # ----------------------------------------------------------------------------
 
-print( f"sending MQTT status messages\n")
+print( f"sending MQTT status messages\nMessage action happens AFTER keypress\n")
 
 status = Status()
+
+status.show_mode( {
+    "copy": True,
+    "sync": True,
+    "index": True,
+    "hotspot": True,
+    "wifi": True,
+})
+status.keepalive()
+
 delay_action( "status.error")
-status.error("cannot do something", 3, "second error")
+status.error("cannot do something", 3, "second error line")
 
 delay_action( "status.ready")
 status.ready()
@@ -108,4 +118,6 @@ status.waitremove()
 delay_action( "status.diskful")
 status.diskfull("/mnt/some_usb")
 
+delay_action( "press to exit")
+status.fivelines( ("", "", "test complete", "", ""))
 print( "done")

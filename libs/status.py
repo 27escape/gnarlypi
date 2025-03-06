@@ -207,3 +207,16 @@ class Status:
     def indextrip(self):
         """create trip index symlinks from files in index/date/{YYYY-MM-DD}"""
         self.msg.publish("/photos/indextrip")
+
+
+    # ----------------------------------------------------------------------------
+    def show_mode( self, data ):
+        """send the mode to the display, while anything can be sent
+        copy, index and sync are currently the usual ones, they should be True
+        or False
+
+        Args:
+            data (dict)     mode data to be displayed
+        """
+        # print( f"show_mode {data}")
+        self.msg.publish( "/photos/show_mode", data )
