@@ -4,6 +4,7 @@ import json
 import signal
 import sys
 import time
+from datetime import datetime
 
 sys.path.insert( 0, '../')
 from libs.messaging import Messaging
@@ -116,8 +117,8 @@ def status_keepalive(topic, data):
     """status_devicedata"""
     global last_keep_alive
     if not int(data["_epoch"] - last_keep_alive) % 30:
-        print("system still working")
-        last_keep_alive = data["_epoch"]
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - system still working") 
+    last_keep_alive = data["_epoch"]
 
 
 # ----------------------------------------------------------------------------
