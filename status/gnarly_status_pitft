@@ -198,7 +198,7 @@ def print_line(txt, line=2, color=WHITE, txt2=""):
     draw.text((0, line * NEW_LINE), txt, font=font, fill=color)
     if txt2 != "":
         draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 # ----------------------------------------------------------------------------
 # current mode flags
@@ -218,8 +218,12 @@ mode_flags = [
 # it should only be called after all the other draw calls have been performed
 def update_display():
     mode_str = ""
+    
     for key in mode_flags:
-      mode_str += key[0].upper() if (current_mode and current_mode[key]) else " "
+        if key and current_mode and current_mode.get(key):
+            mode_str += key[0].upper()
+        else:
+            mode_str += " "     
 
     now = mode_str + time.strftime("%X")
     # center_line(now, 0)
@@ -229,22 +233,22 @@ def update_display():
 
 def show_copy(percent, line=1):
     show_progress_bar("Copy", line * NEW_LINE, percent, COPY_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_files(percent, line=2):
     show_progress_bar("Files", line * NEW_LINE, percent, FILE_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_sd(percent, line=3):
     show_progress_bar("SD", line * NEW_LINE, percent, SD_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_hd(percent, line=4):
     show_progress_bar("HD", line * NEW_LINE, percent, HD_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_file_stats(filenum, total):
@@ -309,6 +313,7 @@ def status_endcopy(topic, data):
     """status_endcopy"""
     # print_line("end copy ")
     cls()
+    update_display()
 
 
 start_copy_time = 0
@@ -402,6 +407,7 @@ def status_keepalive(topic, data):
 def status_cls(topic, data):
     """status_devicedata"""
     cls()
+    update_display()
 
 
 # ----------------------------------------------------------------------------
@@ -411,6 +417,7 @@ def status_update_mode(topic, data):
 
     for key, value in data.items():
         current_mode[key] = value
+    update_display()
 
 
 # ----------------------------------------------------------------------------

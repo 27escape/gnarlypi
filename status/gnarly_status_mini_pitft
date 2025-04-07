@@ -154,6 +154,7 @@ def show_progress_bar(text, y, progress, color=WHITE, bg=BLACK):
 # ----------------------------------------------------------------------------
 
 
+
 def cls():
     # Draw a black filled box to clear the image.
     draw.rectangle((0, 0, tft["width"], tft["height"]), outline=0, fill=0)
@@ -161,12 +162,10 @@ def cls():
     disp.image(image, ROTATION)
 
 
-def clr_line(line=0, fill='#000000'):
+def clr_line(line=0, fill="#000000"):
     y = line * NEW_LINE
     # Draw the background for the full width
     draw.rectangle((0, y, DISPLAY_WIDTH, y + NEW_LINE), fill=fill)
-
-
 
 
 # center text on the middle of the display
@@ -178,21 +177,20 @@ def display_center_text(txt, color=WHITE):
     draw.text(
         (DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2), txt, font=font, fill=color, anchor="mm"
     )
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 # center text on the middle of the given line
 def center_line(txt, line=2, color=WHITE, bg=BLACK):
     clr_line(line, bg)
     draw.text(
-        (DISPLAY_WIDTH / 2, (line * NEW_LINE) + (FONT_SIZE / 2)+2),
+        (DISPLAY_WIDTH / 2, (line * NEW_LINE) + (FONT_SIZE / 2) + 2),
         txt,
         font=font,
         fill=color,
-
         anchor="mm",
     )
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def print_line(txt, line=2, color=WHITE, txt2=""):
@@ -200,8 +198,8 @@ def print_line(txt, line=2, color=WHITE, txt2=""):
     # print( f"print_line {txt}")
     draw.text((0, line * NEW_LINE), txt, font=font, fill=color)
     if txt2 != "":
-          draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
-    disp.image(image, ROTATION)
+        draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
+    # disp.image(image, ROTATION)
 
 # ----------------------------------------------------------------------------
 # current mode flags
@@ -217,52 +215,63 @@ mode_flags = [
 ]
 
 # ----------------------------------------------------------------------------
-def show_time(line=0):
+# this will perform the slow disp.image call for all the other small writes to the display
+# it should only be called after all the other draw calls have been performed
+def update_display():
     mode_str = ""
+    
     for key in mode_flags:
-      mode_str += key[0].upper() if (current_mode and current_mode[key]) else " "
+        if key and current_mode and current_mode.get(key):
+            mode_str += key[0].upper()
+        else:
+            mode_str += " "     
 
-    now = mode_str + time.strftime("     %X")
+    now = mode_str + time.strftime("%X")
     # center_line(now, 0)
     print_line(now, 0)
+    disp.image(image, ROTATION)
 
 
 def show_copy(percent, line=1):
     show_progress_bar("Copy", line * NEW_LINE, percent, COPY_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_files(percent, line=2):
     show_progress_bar("Files", line * NEW_LINE, percent, FILE_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_sd(percent, line=3):
     show_progress_bar("SD", line * NEW_LINE, percent, SD_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
 
 
 def show_hd(percent, line=4):
     show_progress_bar("HD", line * NEW_LINE, percent, HD_COLOR)
-    disp.image(image, ROTATION)
+    # disp.image(image, ROTATION)
+
 
 def show_file_stats(filenum, total):
-    print_line( "File", 6, WHITE, f"{filenum}/{total}")
+    print_line("File", 6, WHITE, f"{filenum}/{total}")
+
 
 def show_tx_stats(filename, bps):
     bps = int(bps)
-    if bps >= 1024*1024:
-      bps = f"{int( bps / (1024*1024))}M"
+    if bps >= 1024 * 1024:
+        bps = f"{int( bps / (1024*1024))}M"
     elif bps >= 1024:
-      bps = f"{int( bps / 1024)}K"
+        bps = f"{int( bps / 1024)}K"
 
-    center_line( f"{bps}b/s", 7, WHITE, BLUE)
+    center_line(f"{bps}b/s", 7, WHITE, BLUE)
+
 
 # ----------------------------------------------------------------------------
 def signal_handler(sig, frame):
     # print("You pressed Ctrl+C!")
     cls()
     display_center_text("display offline", PURPLE)
+    update_display()
     sys.exit(0)
 
 
@@ -273,21 +282,23 @@ signal.signal(signal.SIGINT, signal_handler)
 def status_error(topic, data):
     """status_error"""
     cls()
-    show_time()
+    update_display()
     msg = "Error"
     if "level" in data:
-      msg += f":{data['level']}"
+        msg += f":{data['level']}"
     center_line(msg, 0, WHITE, RED)
-    center_line( data['msg'], 1, WHITE)
-    if 'msg2' in data and len( data['msg2']):
-      center_line( data['msg2'],3, RED)
+    center_line(data["msg"], 1, WHITE)
+    if "msg2" in data and len(data["msg2"]):
+        center_line(data["msg2"], 3, RED)
+    update_display()
+
 
 # ----------------------------------------------------------------------------
 def status_ready(topic, data):
     """status_ready"""
-    show_time()
     clr_line(3)
     center_line("Insert SD card", 2, GREEN)
+    update_display()
 
 
 # ----------------------------------------------------------------------------
@@ -295,7 +306,7 @@ def status_startcopy(topic, data):
     """status_startcopy"""
     # print_line("start copy")
     cls()
-    show_time()
+    update_display()
 
 
 # ----------------------------------------------------------------------------
@@ -303,40 +314,43 @@ def status_endcopy(topic, data):
     """status_endcopy"""
     # print_line("end copy ")
     cls()
+    update_display()
 
 
 start_copy_time = 0
+
+
 # ----------------------------------------------------------------------------
 def status_copydata(topic, data):
     """status_copydata"""
     global start_copy_time
     elapsed = 0
 
-    show_time()
-
     # assumption is that if size is 0, then rsync or similar is happening
     # and we are not getting per file copy updates, so we won't show it
     if data["size"]:
-      show_copy(data["copied"] / data["size"])
+        show_copy(data["copied"] / data["size"])
 
     show_files(data["files_copied"] / data["files_total"])
     show_file_stats(data["files_copied"], data["files_total"])
 
     if not data["copied"]:
-       start_copy_time = time.time()
-       last_copy_size = 0
+        start_copy_time = time.time()
+        last_copy_size = 0
     else:
-      elapsed = time.time() - start_copy_time
-    bps = data["bps"] or int( data["copied"] / elapsed)
+        elapsed = time.time() - start_copy_time
+    bps = data["bps"] or int(data["copied"] / elapsed)
     # assuming photo filenames are 13 chars long
-    filename = os.path.basename(data['fromfile'])[:13]
-    show_tx_stats( filename, bps)
+    filename = os.path.basename(data["fromfile"])[:13]
+    show_tx_stats(filename, bps)
+    update_display()
 
 
 # ----------------------------------------------------------------------------
 def status_waitremove(topic, data):
     """status_waitremove"""
     center_line("Remove SD Card", 2, ORANGE)
+    update_display()
 
 
 # ----------------------------------------------------------------------------
@@ -355,21 +369,15 @@ def status_devicedata(topic, data):
 
     if data["hd_size"]:
         show_hd(quick_perc(data["hd_free"], data["hd_size"]))
-
-
-# ----------------------------------------------------------------------------
-def general_status(topic, data):
-    """status_devicedata"""
-    cls()
-    print_line("general status blue ")
+    update_display()
 
 
 # ----------------------------------------------------------------------------
 def status_diskfull(topic, data):
     """status_devicedata"""
     cls()
-    center_line("HD disk full", 2, '#FFFFFF', '#FF0000')
-
+    center_line("HD disk full", 2, "#FFFFFF", "#FF0000")
+    update_display()
 
 # display a small message
 def status_fivelines(topic, data):
@@ -383,6 +391,7 @@ def status_fivelines(topic, data):
     # get index and the array value, max 5 lines
     for line, txt in enumerate(data["lines"][:5]):
         center_line(txt, line, color)
+    update_display()
 
 
 # ----------------------------------------------------------------------------
@@ -390,23 +399,27 @@ def status_fivelines(topic, data):
 # we can update the time
 def status_keepalive(topic, data):
     """status_devicedata"""
-    show_time(0)
+    print( "keepalive\n")
+    update_display()
 
 
 # ----------------------------------------------------------------------------
-# clea the display
+# clear the display
 def status_cls(topic, data):
     """status_devicedata"""
     cls()
+    update_display()
 
 
 # ----------------------------------------------------------------------------
 # set the current mode
-def show_mode( topic, data):
-  global current_mode
+def status_update_mode(topic, data):
+    global current_mode
 
-  for key, value in data.items():
-      current_mode[key] = value
+    for key, value in data.items():
+        current_mode[key] = value
+    update_display()
+
 
 # ----------------------------------------------------------------------------
 def mqtt_listener():
@@ -423,7 +436,7 @@ def mqtt_listener():
         "/photos/keepalive": status_keepalive,
         "/photos/fivelines": status_fivelines,
         "/photos/cls": status_cls,
-        "/photos/show_mode": show_mode,
+        "/photos/show_mode": status_update_mode,
     }
 
     msg = Messaging()
