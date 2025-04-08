@@ -7,7 +7,7 @@ In a YAML file lines that start with a '#' symbol are considered to be comments 
 In my version of the YAML file, it is possible to reference environment variables that have been setup before the reading program starts, these need to be wrapped in braces, e.g. in the command line environment `$HOME` would be the users home directory but in this configuration YAML file, it is referenced as `${HOME}`.
 It is also possible to reference other entries in the file, using `dot notation`, these need to be in brackets, e.g. `$(gnarypi.logfile)`
 
-A sample configuration file would be
+A sample configuration file for the pitft display would be
 ```yaml
 status:
   devices:
@@ -15,12 +15,15 @@ status:
     # - gnarly_status_blinkt
     # - gnarly_status_curses
     # - gnarly_status_ledshim
-    # - gnarly_status_mini_pitft
     - gnarly_status_pitft
-  mini_pitft:
-    rotation: 90
   pitft:
     rotation: 0
+    font_size: 24
+    display_height: 240
+    display_width: 240
+    x_offset: 0
+    y_offset: 80
+    newline: 28
 
 gnarlypi:
   store: "${HOME}/usb_data/"
@@ -47,9 +50,45 @@ In this example, we can see that all of the status devices are commented out exc
 
 **devices** this is an array of the device status programs to start when the main gnarlypi application starts, these can be found in the `status` directory, only start the ones that are relevant to the devices that you have connected to your rPI, it is unlikely that you have both the pitft and the mnini_pitft connected at the same time. Also the gnarly_status_basic is generally used for debugging and is not otherwise useful for the running of the system.
 
-**devices.mini_pitft** if you are using this device, the **rotation** field determines how the data is displayed, valid entries are **90** or **270**.
 
-**devices.pitft** if you are using this device, the **rotation** field determines how the data is displayed, valid entries are **0** or **180**.
+**devices.pitft** this subsection is used by the mini_pitft and the pitft devices
+
+- rotation is 90, 270 for the mini_pitft and, 0 or 180 for the pitft 
+- font_size hopefully its descriptive enough
+- newline is a bit more than the font_size, where the next line should follow on the display
+- display_height and display_width set the size of the display
+- x_offset and y_offset are used to show where the writable area starts
+
+#### settings for mini_pitft
+
+The mini_pitft display is a different size, if this is being used, replace the `pitft` section in `status` with the following
+
+```yaml
+  pitft:
+    rotation: 90
+    font_size: 14
+    newline: 16
+    display_height: 135
+    display_width: 240
+    x_offset: 53
+    y_offset: 40
+```
+
+
+#### settings for pitft
+
+The pitft display is larger display, if this is being used, replace the `pitft` section in `status` with the following
+
+```yaml
+  pitft:
+    rotation: 0
+    font_size: 24
+    newline: 28
+    display_height: 240
+    display_width: 240
+    x_offset: 0
+    y_offset: 80
+```
 
 ### gnarlypi section
 

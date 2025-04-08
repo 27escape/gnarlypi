@@ -15,12 +15,15 @@ from libs.messaging import Messaging
 from libs.config import Config
 
 # ----------------------------------------------------------------------------
-FONT_SIZE = 24
-DISPLAY_HEIGHT = 240
+# these are the defaults for the mini_pitft, ensuring things work even if config not read
+FONT_SIZE = 14
+DISPLAY_HEIGHT = 135
 DISPLAY_WIDTH = 240
-X_OFFSET = 0
-Y_OFFSET = 80
-ROTATION = 180
+X_OFFSET = 53
+Y_OFFSET = 40
+ROTATION = 90
+NEW_LINE = FONT_SIZE + 2
+
 # Config for display baudrate (default max is 24mhz):
 BAUDRATE = 64000000
 
@@ -41,7 +44,6 @@ FILE_COLOR = YELLOW
 COPY_COLOR = RED
 SD_COLOR = MAGENTA
 HD_COLOR = CYAN
-NEW_LINE = FONT_SIZE + 4
 
 current_mode = {}
 
@@ -398,7 +400,6 @@ def status_fivelines(topic, data):
 # we can update the time
 def status_keepalive(topic, data):
     """status_devicedata"""
-    print( "keepalive\n")
     update_display()
 
 
@@ -449,8 +450,17 @@ def mqtt_listener():
 if __name__ == "__main__":
     # get config from default location $GNARLYPI_CONFIG
     config = Config()
-    # set rotation from config or default to 180
-    ROTATION = config.get("status.pitft.rotation", 180)
+    
+    # print(f"Config file: {config.get('status.pitft')}")
+    # get display settings from config or use defaults
+    ROTATION = config.get("status.pitft.rotation", ROTATION)
+    FONT_SIZE = config.get("status.pitft.font_size", FONT_SIZE)
+    NEW_LINE = config.get("status.pitft.newline", NEW_LINE)
+    DISPLAY_HEIGHT = config.get("status.pitft.display_height", DISPLAY_HEIGHT)
+    DISPLAY_WIDTH = config.get("status.pitft.display_width", DISPLAY_WIDTH)
+    X_OFFSET = config.get("status.pitft.x_offset", X_OFFSET)
+    Y_OFFSET = config.get("status.pitft.y_offset", Y_OFFSET)
+
     # setup hardware
     tft = init_board()
 

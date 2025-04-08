@@ -6,10 +6,23 @@ status:
     # - gnarly_status_ledshimrm
     # - gnarly_status_mini_pitft
     - gnarly_status_pitft
-  mini_pitft:
-    rotation: 90
   pitft:
     rotation: 0
+    font_size: 24
+    display_height: 240
+    display_width: 240
+    x_offset: 0
+    y_offset: 80
+    newline: 28
+
+  # settings for the mini_pitft, copy these to the pitft section if needed
+    # rotation: 90
+    # font_size: 14
+    # display_height: 135
+    # display_width: 240
+    # x_offset: 53
+    # y_offset: 40
+    # newline: 16
 
 gnarlypi:
   store: "${HOME}/usb_data/"
@@ -17,7 +30,7 @@ gnarlypi:
   logfile: "/tmp/gnarlypi.log"
   apps:
     # - gnarly_indexer
-    - gnarly_rsync
+    # - gnarly_rsync
 
 indexer:
   trip_variance: 2
@@ -31,10 +44,10 @@ rsync:
   source: "$(indexer.index)"
   target: ${USER}@homeassistant:/forSamba/NVME
 
-hotspot:
-  name: "gnarly
-  password: "gnarlypassword"
+# hotspot:
+#   name: "gnarly
+#   password: "gnarlypassword"
 
-wifi:
-  name: "home"
-  password: "homepassword"
+# wifi:
+#   name: "home"
+#   password: "homepassword"
