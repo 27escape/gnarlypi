@@ -107,7 +107,8 @@ def run_rsync_with_progress(source, destination):
         left = 0
         total = 0
 
-        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", source, destination]
+        # leinfo.sav is a file that is created by gopro's, we don't want to copy it
+        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", source, destination]
         logger.info( f"running [{' '.join( rsync_cmd)}]")
 
         # universal_newlines -  Make all end-of-lines '\n'
