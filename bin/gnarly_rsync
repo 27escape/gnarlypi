@@ -3,18 +3,18 @@
 import os
 import re
 import sys
+import time
 import signal
 import logging
 import argparse
-import threading
 import contextlib
 import subprocess
 from dotwiz import DotWiz
 
 sys.path.insert( 0, '../')
 from libs.status import Status
-from libs.messaging import Messaging
-from libs.basic_state import BasicStateMachine
+from libs.locking import Lock
+from libs.config import Config
 
 # ----------------------------------------------------------------------------
 
@@ -22,20 +22,26 @@ USER = os.getenv("USER")
 HOME = os.getenv("HOME")
 APP_NAME = os.path.basename(__file__)
 
-# Replace with your desired source directory
-SOURCE_DIR = os.path.join(HOME, "photos")
-
+# get config from default location $GNARLYPI_CONFIG
+config = Config()
+logfile = config.get("gnarlypi.logfile")
 logger = logging.getLogger(APP_NAME)
 
+if logfile:
+    logging.basicConfig(
+        filename=logfile,
+        filemode="a",
+        encoding="utf-8",
+        format="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=logging.INFO,
+    )
+    logger.info("Started")
+else:
+    print("no logfile set")
+
+
 copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
-
-state_table = [
-  "INIT",
-  "WAITING",
-  "ACCEPT BUTTON",
-  "RSYNC",
-
-]
 
 # ----------------------------------------------------------------------------
 
@@ -46,12 +52,11 @@ def signal_handler(sig, frame):
     logger.info("You pressed Ctrl+C!")
 
     status.fivelines(("", APP_NAME, "", "cancelled", ""))
+    lock.releaseLock()
     sys.exit(3)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
-
-
 
 # ----------------------------------------------------------------------------
 def setLogLevel(loglevel):
@@ -93,7 +98,8 @@ def run_rsync_with_progress(source, destination):
 
     """
 
-    status.fivelines(( "", "RSYNC", "", "", ""))
+    status.clear()
+    status.show_mode( { "sync" : True})
 
     try:
         current_file = ""
@@ -101,8 +107,9 @@ def run_rsync_with_progress(source, destination):
         left = 0
         total = 0
 
-        rsync_cmd = ["rsync", "-aviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", source, destination]
-        logger.info( f"running [{' '.join( rsync_cmd)}]")
+        # leinfo.sav is a file that is created by gopro's, we don't want to copy it
+        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", source, destination]
+        logger.debug( f"running [{' '.join( rsync_cmd)}]")
 
         # universal_newlines -  Make all end-of-lines '\n'
         # this means we will also get line updates during copy process that would have ended with \r
@@ -118,7 +125,7 @@ def run_rsync_with_progress(source, destination):
             # logger.info( line)
             if file_match := re.search(r"^.f.*?\s(.*)$", line):
                 current_file = os.path.join( os.path.dirname(source), file_match.group(1))
-                logger.info( f"current {current_file}")
+                logger.info( f"{total - left}/{total}  {current_file}")
                 filesize = os.path.getsize( current_file)
                 # log when we have a file, it may take some time to copy if remote
                 status.copydata(
@@ -136,6 +143,7 @@ def run_rsync_with_progress(source, destination):
                 bytes_copied = int(count_match.group(1).replace(',', ''))
                 bps = 0
                 bps_str = count_match.group(2)
+                bps_orig = bps_str
 
                 # find file counts, this happens when the file is complete
                 if end_match := re.search(r"to-chk\=([0-9]+)\/([0-9]+)", line):
@@ -153,8 +161,8 @@ def run_rsync_with_progress(source, destination):
                   bps = bps_str * 1024
                 else:
                   bps = bps_str
-
-                logger.info( f"{total - left}/{total} {int(bps)} {current_file}")
+                # if we need more detail
+                logger.debug( f"  {bps_orig} {current_file}")
                 status.copydata(
                   current_file,
                   current_file,
@@ -164,9 +172,10 @@ def run_rsync_with_progress(source, destination):
                   total,
                   int(bps)
                 )
-
-        logger.info( f"backed up {total} files/folders")
-        status.fivelines(( "", "Completed", "", f"{total} files", ""))
+        if total:
+          logger.info( f"backed up {total} files/folders")
+        status.show_mode( { "sync" : False })
+        # status.fivelines(( "", "Completed", "", f"{total} files", ""))
 
 
     except subprocess.CalledProcessError as e:
@@ -201,22 +210,6 @@ def status_button(topic, dData):
 def status_error(topic, dData):
   print("ignoreme")
 
-# ----------------------------------------------------------------------------
-# thread to listen for button press messages
-msg = Messaging()
-
-def thread_buttons():
-
-    # Define a dictionary to map topics to handling functions
-    handlers = {
-        "/photos/button": status_button,
-        "/photos/error": status_error,
-    }
-
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
-
-
 
 # ----------------------------------------------------------------------------
 
@@ -226,46 +219,29 @@ if __name__ == "__main__":
         logger.info("Do not run this script as root")
         sys.exit(1)
 
-    LOGLEVEL = os.environ.get("LOGLEVEL", "WARNING").upper()
-    logger.info("Started")
-
-    status = Status()
+    source = config.get('rsync.source')
+    target = config.get('rsync.target')
 
     parser = argparse.ArgumentParser(
-        description=f"Copy backed up photos to a remote system using rsync"
+        description=f"Copy backed up photos from {source} to a {target} using rsync, change values in config file"
     )
-    parser.add_argument(
-      "source",
-      type=str,
-      help="Full path of imported photos",
-    )
-    parser.add_argument(
-      "target",
-      type=str,
-      help="Target path on a remote system that will accept automatic SSH/rsync with SSH keys",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        # the following makes it a boolean flag
-        action="store_true",
-        help="Increase level of logging",
-    )
-    args = parser.parse_args()
-    logLevel = "INFO" if (args.verbose) else LOGLEVEL
-    setLogLevel(logLevel)
-
 
     # Check if source dierctory exists
-    if not os.path.exists(args.source) or not os.path.isdir( args.source):
-        logger.info(f"Error: Source '{args.source}' is not a directory.")
+    if not os.path.exists(source) or not os.path.isdir( source):
+        logger.info(f"Error: Source '{source}' is not a directory.")
+        print(f"Error: Source '{source}' is not a directory.")
         sys.exit(2)
 
-    thButtons = threading.Thread(target=thread_buttons)
-    thButtons.start()
 
-    # this will be the main thread
-    # we cannot check the target, this will be down to the user
-    run_rsync_with_progress(args.source, args.target)
+    while True:
+      time.sleep( int(config.get('rsync.sleep')))
 
-    msg.client_disconnect()
+      status = Status()
+      lock = Lock()
+
+      # we cannot check the target, this will be down to the user
+      lock.waitLock()
+      run_rsync_with_progress(source, target)
+      lock.releaseLock()
+      status.app_resume() ;
+

@@ -2,3 +2,5 @@
 old
 launch.json
 libs/__pycache__/
+sync.sh
+off

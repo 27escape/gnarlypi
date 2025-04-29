@@ -1,0 +1,24 @@
+[project]
+name = "gnarlypi"
+version = "0.2.1"
+description = "System to manage photos on a raspberry pi"
+
+authors = [
+ {name="Kevin Mulholland", email="python@27escape.com"}
+]
+
+dependencies = [
+  "paho-mqtt>2.0.0"
+]
+
+# requires-python = ">=3.7"
+
+# Refer to https://pypi.org/classifiers/ for options
+classifiers = [
+   "Programming Language :: Python :: 3",
+   "Operating System :: OS Independent",
+]
+
+# find local modules
+[tool.setuptools.packages]
+find = {}

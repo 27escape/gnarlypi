@@ -1,4 +1,4 @@
-# all of the publish and subscript messaging commands
+# all of the publish and status messaging commands
 
 # http://www.steves-internet-guide.com/client-connections-python-mqtt/
 
@@ -102,9 +102,9 @@ class Messaging:
 
             try:
                 self.topic_handlers[topic](topic=topic, data=json.loads(message.payload.decode()))
-            except Exception as e:
-                logger.info( f"likely message is not JSON topic:{topic}, message:{message.payload.decode()}")
-
+            except Exception as err:
+                # logger.info( f"likely message is not JSON topic:{topic}, message:{message.payload.decode()}")
+                logger.info(f"{type(err).__name__} was raised eventually in topics_on_message: {err}")
         # else:
         #     self.handle_all(client, userdata, message)
 

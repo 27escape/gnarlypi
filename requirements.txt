@@ -1,2 +1,7 @@
 paho-mqtt==2.1.0
 dotwiz==0.4.0
+pyyaml==6.0.2
+lock==2018.3.25.2110
+fasteners==0.19
+ruamel.yaml==0.18.10
+psutil==7.0.0

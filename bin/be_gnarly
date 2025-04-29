@@ -6,10 +6,15 @@
 
 # ----------------------------------------------------------------------------
 
-FULL_PATH="$HOME/gnarlypi/bin"
-export GNARLY_LOG="/tmp/gnarly.log"
+export FULL_PATH="$HOME/gnarlypi"
+export GNARLY_ERR_LOG="/tmp/gnarlypi.err"
+export BIN_PATH=$FULL_PATH/bin
+export GNARLYPI_CONFIG=$HOME/gnarlypi/gnarlypi.yml
 
-cd "$FULL_PATH" || (echo "cannot find dir $FULL_PATH" && exit 1)
+# need to set this so python knows where the libraries are
+export PYTHONPATH="$FULL_PATH:$PYTHONPATH"
+
+cd "$BIN_PATH" || (echo "cannot find dir $BIN_PATH" && exit 1)
 
 SELF=$(basename "$0")
 processes_to_kill=$(ps ax | grep "gnarly" | grep -v grep | grep -v "$SELF")
@@ -23,11 +28,8 @@ for line in "${lines[@]}"; do
   kill $pid 2>/dev/null
 done
 
-./start_displays.sh
+# remove any previous log files
+rm -f /tmp/gnarlypi* 2>/dev/null
 
-# the main program that does the reading of the SD card etc
-# give the status programs time to start up and connect to MQTT
-sleep 1
-
-# default startup location
-nohup "./gnarlypi" "$HOME/usb_data" >> $GNARLY_LOG 2>&1 &
+# this will start up other apps as required, inc the status displays
+"./gnarlypi"  >> $GNARLY_ERR_LOG 2>&1

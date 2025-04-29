@@ -1,0 +1,392 @@
+#!/usr/bin/env python3
+# This *should* be able to read data from CR2 (canon), NEF (Nikon), ORF (OMSystems) and MOV/AVI files
+# if not, I need to look into the Cr2 and Nef libraries to see what they can bring to the table
+
+import os
+import re
+import sys
+import time
+import signal
+import shutil
+import logging
+import threading
+import argparse
+from datetime import datetime, timedelta, timezone
+from stat import *
+import piexif
+
+sys.path.insert(0, "../")
+from libs.status import Status
+from libs.messaging import Messaging
+from libs.config import Config
+
+VERSION = "0.1.0"
+APP_NAME = os.path.basename(__file__) + " v" + VERSION
+CREATOR = "27escape"
+COPYRIGHT = "©️2025"
+
+# get config from default location $GNARLYPI_CONFIG
+config = Config()
+
+logfile = config.get('gnarlypi.logfile')
+logger = logging.getLogger(APP_NAME)
+
+if logfile:
+  logging.basicConfig(filename=logfile,
+                      filemode='a',
+                      encoding='utf-8',
+                      format='%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s',
+                      datefmt='%Y-%m-%d %H:%M:%S',
+                      level=logging.INFO)
+  logger.info("Started")
+
+
+# tell index_file to ignore files
+indexer_ignore_files = False
+# when did the indexer last process a file
+last_file_index = datetime.now()
+
+USER = os.getenv("USER")
+HOME = os.getenv("HOME")
+status = None
+EXTENSIONS = [
+    "NEF",
+    "DNG",
+    "JPG",
+    "JPEG",
+    "ORF",
+    "CR2"
+    "AVI",
+    "MP4",
+    "MOV"
+]
+
+REQUIRED_TAGS = [
+    "DateTimeOriginal",
+    "OffsetTimeOriginal",
+]
+
+SOURCE_DIR = ""
+INDEX_DIR = ""
+
+# ----------------------------------------------------------------------------
+
+
+def signal_handler(sig, frame):
+    """ """
+
+    logger.info("Ctrl+C pressed!")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGHUP, signal_handler)
+
+
+def abort_handler(sig, frame):
+    """ """
+
+    logger.info("Ctrl+C pressed!")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGHUP, abort_handler)
+
+
+# ----------------------------------------------------------------------------
+def setLogLevel(loglevel):
+    logging.basicConfig(
+        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
+        level=loglevel,
+    )
+
+
+# ----------------------------------------------------------------------------
+def make_dest(dest):
+    """
+    make destination directory set ownership to that of parent directory
+    """
+    logger.info(f"making {dest}")
+    os.makedirs(dest, exist_ok=True)
+    parent = os.path.dirname(dest)
+    stat = os.stat(parent)
+    os.chown(dest, stat.st_uid, stat.st_gid)
+
+
+# ----------------------------------------------------------------------------
+def is_valid_extension(filename, extensions):
+    """
+    Validates if the filename has an extension from the provided list.
+
+    Args:
+        filename (str): The name of the file to validate.
+        extensions (list): A list of allowed extensions.
+
+    Returns:
+        bool: True if the filename has a valid extension, False otherwise.
+    """
+    return any(filename.lower().endswith(ext.lower()) for ext in extensions)
+
+# ----------------------------------------------------------------------------
+def UTC_from_exif(original, offset):
+  """
+  Calculates UTC time from EXIF DateTimeOriginal and EXIF OffsetTimeOriginal.
+
+  Args:
+    original: String original datetime "YYYY:MM:DD HH:MM:SS"
+    offset:   String   time offset "HH:MM:SS"
+
+  Returns:
+    UTC time "YYYY-MM-DD HH:MM:SS+00:00"
+  """
+
+  try:
+    # Parse original
+    dt_obj = datetime.strptime(original, "%Y:%m:%d %H:%M:%S")
+    if not offset:
+      offset = "00:00"
+
+    # Parse offset hours/minutes
+    offset_hours, offset_minutes = map(int, offset.split(':'))
+    offset_timedelta = timedelta(hours=offset_hours, minutes=offset_minutes)
+
+    # Calculate UTC time
+    utc_time = dt_obj - offset_timedelta
+
+    # Convert to UTC timezone
+    utc_time = utc_time.replace(tzinfo=timezone.utc)
+
+    # Format UTC time as string
+    return utc_time.strftime("%Y-%m-%d %H:%M:%S%z")
+
+  except ValueError:
+    #   possibly happens if time offset is bad
+    logger.error(f"ValueError: Invalid datetime or offset format: {original}, {offset}, reseting to 1970")
+    dt_obj = datetime.strptime("1970:01:01 00:00:00", "%Y:%m:%d %H:%M:%S")
+    return dt_obj.strftime("%Y-%m-%d %H:%M:%S%z")
+  except Exception as err:
+    logger.error(f"{type(err).__name__} was raised: {err}")
+    return dt_obj.strftime("%Y-%m-%d %H:%M:%S%z")
+
+# ----------------------------------------------------------------------------
+
+def get_file_ctime(file_path):
+    """
+    Get the creation date of a file.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        datetime: The creation date of the file.
+    """
+    try:
+        # Get the file's status
+        stat_info = os.stat(file_path)
+        # Get the creation time (st_ctime) and convert it to a datetime object
+        creation_time = datetime.fromtimestamp(stat_info.st_ctime)
+        # put it in the same format that exif uses
+        return creation_time.strftime("%Y:%m:%d %H:%M:%S")
+    except Exception as e:
+        logger.error(f"Error getting creation date: {e}")
+        return None
+
+
+# ----------------------------------------------------------------------------
+def extract_exif(file_path):
+    """
+    Extracts EXIF data from an image file and filters it based on REQUIRED_TAGS.
+
+    Args:
+        file_path (str): The path to the image file.
+
+    Returns:
+        dict: A dictionary containing the required EXIF tags and their values.
+    """
+    info = {}
+    try:
+        # Load the EXIF data from the image
+        exif_data = piexif.load(file_path)
+
+        # Filter and extract only the required tags
+        for ifd_name in exif_data:
+            if ifd_name == "Exif":
+                for tag in exif_data[ifd_name]:
+                    tag_name = piexif.TAGS[ifd_name].get(tag, {}).get("name", None)
+                    if tag_name in REQUIRED_TAGS:
+                        tag_value = exif_data[ifd_name][tag]
+                        info[tag_name] = tag_value.decode( 'utf-8', errors='replace') if isinstance(tag_value, bytes) else tag_value
+                    else:
+                        # create empty tag if not found
+                        info[tag_name] = ""
+    except Exception as e:
+        # print(f"Error extracting EXIF data: {e}")
+        info["DateTimeOriginal"] = get_file_ctime(file_path)
+        info["OffsetTimeOriginal"] = "00:00"
+    
+    # some cameras set a partially empty time offset
+    if re.match(r"^\s*:", info.get("OffsetTimeOriginal", "")):
+        info["OffsetTimeOriginal"] = "00:00"
+    
+    return info
+
+
+# ----------------------------------------------------------------------------
+
+def create_unique_symlink(src_file, target_dir):
+    symlink_name = os.path.basename(src_file)
+    symlink_path = os.path.join(target_dir, symlink_name)
+    i = 1
+
+    while os.path.islink(symlink_path):
+        base, ext = os.path.splitext(symlink_name)
+        symlink_name = f"{base}-{i}{ext}"
+        symlink_path = os.path.join(target_dir, symlink_name)
+        i += 1
+        logger.error(f"Symlink already exists, creating new symlink: {symlink_path} {i}")
+
+    os.symlink(src_file, symlink_path)
+
+# ----------------------------------------------------------------------------
+# add a single file to the index
+# index_by_date (YYYY-MM-DD), byYear (YYYY/MM)
+
+def index_by_date( filename, imgdate):
+    """index symlink file by date in image metadata"""
+    
+    # YYYY-MM-DD
+    imgdate = imgdate.split(' ')[0]
+    destdir = os.path.join( INDEX_DIR, 'date', imgdate)
+    make_dest(destdir)
+    create_unique_symlink( filename, destdir)
+   
+    y,m,d = imgdate.split('-')
+    # YYYY
+    destdir = os.path.join( INDEX_DIR, 'yyyy', y)
+    destlink = os.path.join( destdir, os.path.basename(filename))
+    make_dest(destdir)
+    create_unique_symlink( filename, destdir)
+
+    # YYYY/MM
+    destdir = os.path.join( INDEX_DIR, 'yyyy-mm', y, m)
+    make_dest(destdir)
+    create_unique_symlink( filename, destdir)
+
+
+# ----------------------------------------------------------------------------
+def index_file(topic, data):
+    """index_file"""
+    global last_file_index
+    last_file_index = datetime.now()
+    # we want to drain the indexer
+    if indexer_ignore_files:
+        logger.info( 'ignoring')
+        return
+
+    if not is_valid_extension(data["filename"], EXTENSIONS):
+        logger.info(f'ignore {data["filename"]}')
+        return
+
+    logger.info(f'index {data["filename"]} into {INDEX_DIR}')
+
+
+    try:
+        tags = extract_exif( data["filename"])
+        if tags.get("DateTimeOriginal"):
+            utc = UTC_from_exif( tags["DateTimeOriginal"], tags.get("OffsetTimeOriginal", "00:00"))
+    except Exception as e:
+        logger.error(f"Error extracting EXIF data: {e}")
+        # print( f'no date in {data["filename"]}')
+        utc = get_file_ctime( data["filename"])
+
+    index_by_date( data["filename"],  utc)
+
+
+# ----------------------------------------------------------------------------
+# start indexing an entire directory, wipes and starts afresh
+# don't use this too often as it will take a while
+def index_dir(topic, data):
+    """index_dir"""
+    global indexer_ignore_files
+
+    logger.info( 'drain the swamp')
+    # allow the index files to drain
+    indexer_ignore_files = True
+    # give it a few seconds to drain them all
+    draining = True
+    while draining:
+        since_index = datetime.now() - last_file_index
+        if since_index.seconds >= 2:
+            draining = False
+        else:
+            # give it a second or so
+            time.sleep(1)
+
+    # removing the dir of the index is the easiest way to
+    # perform the wipe
+    if os.path.exists(INDEX_DIR):
+      shutil.rmtree(INDEX_DIR)
+    os.makedirs(INDEX_DIR, exist_ok=True)
+
+    logger.info(f"re-index to {INDEX_DIR}")
+    # we re-enable the indexer before we start adding the new files
+    indexer_ignore_files = False
+    done = 0 
+    for dirpath, dirnames, filenames in os.walk(SOURCE_DIR):
+        for filename in filenames:
+            src_path = os.path.join(dirpath, filename)
+            # send it to mqtt for processing
+            status.indexfile(src_path)
+
+
+# ----------------------------------------------------------------------------
+# works as a simple thread just to listen for messages
+def mqtt_listener():
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        "/photos/indexfile": index_file,
+        "/photos/indexdir": index_dir
+    }
+
+    msg = Messaging()
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
+
+# ----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    if USER == "root":
+        logger.info(
+            f"Do not run this script as root, run is as one of your users, give a user permisison to mount drives with this command:  sudo usermod -aG disk {os.getenv('SUDO_USER')}"
+        )
+        sys.exit(1)
+
+    SOURCE_DIR = config.get("indexer.files")
+    INDEX_DIR = config.get("indexer.index")
+    VARIANCE = config.get("indexer.trip_variance")
+
+    parser = argparse.ArgumentParser(
+        description=f"photo indexer to read mqtt messages and create index for photo files, runs forever, indexes from {SOURCE_DIR} to {INDEX_DIR}"
+    )
+    parser.add_argument(
+        "-r",
+        "--reindex",
+        action="store_true",
+        help="Re-index the entire source tree",
+    )
+
+    args = parser.parse_args()
+
+    status = Status()
+
+    # start the listener thread
+    thIndexer = threading.Thread(target=mqtt_listener)
+    thIndexer.start()
+
+    if( args.reindex):
+        logger.info( 'reindexing')
+        index_dir(None, None)
+        
+

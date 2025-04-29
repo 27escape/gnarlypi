@@ -48,7 +48,7 @@ Until I have created a web app to display status, I probably will not investigat
 
 I just did a quick trawl of https://thepihut.com/ for these based on price and being either [Pimoroni](https://shop.pimoroni.com/collections/displays?tags=Raspberry%20Pi) or [Adafruit](https://www.adafruit.com/category/63) devices.
 
-I did initially consider ePaper screens but these would not be able to keep up with the copy updates, so could only be used for some of the messages, though you could combine an ePaper device with one of the LED display devices too. 
+I did initially consider ePaper screens but these would not be able to keep up with the copy updates, so could only be used for some of the messages, though you could combine an ePaper device with one of the LED display devices and write your own status program. 
 
 
 ## Configuring your drives
@@ -63,3 +63,45 @@ If you have another computer, windows or mac, then you can use that to initialis
 
 To partition it for ext4 on linux, then ... :TODO:
 
+
+## Mounting your drive
+
+If you are not booting from a large drive, such as the NVME drive, then attaching a separate USB drive will be the way to go for storing your photos onto.
+
+It is likely that the user you are going to run things as is user 1000, however you can check this by running `id`
+
+Attach the USB drive to your rPi and run `blkid` this will give us info about connected as follows
+
+```
+/dev/mmcblk0p1: LABEL_FATBOOT="bootfs" LABEL="bootfs" UUID="91FE-7499" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="123c0f19-01"
+/dev/mmcblk0p2: LABEL="rootfs" UUID="22f22fa2-e005-4ccc-86e6-19da1069914d" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="123c0f19-02"
+/dev/sda1: LABEL="somedrive UUID="E432-FDBC" BLOCK_SIZE="512" TYPE="exfat" PTTYPE="dos" PARTUUID="89e29715-12324-5678-a33d-88efc3816e59"
+```
+
+As we can see, there is a drive connected to `/dev/sda1`, the important part of this output is the "UUID" field with the value `E432-FDBC`. This is for my drive, yours will be different, take a note of it
+
+Now we will create the mount point for this drive and add it to `/etc/fstab` so that it will mount whenever the system is rebooted 
+
+```
+sudo mkdir /mnt/fstab
+sudo vi /etc/fstab
+```
+
+and then, replacing your UUID value, add the following to the end of the fstab file
+```
+UUID=E432-FDBC /mnt/usb_data   exfat    defaults,noatime,user,rw,exec,auto,rw,nofail,x-systemd.automount,nosuid,nodev,uid=1000,gid=1000,fmask=0022,dmask=0022,iocharset=utf8,errors=remount-ro        1 1
+```
+
+To check things are working, we need to reload `/etc/fstab` and we can do that with the following command
+
+```
+sudo systemctl daemon-reload
+```
+
+Then we can attempt to mount the drive with `sudo mount -a` and we should be able to see, using the `mount` command that the drive has been mounted to `/mnt/usb_data`
+
+Finally, we will link this to the directory we will be saving the data to `$HOME/usb_data`
+
+```
+ln -s /mnt/usb_data "$HOME/usb_data"
+```

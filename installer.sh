@@ -158,7 +158,8 @@ function install_crontab() {
   if [ "$?" == "1" ] ; then
       echo "installing reboot rule into crontab"
       echo "#start gnarlypi on bootup
-@reboot /home/$USER/gnarlypi/bin/be_gnarly" >> "$TMP"
+@reboot /home/$USER/gnarlypi/bin/be_gnarly
+" >> "$TMP"
       # update crontab
       crontab "$TMP"
       rm "$TMP"
@@ -172,6 +173,16 @@ function install_crontab() {
 function install_gnarly() {
   echo "Installing gnarly code"
   pip3 install -r requirements.txt
+}
+
+function link_usbdata() {
+  if [ -d "/mnt/usb_data" ] ; then
+    echo "linking /mnt/usb_data to /home/$USER/usb_data"
+    if [ ! -d "/home/$USER/usb_data" ] ; then
+      mkdir "/home/$USER/usb_data"
+    fi
+    sudo ln -s "/mnt/usb_data" "/home/$USER/usb_data"
+  fi
 }
 
 # ----------------------------------------------------------------------------

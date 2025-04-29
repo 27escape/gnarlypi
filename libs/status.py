@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import signal
 from .messaging import Messaging
 
 # ----------------------------------------------------------------------------
+
 
 class Status:
     """Status
@@ -18,8 +18,7 @@ class Status:
     def __init__(self, server="localhost") -> None:
         self.server = server
         self.msg = Messaging()
-        self.msg.connect( None, self.server)
-
+        self.msg.connect(None, self.server)
 
     # ----------------------------------------------------------------------------
     def error(self, error_msg, error_lvl=0, msg2=""):
@@ -33,14 +32,14 @@ class Status:
                                 status devices
         """
 
-        self.msg.publish("/photos/error", {"msg": error_msg, "level": error_lvl, "msg2": msg2})
-
+        self.msg.publish(
+            "/photos/error", {"msg": error_msg, "level": error_lvl, "msg2": msg2}
+        )
 
     # ----------------------------------------------------------------------------
     def ready(self):
         """show that the system is ready to accept an SD card insertion"""
         self.msg.publish("/photos/ready")
-
 
     # ----------------------------------------------------------------------------
     # this may be ignored by some devices
@@ -48,12 +47,10 @@ class Status:
         """show that an SD card has been inserted"""
         self.msg.publish("/photos/inserted")
 
-
     # ----------------------------------------------------------------------------
     def startcopy(self, file_count=0):
-        """show that the overall copy process has started """
-        self.msg.publish("/photos/startcopy", { "files_total": file_count})
-
+        """show that the overall copy process has started"""
+        self.msg.publish("/photos/startcopy", {"files_total": file_count})
 
     # ----------------------------------------------------------------------------
     def endcopy(self, files_copied=0, file_count=0):
@@ -64,18 +61,27 @@ class Status:
             files_total  (int)      The total number of files on the device that
                                     could have been copied
         """
-        self.msg.publish("/photos/endcopy",
+        self.msg.publish(
+            "/photos/endcopy",
             {
                 "files_copied": files_copied,
                 "files_total": file_count,
             },
         )
 
-
     # ----------------------------------------------------------------------------
     # status device may choose to ignore this
     # info about individual file copy and the overall file copy data
-    def copydata(self,fromfile, tofile, filesize=0, bytes_copied=0, files_copied=0, file_count=0, bps=0):
+    def copydata(
+        self,
+        fromfile,
+        tofile,
+        filesize=0,
+        bytes_copied=0,
+        files_copied=0,
+        file_count=0,
+        bps=0,
+    ):
         """update data during a file copy process
 
         Args:
@@ -97,17 +103,15 @@ class Status:
                 "copied": bytes_copied,
                 "files_copied": files_copied,
                 "files_total": file_count,
-                "bps": bps
+                "bps": bps,
             },
         )
-
 
     # ----------------------------------------------------------------------------
     # waiting for the removal of the SD card
     def waitremove(self):
         """show that system is waiting for the removal of the SD card"""
         self.msg.publish("/photos/waitremove")
-
 
     # ----------------------------------------------------------------------------
     def diskfull(self, diskname):
@@ -118,7 +122,6 @@ class Status:
         """
         self.msg.publish("/photos/diskfull", {"diskname": diskname})
 
-
     # ----------------------------------------------------------------------------
     def devicedata(self, sd_size, sd_free, hd_size, hd_free):
         """send information about the source and target drives
@@ -128,7 +131,7 @@ class Status:
             sd_free (int)   number of bytes free on the SD card
             hd_size (int)   overall size of the target drive in bytes
             hd_free (int)   number of bytes free on the target drive
-            """
+        """
         self.msg.publish(
             "/photos/devicedata",
             {
@@ -138,7 +141,6 @@ class Status:
                 "hd_free": hd_free,
             },
         )
-
 
     # ----------------------------------------------------------------------------
     # send this periodically to allow the display clients to know that the system is
@@ -156,19 +158,17 @@ class Status:
             color  (str)
         """
         # slice to 5 lines
-        self.msg.publish("/photos/fivelines", {"color": color, "lines":lines[:5]})
-
+        self.msg.publish("/photos/fivelines", {"color": color, "lines": lines[:5]})
 
     # ----------------------------------------------------------------------------
     # allow the caller to clear the display, or the receivers appropriate part
     # of the display
     def clear(self):
-        """clear/blank the display """
+        """clear/blank the display"""
         self.msg.publish("/photos/cls")
 
-
     # ----------------------------------------------------------------------------
-    def buttonpress( self, button):
+    def buttonpress(self, button):
         """send a single button press
 
         Args:
@@ -176,3 +176,47 @@ class Status:
         """
         # slice to a single character
         self.msg.publish("/photos/button", {"button": button[:1]})
+
+    # ----------------------------------------------------------------------------
+    def app_resume(self):
+        """tell the main app, that a sub app has completed
+
+        Args:
+        """
+        # slice to a single character
+        self.msg.publish("/photos/app_resume", {})
+
+    # ----------------------------------------------------------------------------
+    def indexfile(self, filename):
+        """create index symlinks for file in the destdir
+
+        Args:
+            filename (str)  full path to the file to be index
+        """
+        self.msg.publish("/photos/indexfile", {"filename": filename})
+
+    # ----------------------------------------------------------------------------
+    def indexdir(self):
+        """re-create index symlinks, config file holds directory info,
+        all previous index should be removed
+
+        """
+        self.msg.publish("/photos/indexdir")
+
+    # ----------------------------------------------------------------------------
+    def indextrip(self):
+        """create trip index symlinks from files in index/date/{YYYY-MM-DD}"""
+        self.msg.publish("/photos/indextrip")
+
+
+    # ----------------------------------------------------------------------------
+    def show_mode( self, data ):
+        """send the mode to the display, while anything can be sent
+        copy, index and sync are currently the usual ones, they should be True
+        or False
+
+        Args:
+            data (dict)     mode data to be displayed
+        """
+        # print( f"show_mode {data}")
+        self.msg.publish( "/photos/show_mode", data )

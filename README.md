@@ -4,7 +4,7 @@ A simple replacement for the Gnarbox (RIP).
 
 This is to replicate some of the functions of that device, ideally to run on different iterations of the Raspberry PI and to have output displayed on a range of modules, LEDs and displays as I have them and develop the code.
 
-Currently there is an alternative for the Gnarrbox doing the rounds on Kickstarter etc, this is the UnifyDrive UT2, earlybird price is 399 USD without any storage addded see [Kickstarter Campaign](https://www.kickstarter.com/projects/1945743381/ut2-redefining-portable-storage-solutions). A 2TB NVME drive is likely about 150 USD, so looking at 550 USD or possibly a lot more after launch.
+Currently there is an alternative for the [Gnarrbox 2.0](https://www.kickstarter.com/projects/gnarbox/gnarbox-20-ssd-rugged-backup-device-for-your-camer?ref=discovery&term=camera%20backup&total_hits=13&category_id=333) doing the rounds on Kickstarter etc, this is the UnifyDrive UT2, earlybird price is 399 USD without any storage addded see [UnifyDrive UT2 - Kickstarter](https://www.kickstarter.com/projects/1945743381/ut2-redefining-portable-storage-solutions). A 2TB NVME drive is likely about 150 USD, so looking at 550 USD or possibly a lot more after launch. Other alternative devices can be found in [docs/alternatives](./docs/alternatives.md)
 
 This project then is to provide a _much_ cheaper alternative to that, though maybe without a nice box to put it in, and no battery either. But, we can create it with Raspberry PI's, storage and display options that fit in our budgets!
 
@@ -66,18 +66,23 @@ You will be prompted to enter a password (twice), this is for the SAMBA file sha
 
 Hopefully that will do everything needed and the system will reboot and it will just work. Raise an issue on the repo if there are any problems and I will see if I can resolve them.
 
-If you make any changes to the connected displays run the `display_config.sh` script to make changes.
-
-
 ## Using the system
 
-Rebooting the system when it has been installed, will have the system up and running. Either connecting a camera (in storage mode) via USB or a suitable SD Card reader, such as the [Anker 2-in-1 USB 3.0 SD Card Reader](https://www.amazon.co.uk/gp/product/B00LFIXC8I) which also has micro SD card slots,
+Rebooting the system when it has been installed, will have the system up and running. 
+
+Then either connect a camera (in storage mode) via USB or a suitable SD Card reader, such as the [Anker 2-in-1 USB 3.0 SD Card Reader](https://www.amazon.co.uk/gp/product/B00LFIXC8I) which also has micro SD card slots, using an SD card read is MUCH faster than connecting to a camera directly.
+
+Do not connect your camera or insert your SD card until the system has booted up, otherwise the system will consider that drive as part of the system and will ignore it. If this happens, just remove and reboot!
 
 Copying will start automatically when a suitable card/device is connected, the display(s) will show the status until the copy is complete. You will then be prompted to remove the card and the system will return to waiting for another device to be connected.
 
+If connecting a camera that has multiple card slots, then all of these will be read and processed before the remove message is displayed.
+
 ### Copy speeds
 
-Data should be read from a USB3 connected SD card reader around 180MB/s depending on your SD card and via a USB cable to your camera at about 25MB/s, so set aside plenty of time to copy! :)
+On a Raspberry Pi 5, data should be read from a USB3 connected SD card reader around 180MB/s to 200MB/s depending on your SD card (assuming copying to NVME storage) and via a USB cable to a camera at about 25MB/s, so set aside plenty of time to copy! :)
+
+On the Raspberry Pi Zero, its much slower, I get 12MB/s via USB2 SD card reader to a USB2 connected drive and USB2 to a connected to camera its about 11MB/s, so no advantage there, this may allow a future iteration based on the pi Zero not to require a SD card interface and hence be a bit cheaper still.
 
 ### Retrieving files
 
@@ -89,6 +94,10 @@ I have not given much thought to documenting this step but you will need to conn
 - Mac/OSX [How to Connect Your macOS Device to an SMB Share](https://www.techrepublic.com/article/how-to-connect-your-macos-device-to-an-smb-share/)
 - Linux - given the range of options for file managers etc, I am not going to provide a link, you are competent enough to search the internet yourself 
 
+## Configuring the system
+
+see [[docs/config]]
+
 ## TODO
 
-see [[TODO]]
+see [[docs/TODO]]
