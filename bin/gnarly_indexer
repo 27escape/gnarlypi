@@ -3,6 +3,7 @@
 # if not, I need to look into the Cr2 and Nef libraries to see what they can bring to the table
 
 import os
+import re
 import sys
 import time
 import signal
@@ -12,8 +13,7 @@ import threading
 import argparse
 from datetime import datetime, timedelta, timezone
 from stat import *
-
-import exifread
+import piexif
 
 sys.path.insert(0, "../")
 from libs.status import Status
@@ -29,7 +29,6 @@ COPYRIGHT = "©️2025"
 config = Config()
 
 logfile = config.get('gnarlypi.logfile')
-print ( f"config {logfile}")
 logger = logging.getLogger(APP_NAME)
 
 if logfile:
@@ -56,16 +55,16 @@ EXTENSIONS = [
     "JPG",
     "JPEG",
     "ORF",
+    "CR2"
     "AVI",
     "MP4",
     "MOV"
 ]
 
 REQUIRED_TAGS = [
-    "EXIF DateTimeOriginal",
-    "EXIF OffsetTimeOriginal",
-    "Image Make",
-    "Image Model"]
+    "DateTimeOriginal",
+    "OffsetTimeOriginal",
+]
 
 SOURCE_DIR = ""
 INDEX_DIR = ""
@@ -114,7 +113,6 @@ def make_dest(dest):
     os.chown(dest, stat.st_uid, stat.st_gid)
 
 
-
 # ----------------------------------------------------------------------------
 def is_valid_extension(filename, extensions):
     """
@@ -145,6 +143,8 @@ def UTC_from_exif(original, offset):
   try:
     # Parse original
     dt_obj = datetime.strptime(original, "%Y:%m:%d %H:%M:%S")
+    if not offset:
+      offset = "00:00"
 
     # Parse offset hours/minutes
     offset_hours, offset_minutes = map(int, offset.split(':'))
@@ -161,58 +161,73 @@ def UTC_from_exif(original, offset):
 
   except ValueError:
     #   possibly happens if time offset is bad
-    print(f"ValueError: Invalid datetime or offset format: {original}, {offset}")
+    logger.error(f"ValueError: Invalid datetime or offset format: {original}, {offset}, reseting to 1970")
+    dt_obj = datetime.strptime("1970:01:01 00:00:00", "%Y:%m:%d %H:%M:%S")
     return dt_obj.strftime("%Y-%m-%d %H:%M:%S%z")
   except Exception as err:
-    print(f"{type(err).__name__} was raised: {err}")
+    logger.error(f"{type(err).__name__} was raised: {err}")
     return dt_obj.strftime("%Y-%m-%d %H:%M:%S%z")
+
+# ----------------------------------------------------------------------------
+
+def get_file_ctime(file_path):
+    """
+    Get the creation date of a file.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        datetime: The creation date of the file.
+    """
+    try:
+        # Get the file's status
+        stat_info = os.stat(file_path)
+        # Get the creation time (st_ctime) and convert it to a datetime object
+        creation_time = datetime.fromtimestamp(stat_info.st_ctime)
+        # put it in the same format that exif uses
+        return creation_time.strftime("%Y:%m:%d %H:%M:%S")
+    except Exception as e:
+        logger.error(f"Error getting creation date: {e}")
+        return None
 
 
 # ----------------------------------------------------------------------------
-def get_exif_tag_as_string(tag):
-  """
-  Converts an IfdTag object to a string representation.
+def extract_exif(file_path):
+    """
+    Extracts EXIF data from an image file and filters it based on REQUIRED_TAGS.
 
-  Args:
-    tag: The IfdTag object to convert.
+    Args:
+        file_path (str): The path to the image file.
 
-  Returns:
-    A string representation of the IfdTag,
-    including tag name and value.
-  """
-  try:
-    # tag_name = tag.printable
-    tag_value = tag.values
-
-    # Handle potential data types
-    if isinstance(tag_value, list):
-      tag_value_str = ', '.join(map(str, tag_value))
-    elif isinstance(tag_value, bytes):
-      tag_value_str = tag_value.decode('utf-8', errors='replace')
-    else:
-      tag_value_str = str(tag_value)
-
-    return tag_value_str
-  except AttributeError:
-    logger.error( f"Error: Unable to convert tag to string.")
-    return ""
-  except Exception as err:
-    print(f"{type(err).__name__} was raised: {err}")
-    return ""
-
-# ----------------------------------------------------------------------------
-# https://sqlpey.com/python/how-to-read-exif-data-from-images-in-python/
-def read_exif_with_exifread(image_path):
+    Returns:
+        dict: A dictionary containing the required EXIF tags and their values.
+    """
     info = {}
-    with open(image_path, 'rb') as f:
-        tags = exifread.process_file(f)
+    try:
+        # Load the EXIF data from the image
+        exif_data = piexif.load(file_path)
 
-        for ele in REQUIRED_TAGS:
-            try:
-                info[ele] = get_exif_tag_as_string(tags[ele])
-            except KeyError:
-                info[ele] = ""
-
+        # Filter and extract only the required tags
+        for ifd_name in exif_data:
+            if ifd_name == "Exif":
+                for tag in exif_data[ifd_name]:
+                    tag_name = piexif.TAGS[ifd_name].get(tag, {}).get("name", None)
+                    if tag_name in REQUIRED_TAGS:
+                        tag_value = exif_data[ifd_name][tag]
+                        info[tag_name] = tag_value.decode( 'utf-8', errors='replace') if isinstance(tag_value, bytes) else tag_value
+                    else:
+                        # create empty tag if not found
+                        info[tag_name] = ""
+    except Exception as e:
+        # print(f"Error extracting EXIF data: {e}")
+        info["DateTimeOriginal"] = get_file_ctime(file_path)
+        info["OffsetTimeOriginal"] = "00:00"
+    
+    # some cameras set a partially empty time offset
+    if re.match(r"^\s*:", info.get("OffsetTimeOriginal", "")):
+        info["OffsetTimeOriginal"] = "00:00"
+    
     return info
 
 
@@ -228,52 +243,34 @@ def create_unique_symlink(src_file, target_dir):
         symlink_name = f"{base}-{i}{ext}"
         symlink_path = os.path.join(target_dir, symlink_name)
         i += 1
+        logger.error(f"Symlink already exists, creating new symlink: {symlink_path} {i}")
 
     os.symlink(src_file, symlink_path)
 
 # ----------------------------------------------------------------------------
 # add a single file to the index
-# byDate (YYYY-MM-DD), byYear (YYYY/MM)
-# byModel (model)
-# byTrip (YYYY-MM-DD:YYYY-MM-DD)
+# index_by_date (YYYY-MM-DD), byYear (YYYY/MM)
 
-def byDate( filename, imgdate):
+def index_by_date( filename, imgdate):
     """index symlink file by date in image metadata"""
+    
     # YYYY-MM-DD
     imgdate = imgdate.split(' ')[0]
     destdir = os.path.join( INDEX_DIR, 'date', imgdate)
-    destlink = os.path.join( destdir, os.path.basename(filename))
     make_dest(destdir)
-    create_unique_symlink( filename, destlink)
-
+    create_unique_symlink( filename, destdir)
+   
     y,m,d = imgdate.split('-')
     # YYYY
     destdir = os.path.join( INDEX_DIR, 'yyyy', y)
     destlink = os.path.join( destdir, os.path.basename(filename))
     make_dest(destdir)
-    create_unique_symlink( filename, destlink)
+    create_unique_symlink( filename, destdir)
 
     # YYYY/MM
     destdir = os.path.join( INDEX_DIR, 'yyyy-mm', y, m)
-    destlink = os.path.join( destdir, os.path.basename(filename))
     make_dest(destdir)
-    create_unique_symlink( filename, destlink)
-
-
-def byModel( filename, brand, model):
-    """index symlink file by year in image metadata"""
-    brand = brand.strip().replace( ' ', '-')
-    model = model.strip().replace( ' ', '-')
-    if brand == '':
-        brand = 'unknown'
-    if model == '':
-        model = 'unknown'
-    destdir = os.path.join( INDEX_DIR, 'camera', brand, model)
-    destlink = os.path.join( destdir, os.path.basename(filename))
-
-    make_dest(destdir)
-    create_unique_symlink( filename, destlink)
-    # print( f'{filename} -> {destlink}')
+    create_unique_symlink( filename, destdir)
 
 
 # ----------------------------------------------------------------------------
@@ -291,51 +288,23 @@ def index_file(topic, data):
         return
 
     logger.info(f'index {data["filename"]} into {INDEX_DIR}')
-    tags = read_exif_with_exifread( data["filename"])
-    # print( f'has tags {tags}')
-
-    utc = UTC_from_exif( tags["EXIF DateTimeOriginal"], tags["EXIF OffsetTimeOriginal"])
-    # print( f'has utc {utc}')
-
-    byDate( data["filename"],  utc)
-    byModel( data["filename"], tags["Image Make"], tags["Image Model"])
 
 
-# ----------------------------------------------------------------------------
-def index_trip(topic, data):
-    """index_file"""
-    # we will run through directories in INDEX_DIR/date if there is another directory
-    # 'next to' the current one give or take a couple of days (from trip_variance)
-    # then the directories are part of the same trip
-    # this will ALWAYS rebuild the entire trip index for simplicity
+    try:
+        tags = extract_exif( data["filename"])
+        if tags.get("DateTimeOriginal"):
+            utc = UTC_from_exif( tags["DateTimeOriginal"], tags.get("OffsetTimeOriginal", "00:00"))
+    except Exception as e:
+        logger.error(f"Error extracting EXIF data: {e}")
+        # print( f'no date in {data["filename"]}')
+        utc = get_file_ctime( data["filename"])
 
-    trip_dir = os.path.join( INDEX_DIR, 'trip')
-    # removing the dir of the index is the easiest way to
-    # perform the wipe
-    if os.path.exists(trip_dir):
-      shutil.rmtree(trip_dir)
-    os.makedirs(INDEX_DIR, exist_ok=True)
-
-    logger.info(f"re-index to {trip_dir}")
-    # as the directory is ordered YYYY-MM-DD we can just walk the directory without needing to sort
-    #
-    last_date = 0
-    toplevel = os.path.join( INDEX_DIR, 'date')
-    for dirpath, dirnames, filenames in os.walk(toplevel):
-        if( dirpath == toplevel):
-            print( f'{dirpath} dirnames {dirnames}')
-            continue
-        # for filename in filenames:
-        #     # dirpath should be of the form INDEX_DIR/date/YYYY-MM-DD
-        #     src_path = os.path.join(dirpath, filename)
-        #     status.indexfile(src_path)
-
-
-
+    index_by_date( data["filename"],  utc)
 
 
 # ----------------------------------------------------------------------------
 # start indexing an entire directory, wipes and starts afresh
+# don't use this too often as it will take a while
 def index_dir(topic, data):
     """index_dir"""
     global indexer_ignore_files
@@ -353,13 +322,6 @@ def index_dir(topic, data):
             # give it a second or so
             time.sleep(1)
 
-    logger.info( 'read to index')
-    # now we can rebuild the index, first wipe the old index,
-    # then find all the files and publish them one at a time
-    # to the indexer, this may not be the most efficient
-    # but it does ensure that there are no conflicts between
-    # ongoing operations and this reindex
-
     # removing the dir of the index is the easiest way to
     # perform the wipe
     if os.path.exists(INDEX_DIR):
@@ -369,15 +331,12 @@ def index_dir(topic, data):
     logger.info(f"re-index to {INDEX_DIR}")
     # we re-enable the indexer before we start adding the new files
     indexer_ignore_files = False
+    done = 0 
     for dirpath, dirnames, filenames in os.walk(SOURCE_DIR):
         for filename in filenames:
             src_path = os.path.join(dirpath, filename)
+            # send it to mqtt for processing
             status.indexfile(src_path)
-
-
-    # must happen after the files are indexed
-    print( f"\n\n\nindextrip\n\n\n")
-    status.indextrip()
 
 
 # ----------------------------------------------------------------------------
@@ -386,8 +345,7 @@ def mqtt_listener():
     # Define a dictionary to map topics to handling functions
     handlers = {
         "/photos/indexfile": index_file,
-        "/photos/indexdir": index_dir,
-        "/photos/indextrip": index_trip,
+        "/photos/indexdir": index_dir
     }
 
     msg = Messaging()
@@ -423,11 +381,12 @@ if __name__ == "__main__":
 
     status = Status()
 
+    # start the listener thread
     thIndexer = threading.Thread(target=mqtt_listener)
     thIndexer.start()
+
     if( args.reindex):
         logger.info( 'reindexing')
-        time.sleep(1)
-        # do it the right way and don't call directly
-        status.indexdir()
+        index_dir(None, None)
+        
 
