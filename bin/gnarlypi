@@ -375,7 +375,7 @@ def make_dest(dest):
     """
     make destination directory set ownership to that of parent directory
     """
-    logger.info(f"making {dest}")
+    logger.debug(f"making {dest} if needed")
     os.makedirs(dest, exist_ok=True)
     parent = os.path.dirname(dest)
     stat = os.stat(parent)
@@ -451,9 +451,9 @@ def copyFromDevice(device, useTheForce):
         if mount_drive(device, mount_point):
 
             # if os.path.ismount(mount_point):
-            logger.info(f"is mounted {mount_point}")
+            # logger.info(f"is mounted {mount_point}")
             camera_dir = os.path.join(mount_point, "DCIM")
-            logger.info(f"checking {camera_dir}")
+            # logger.info(f"checking {camera_dir}")
             # test if we have a camera related folder structure
             # Copy files only if its a photo drive
             if os.path.isdir(camera_dir):
