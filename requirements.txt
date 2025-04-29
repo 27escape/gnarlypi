@@ -5,3 +5,4 @@ lock==2018.3.25.2110
 fasteners==0.19
 ruamel.yaml==0.18.10
 psutil==7.0.0
+piexif==1.1.3

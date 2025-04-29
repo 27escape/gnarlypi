@@ -1,6 +1,6 @@
 [project]
 name = "gnarlypi"
-version = "0.2.1"
+version = "0.3.0"
 description = "System to manage photos on a raspberry pi"
 
 authors = [
