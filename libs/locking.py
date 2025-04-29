@@ -2,7 +2,7 @@
 
 import fasteners
 
-LOCKFILE = "/tmp/gnarlypi.lock"
+LOCKFILE = "/tmp/lock.gnarlypi"
 
 
 class Lock:
