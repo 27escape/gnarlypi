@@ -8,7 +8,6 @@ import sys
 import time
 import signal
 import shutil
-import logging
 import threading
 import argparse
 from datetime import datetime, timedelta, timezone
@@ -19,6 +18,7 @@ sys.path.insert(0, "../")
 from libs.status import Status
 from libs.messaging import Messaging
 from libs.config import Config
+from libs.debug import Debug
 
 VERSION = "0.1.0"
 APP_NAME = os.path.basename(__file__) + " v" + VERSION
@@ -28,18 +28,7 @@ COPYRIGHT = "©️2025"
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
 
-logfile = config.get('gnarlypi.logfile')
-logger = logging.getLogger(APP_NAME)
-
-if logfile:
-  logging.basicConfig(filename=logfile,
-                      filemode='a',
-                      encoding='utf-8',
-                      format='%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s',
-                      datefmt='%Y-%m-%d %H:%M:%S',
-                      level=logging.INFO)
-  logger.info("Started")
-
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
 # tell index_file to ignore files
 indexer_ignore_files = False
@@ -49,15 +38,22 @@ last_file_index = datetime.now()
 USER = os.getenv("USER")
 HOME = os.getenv("HOME")
 status = None
+# picked extensions from https://www.file-extensions.org/filetype/extension/name/digital-camera-raw-files
 EXTENSIONS = [
-    "NEF",
     "DNG",
-    "JPG",
-    "JPEG",
-    "ORF",
-    "CR2"
+    "CIB"
+    "NEF", "NRW",
+    "JPG", "JPEG",
+    "ORF", "OIF",
+    "CR2", "CR3",
+    "RAW","RW2", 
+    "FFF", "3PR", "3FR", 
+    "ARW", "SR2", "SRF", "CRAW",
+    "RWL", 
+    "RAF",
+    "SRW",
     "AVI",
-    "MP4",
+    "MP4", ".M4V",
     "MOV"
 ]
 
@@ -186,7 +182,7 @@ def get_file_ctime(file_path):
         # Get the creation time (st_ctime) and convert it to a datetime object
         creation_time = datetime.fromtimestamp(stat_info.st_ctime)
         # put it in the same format that exif uses
-        return creation_time.strftime("%Y:%m:%d %H:%M:%S")
+        return creation_time.strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         logger.error(f"Error getting creation date: {e}")
         return None
@@ -256,19 +252,19 @@ def index_by_date( filename, imgdate):
     
     # YYYY-MM-DD
     imgdate = imgdate.split(' ')[0]
-    destdir = os.path.join( INDEX_DIR, 'date', imgdate)
-    make_dest(destdir)
-    create_unique_symlink( filename, destdir)
+    # destdir = os.path.join( INDEX_DIR, 'date', imgdate)
+    # make_dest(destdir)
+    # create_unique_symlink( filename, destdir)
    
-    y,m,d = imgdate.split('-')
+    yyyy,mm,dd = imgdate.split('-')
     # YYYY
-    destdir = os.path.join( INDEX_DIR, 'yyyy', y)
-    destlink = os.path.join( destdir, os.path.basename(filename))
-    make_dest(destdir)
-    create_unique_symlink( filename, destdir)
+    # destdir = os.path.join( INDEX_DIR, 'yyyy', y)
+    # make_dest(destdir)
+    # create_unique_symlink( filename, destdir)
 
     # YYYY/MM
-    destdir = os.path.join( INDEX_DIR, 'yyyy-mm', y, m)
+    # destdir = os.path.join( INDEX_DIR, 'yyyy-mm', y, m)
+    destdir = os.path.join( INDEX_DIR, yyyy, imgdate)
     make_dest(destdir)
     create_unique_symlink( filename, destdir)
 
@@ -288,7 +284,6 @@ def index_file(topic, data):
         return
 
     logger.info(f'index {data["filename"]} into {INDEX_DIR}')
-
 
     try:
         tags = extract_exif( data["filename"])

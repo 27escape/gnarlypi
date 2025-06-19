@@ -7,7 +7,6 @@ import time
 import psutil
 import shutil
 import signal
-import logging
 import argparse
 import threading
 import subprocess
@@ -19,6 +18,7 @@ from libs.status import Status
 from libs.messaging import Messaging
 from libs.locking import Lock
 from libs.config import Config
+from libs.debug import Debug
 
 VERSION = "0.2.0"
 APP_NAME = os.path.basename(__file__) + " v" + VERSION
@@ -27,21 +27,7 @@ COPYRIGHT = "©️2025"
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
-logfile = config.get("gnarlypi.logfile")
-logger = logging.getLogger(APP_NAME)
-
-if logfile:
-    logging.basicConfig(
-        filename=logfile,
-        filemode="a",
-        encoding="utf-8",
-        format="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.INFO,
-    )
-    logger.info("Started")
-else:
-    print("no logfile set")
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
 # ----------------------------------------------------------------------------
 
@@ -84,20 +70,6 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
-
-
-def abort_handler(sig, frame):
-    """ """
-
-    logger.info("You pressed Ctrl+C!")
-    if len(last_mount):
-        umount_drive(last_mount)
-
-    status.fivelines(("", APP_NAME, "", "crashed", ""))
-    sys.exit(0)
-
-
-signal.signal(signal.SIGHUP, abort_handler)
 
 
 # ----------------------------------------------------------------------------
@@ -656,8 +628,9 @@ if __name__ == "__main__":
         wait_drive_inserted()
         # this will prevent any button presses from being actioned
         setStatusCopying(True)
+        logger.debug("waiting for lock")
         lock.waitLock()
-
+        logger.debug("got lock")
         # Get list of devices via blkid
         for device in getDevices():
             if not wantAbandon():
@@ -666,6 +639,8 @@ if __name__ == "__main__":
         wait_remove_all_devices()
         setStatusCopying(False)
         lock.releaseLock()
+        logger.debug( "released lock")
+        
 
     status.fivelines((APP_NAME, "", "Abandoned", "", "POWER OFF"))
     # force the end of the messages
