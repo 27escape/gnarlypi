@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import fasteners
+import os
 
 LOCKFILE = "/tmp/lock.gnarlypi"
 
@@ -21,11 +22,13 @@ class Lock:
 
     """wait for the gnarlypi lock file to be acquired"""
     def waitLock( self):
-        # print( "waitlock")
         self.lock.acquire()
 
 
     """release for the gnarlypi lock file"""
     def releaseLock( self):
-        # print( "releaselock")
         self.lock.release()
+        # Release the lock and delete the lock file
+        if os.path.exists(self.lockfile):
+            os.remove(self.lockfile)
+        

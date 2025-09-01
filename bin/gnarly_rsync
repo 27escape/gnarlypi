@@ -5,7 +5,6 @@ import re
 import sys
 import time
 import signal
-import logging
 import argparse
 import contextlib
 import subprocess
@@ -15,7 +14,7 @@ sys.path.insert( 0, '../')
 from libs.status import Status
 from libs.locking import Lock
 from libs.config import Config
-
+from libs.debug import Debug
 # ----------------------------------------------------------------------------
 
 USER = os.getenv("USER")
@@ -24,22 +23,7 @@ APP_NAME = os.path.basename(__file__)
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
-logfile = config.get("gnarlypi.logfile")
-logger = logging.getLogger(APP_NAME)
-
-if logfile:
-    logging.basicConfig(
-        filename=logfile,
-        filemode="a",
-        encoding="utf-8",
-        format="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.INFO,
-    )
-    logger.info("Started")
-else:
-    print("no logfile set")
-
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
 copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
 
@@ -51,7 +35,7 @@ def signal_handler(sig, frame):
 
     logger.info("You pressed Ctrl+C!")
 
-    status.fivelines(("", APP_NAME, "", "cancelled", ""))
+    status.fivelines(("", APP_NAME, "", "offline", ""))
     lock.releaseLock()
     sys.exit(3)
 
@@ -59,12 +43,6 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
 
 # ----------------------------------------------------------------------------
-def setLogLevel(loglevel):
-    logging.basicConfig(
-        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
-        level=loglevel,
-    )
-
 # taken from https://stackoverflow.com/questions/803265/getting-realtime-output-using-subprocess
 # Unix, Windows and old Macintosh end-of-line
 newlines = ['\n', '\r\n', '\r']
@@ -108,7 +86,8 @@ def run_rsync_with_progress(source, destination):
         total = 0
 
         # leinfo.sav is a file that is created by gopro's, we don't want to copy it
-        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", source, destination]
+        # we also want symlinks such as those creaed by the index to be copied as files
+        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", "--copy-links", source, destination]
         logger.debug( f"running [{' '.join( rsync_cmd)}]")
 
         # universal_newlines -  Make all end-of-lines '\n'
@@ -240,8 +219,11 @@ if __name__ == "__main__":
       lock = Lock()
 
       # we cannot check the target, this will be down to the user
+      logger.debug( "waitlock")
       lock.waitLock()
+      logger.debug("got lock")
       run_rsync_with_progress(source, target)
       lock.releaseLock()
+      logger.debug( "released lock")
       status.app_resume() ;
 
