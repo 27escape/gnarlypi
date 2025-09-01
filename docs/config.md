@@ -29,6 +29,7 @@ gnarlypi:
   store: "${HOME}/usb_data/"
   force: false
   logfile: "/tmp/gnarlypi.log"
+  loglevel: "debug"
   apps:
     # - gnarly_indexer
     - gnarly_rsync
@@ -97,6 +98,8 @@ The pitft display is larger display, if this is being used, replace the `pitft` 
 **force** force overwriting of the image files, generally this should be **false**, so that when copying from your camera/SD card, only new files will be copied, otherwise all image files will be copied each time, which may take quite some time!
 
 **logfile** where should any log file be written, if this is empty or the field does not exist, then there will not be a logfile created. If needed, write it to the `/tmp` directory, so that it will be wiped on system reboot, there is generally no need to maintain this and not writing it to your storage device would be advantageous.
+
+**loglevel** what level of debug is needed, default to "debug", the usual levels can be used, "info", "error" etc.
 
 **apps** - this is an array of the other gnarlypi applications that should be started up when the main gnarlypi application starts, these applications reside in the `bin` directory. Currently `gnarly_rsync` and `gnarly_indexer` are the only programs available
 
