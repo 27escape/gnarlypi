@@ -28,6 +28,7 @@ gnarlypi:
   store: "${HOME}/usb_data/"
   force: false
   logfile: "/tmp/gnarlypi.log"
+  loglevel: "debug"
   apps:
     # - gnarly_indexer
     # - gnarly_rsync
