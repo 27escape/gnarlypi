@@ -73,14 +73,6 @@ signal.signal(signal.SIGHUP, signal_handler)
 
 
 # ----------------------------------------------------------------------------
-def setLogLevel(loglevel):
-    logging.basicConfig(
-        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
-        level=loglevel,
-    )
-
-
-# ----------------------------------------------------------------------------
 def is_program_running(program_name, kill=False):
     """
     Check if a program is already running and optionally kill it.
@@ -572,7 +564,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     status = Status()
-    lock = Lock()
     TARGET_DIR = config.get("gnarlypi.store")
     FILES_DIR = os.path.join(TARGET_DIR, "files")
     INDEX_DIR = os.path.join(TARGET_DIR, "index")
@@ -628,6 +619,8 @@ if __name__ == "__main__":
         wait_drive_inserted()
         # this will prevent any button presses from being actioned
         setStatusCopying(True)
+        # only aquire the lock when we are ready to copy
+        lock = Lock()
         logger.debug("waiting for lock")
         lock.waitLock()
         logger.debug("got lock")
