@@ -17,7 +17,7 @@ I could carry a small laptop but I have enough weight in my bag with cameras/len
 I am developing this against a Raspberry PI 5, this has a [NVME NANO](https://thepihut.com/products/hatdrive-nano-for-raspberry-pi-5) along with a [WD Black 2TB SN770M   NVME drive 2230 M.2](https://www.amazon.co.uk/dp/B0CN17F7XC), its packed into the standard [Raspberry Pi 5 Case](https://thepihut.com/products/raspberry-pi-5-case), though this needed some modification to allow the fan to work. I did not use the [active cooler fan](https://thepihut.com/products/active-cooler-for-raspberry-pi-5), as there were some reports of this fan being sub-optimal in this case, though my construction may be even more sub-optimal! To read from SD an micro SD cards I use an [Anker 2-in-1 USB 3.0 SD Card Reader](https://www.amazon.co.uk/gp/product/B00LFIXC8I). 
 Finally I Use [Right Angle USB C Male to Female Adapters](https://www.amazon.co.uk/dp/B0BLMSDYWD) to keep the power cable tidy.
 
-![My PI 5 in the official case, mini_pitft display, pineboards NVME nano with 2TB WD NVME, with USB SD card reader and a camera cable connected](docs/mypi.jpg)
+![My PI 5 in PiHut layer case, mini_pitft display, pineboards NVME nano with 2TB WD NVME, with USB SD card reader and a camera cable connected](docs/mypiv2.jpg)
 That is my setup, could do with a nicer case and something stronger than the thin perspex I used for the cover
 
 Depending on devices you connect, then [tall headers](https://thepihut.com/products/40-pin-extra-tall-header-push-fit-version-no-shroud) or [extra tall headers](https://thepihut.com/products/stacking-header-for-pi-a-b-pi-2-pi-3-2x20-extra-tall-header) may come in handy
