@@ -88,15 +88,6 @@ def abort_handler(sig, frame):
 
 signal.signal(signal.SIGHUP, abort_handler)
 
-
-# ----------------------------------------------------------------------------
-def setLogLevel(loglevel):
-    logging.basicConfig(
-        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
-        level=loglevel,
-    )
-
-
 # ----------------------------------------------------------------------------
 def make_dest(dest):
     """
