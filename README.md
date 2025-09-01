@@ -18,7 +18,7 @@ I am developing this against a Raspberry PI 5, this has a [NVME NANO](https://th
 Finally I Use [Right Angle USB C Male to Female Adapters](https://www.amazon.co.uk/dp/B0BLMSDYWD) to keep the power cable tidy.
 
 ![My PI 5 in PiHut layer case, mini_pitft display, pineboards NVME nano with 2TB WD NVME, with USB SD card reader and a camera cable connected](docs/mypiv2.jpg)
-That is my setup, could do with a nicer case and something stronger than the thin perspex I used for the cover
+That is my setup, now with a nicer case, reading direct from my camera.
 
 Depending on devices you connect, then [tall headers](https://thepihut.com/products/40-pin-extra-tall-header-push-fit-version-no-shroud) or [extra tall headers](https://thepihut.com/products/stacking-header-for-pi-a-b-pi-2-pi-3-2x20-extra-tall-header) may come in handy
 
