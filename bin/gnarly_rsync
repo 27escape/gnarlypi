@@ -43,12 +43,6 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
 
 # ----------------------------------------------------------------------------
-def setLogLevel(loglevel):
-    logging.basicConfig(
-        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
-        level=loglevel,
-    )
-
 # taken from https://stackoverflow.com/questions/803265/getting-realtime-output-using-subprocess
 # Unix, Windows and old Macintosh end-of-line
 newlines = ['\n', '\r\n', '\r']
@@ -92,7 +86,8 @@ def run_rsync_with_progress(source, destination):
         total = 0
 
         # leinfo.sav is a file that is created by gopro's, we don't want to copy it
-        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", source, destination]
+        # we also want symlinks such as those creaed by the index to be copied as files
+        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", "--copy-links", source, destination]
         logger.debug( f"running [{' '.join( rsync_cmd)}]")
 
         # universal_newlines -  Make all end-of-lines '\n'
