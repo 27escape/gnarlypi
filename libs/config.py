@@ -36,10 +36,11 @@ class Config:
         # Environment variable pattern ${HOME}
         env_pattern = re.compile(r"\$\{([^}^{]+)\}")
         # Substitute environment variables
-        content = env_pattern.sub(
-            lambda match: os.getenv(match.group(1), match.group(0)), content
-        )
-        return content
+        def env_replace(match):
+            var = match.group(1)
+            value = os.getenv(var)
+            return value if value is not None else match.group(0)
+        return env_pattern.sub(env_replace, content)
 
     def _substitute_references(self):
         """Substitute references to other fields in the loaded YAML data."""
