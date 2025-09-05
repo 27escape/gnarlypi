@@ -34,7 +34,7 @@ delay_action( "status.error")
 status.error("cannot do something", 3, "second error line")
 
 delay_action( "status.ready")
-status.ready()
+status.ready("ready to do stuff")
 
 delay_action( "status.devicedata")
 status.devicedata(65 * BLOCK_SIZE, 40* BLOCK_SIZE, 256 * BLOCK_SIZE, 80 * BLOCK_SIZE)
