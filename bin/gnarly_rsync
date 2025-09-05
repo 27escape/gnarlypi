@@ -88,7 +88,7 @@ def run_rsync_with_progress(source, destination):
         # leinfo.sav is a file that is created by gopro's, we don't want to copy it
         # we also want symlinks such as those creaed by the index to be copied as files
         rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", "--copy-links", source, destination]
-        logger.debug( f"running [{' '.join( rsync_cmd)}]")
+        logger.info( f"running [{' '.join( rsync_cmd)}]")
 
         # universal_newlines -  Make all end-of-lines '\n'
         # this means we will also get line updates during copy process that would have ended with \r
@@ -219,11 +219,11 @@ if __name__ == "__main__":
       lock = Lock()
 
       # we cannot check the target, this will be down to the user
-      logger.debug( "waitlock")
+      logger.debug( "rsync waitlock")
       lock.waitLock()
-      logger.debug("got lock")
+      logger.debug("rsync got lock")
       run_rsync_with_progress(source, target)
       lock.releaseLock()
-      logger.debug( "released lock")
+      logger.debug( "rsync released lock")
       status.app_resume() ;
 
