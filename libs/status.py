@@ -28,7 +28,7 @@ class Status:
             error_lvl (int)     concern level of the error, the higher the error_lvl
                                 the more concerning it is 1..3
 
-            msg2      (str)     a secondary message thta can be displayed on some
+            msg2      (str)     a secondary message that can be displayed on some
                                 status devices
         """
 
@@ -37,9 +37,10 @@ class Status:
         )
 
     # ----------------------------------------------------------------------------
-    def ready(self):
+    def ready(self, msg):
         """show that the system is ready to accept an SD card insertion"""
-        self.msg.publish("/photos/ready")
+        print( f"ststus.py Status ready: {msg}" )
+        self.msg.publish("/photos/ready", {"msg": msg})
 
     # ----------------------------------------------------------------------------
     # this may be ignored by some devices

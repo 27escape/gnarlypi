@@ -105,12 +105,6 @@ def wait_time(sleeptime):
     count = 0
     while True:
         status.keepalive()
-        # send keep alive every 10s
-        # if not (count % 10):
-        #     logger.debug(f"waiting {count}s")
-        #     # status.keepalive()
-        #     # reset the counter so it does not get huge
-        #     count = 0
         time.sleep(1)
         count += 1
         if count >= sleeptime:
@@ -361,11 +355,9 @@ def getDevices():
                 # there may be a nicer way to represent this conditional
                 # but for now, it works and is readable
                 if parts[5] == "part":
-                    # logger.info(f"device {parts[0]} is {parts[6]} ({dev})")
                     if len(parts) != 7:
                         # currently unmounted so assume OK
                         devices.append("/dev/" + parts[0])
-                        # logger.info(f"device {parts[0]} is unmounted")
                     else:
                         tmpname = "/dev/" + parts[0]
                         # on first run this will be empty, but filled at the start of main
@@ -375,9 +367,6 @@ def getDevices():
                         # if not any(parts[6] in device for device in startup_devices):
                         if tmpname not in startup_devices:
                             devices.append(tmpname)
-                        # can't use the root or boot drives
-                        # if parts[6] != "/" and not parts[6].startswith("/boot/"):
-                        #     devices.append("/dev/" + parts[0])
 
     except subprocess.CalledProcessError as e:
         print(f"Error running lsblk: {e}")
@@ -413,11 +402,7 @@ def copyFromDevice(device, useTheForce):
     # Check if device isn't already mounted
     if not os.path.ismount(mount_point):
         if mount_drive(device, mount_point):
-
-            # if os.path.ismount(mount_point):
-            # logger.info(f"is mounted {mount_point}")
             camera_dir = os.path.join(mount_point, "DCIM")
-            # logger.info(f"checking {camera_dir}")
             # test if we have a camera related folder structure
             # Copy files only if its a photo drive
             if os.path.isdir(camera_dir):
@@ -440,6 +425,9 @@ def copyFromDevice(device, useTheForce):
 # ----------------------------------------------------------------------------
 def wait_drive_inserted():
     while True:
+        status.ready("Insert SD card")
+        update_drive_stats()
+
         devices = getDevices()
         if len(devices) != 0:
             break
@@ -481,7 +469,7 @@ def status_button(topic, dData):
 # re-draw the main screen
 def status_app_resume(topic, data):
     status.clear()
-    status.ready()
+    status.ready("Insert SD card")
     update_drive_stats()
 
 
@@ -581,7 +569,6 @@ if __name__ == "__main__":
     # lets allow our apps time to settle in
     time.sleep(3)
 
-    # print( "Starting gnarlypi" )
     # get the list of devices already mounted at startup
     # so we can ignore them later
     startup_devices = getDevices()
@@ -613,10 +600,10 @@ if __name__ == "__main__":
         if wantAbandon():
             break
 
-        status.ready()
+        status.ready( "Insert SD card")
         update_drive_stats()
-
         wait_drive_inserted()
+        
         # this will prevent any button presses from being actioned
         setStatusCopying(True)
         # only aquire the lock when we are ready to copy

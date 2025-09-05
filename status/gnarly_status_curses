@@ -213,9 +213,9 @@ def status_ready(topic, data):
 
     cls()
     if data:
-        if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
-            print_msg("..waiting for SD", 2)
-            last_status_time = data["_epoch"]
+        # if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
+        print_msg(data["msg"], 2)
+        last_status_time = data["_epoch"]
 
 
 # ----------------------------------------------------------------------------

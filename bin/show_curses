@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# ----------------------------------------------------------------------------
+
+# for your user, create an entry in your crontab
+# @reboot /home/$USER/gnarlypi/be_gnarly
+
+# ----------------------------------------------------------------------------
+
+source "$HOME/gnarlypi/setenv.sh"
+
+# run curses status display
+"$HOME/gnarlypi/status/gnarly_status_curses"
+

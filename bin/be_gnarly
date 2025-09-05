@@ -6,13 +6,7 @@
 
 # ----------------------------------------------------------------------------
 
-export FULL_PATH="$HOME/gnarlypi"
-export GNARLY_ERR_LOG="/tmp/gnarlypi.err"
-export BIN_PATH=$FULL_PATH/bin
-export GNARLYPI_CONFIG=$HOME/gnarlypi/gnarlypi.yml
-
-# need to set this so python knows where the libraries are
-export PYTHONPATH="$FULL_PATH:$PYTHONPATH"
+source "$HOME/gnarlypi/setenv.sh"
 
 cd "$BIN_PATH" || (echo "cannot find dir $BIN_PATH" && exit 1)
 

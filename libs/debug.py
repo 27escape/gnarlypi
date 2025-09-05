@@ -46,7 +46,8 @@ class DebugLogger:
 def Debug(name, logfile=None, level=logging.INFO):
     """Initialize logging for the application."""
 
-    logger = logging.getLogger(name=__file__)      
+    # logger = logging.getLogger(name=__file__)      
+    logger = logging.getLogger(name=name)      
     # debugger = DebugLogger( logger)     
       
     match level.lower():
