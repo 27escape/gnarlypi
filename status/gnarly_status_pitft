@@ -297,8 +297,11 @@ def status_error(topic, data):
 # ----------------------------------------------------------------------------
 def status_ready(topic, data):
     """status_ready"""
-    clr_line(3)
-    center_line("Insert SD card", 2, GREEN)
+    clr_line(2)
+    if data and "msg" in data:
+        center_line(data["msg"], 2, GREEN)
+    else:
+        center_line("--Insert SD Card", 2, GREEN)
     update_display()
 
 

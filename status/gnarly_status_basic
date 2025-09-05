@@ -43,7 +43,10 @@ def status_ready(topic, data):
     global last_status_time
     if data:
         if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
-            print("System is ready and waiting for SD card")
+            if "msg" in data and len(data["msg"]):
+                print(data["msg"])  
+            else:
+                print("..waiting for SD")
             last_status_time = data["_epoch"]
 
 
