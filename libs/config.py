@@ -31,18 +31,9 @@ class Config:
         self.updated = False
         self._load()
 
-    # def _substitute_env_vars(self, content):
-    #     """Substitute environment variables in the YAML content."""
-    #     # Environment variable pattern ${HOME}
-    #     env_pattern = re.compile(r"\$\{([^}^{]+)\}")
-    #     # Substitute environment variables
-    #     content = env_pattern.sub(
-    #         lambda match: os.getenv(match.group(1), match.group(0)), content
-    #     )
-    #     return content
-
     def _substitute_env_vars(self, content):
         """Substitute environment variables in the YAML content."""
+        # Environment variable pattern ${HOME}
         env_pattern = re.compile(r"\$\{([^}^{]+)\}")
         # Substitute environment variables
         def env_replace(match):
