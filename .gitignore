@@ -5,3 +5,5 @@ libs/__pycache__/
 sync.sh
 off
 z
+node_modules
+.npm
