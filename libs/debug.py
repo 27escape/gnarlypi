@@ -55,7 +55,7 @@ def Debug(name, logfile=None, level=logging.INFO):
             loglevel = logging.DEBUG
         case "info" | logging.INFO:
             loglevel = logging.INFO
-        case "warning" | logging.WARNING:
+        case "warning" | "warn" | logging.WARNING:
             loglevel = logging.WARNING
         case "error" | logging.ERROR:
             loglevel = logging.ERROR
