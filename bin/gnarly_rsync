@@ -198,8 +198,8 @@ if __name__ == "__main__":
         logger.info("Do not run this script as root")
         sys.exit(1)
 
-    source = config.get('rsync.source')
-    target = config.get('rsync.target')
+    source = config.get('rsync.source').replace("//", "/")
+    target = config.get('rsync.target').replace("//", "/")
 
     parser = argparse.ArgumentParser(
         description=f"Copy backed up photos from {source} to a {target} using rsync, change values in config file"
