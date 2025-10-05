@@ -271,7 +271,7 @@ def show_tx_stats(filename, bps):
 def signal_handler(sig, frame):
     # print("You pressed Ctrl+C!")
     cls()
-    display_center_text("display offline", PURPLE)
+    display_center_text("system offline", PURPLE)
     update_display()
     sys.exit(0)
 
@@ -282,15 +282,15 @@ signal.signal(signal.SIGINT, signal_handler)
 # ----------------------------------------------------------------------------
 def status_error(topic, data):
     """status_error"""
-    cls()
+    # cls()
     update_display()
     msg = "Error"
     if "level" in data:
         msg += f":{data['level']}"
-    center_line(msg, 0, WHITE, RED)
-    center_line(data["msg"], 1, WHITE)
+    center_line(msg, 2, WHITE, RED)
+    center_line(data["msg"], 3, WHITE, RED)
     if "msg2" in data and len(data["msg2"]):
-        center_line(data["msg2"], 3, RED)
+        center_line(data["msg2"], 4, RED)
     update_display()
 
 

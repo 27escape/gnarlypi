@@ -31,8 +31,8 @@ logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.l
 
 # ----------------------------------------------------------------------------
 
-ONE_MB = 1024 * 1024 * 1024
-READ_SIZE = 64 * 1024 * 1024
+ONE_MB = 1024 * 1024
+READ_SIZE = 16 * ONE_MB
 # time between checks for card mounted
 WAIT_TIME = 1
 
@@ -53,6 +53,9 @@ status = None
 copy_status = DotWiz({"in_copy_process": False, "copy_abandon": False})
 startup_devices = []
 
+def print_error(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
 # ----------------------------------------------------------------------------
 
 
@@ -64,7 +67,6 @@ def signal_handler(sig, frame):
         umount_drive(last_mount)
 
     status.fivelines(("", APP_NAME, "", "offline", ""))
-    lock.releaseLock()
     sys.exit(0)
 
 
@@ -112,6 +114,12 @@ def wait_time(sleeptime):
 
 
 # ----------------------------------------------------------------------------
+def wait_forever( msg1, level, msg2=""):
+    while True:
+        status.error(msg1, level, msg2)
+        wait_time( 1)
+
+# ----------------------------------------------------------------------------
 def check_freespace(target, required):
     while True:
         total, used, free = shutil.disk_usage(os.path.dirname(target))
@@ -120,7 +128,7 @@ def check_freespace(target, required):
         else:
             status.diskfull()
             logger.error(f"cannot store {target}, device is full")
-            wait_time(60)
+            wait_forever( "disk full", 1, "remove files")
 
 
 # ----------------------------------------------------------------------------
@@ -192,10 +200,11 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
             )
 
             while chunk := f_in.read(READ_SIZE):
-                if wantAbandon():
-                    raise Exception("Abandon required")
+                # if wantAbandon():
+                #     raise Exception("Abandon required")
 
-                f_out.write(chunk)
+                f_out.write(chunk)  
+                # logger.info(f"copying {src_path} to {dst_path} size {total}, chunk {len(chunk)}, total copied {copied}")
                 copied += len(chunk)
                 status.copydata(
                     src_path,
@@ -251,33 +260,32 @@ def rCopy(src, dst, force):
                 total += 1
 
     status.startcopy(file_count=total)
-    logger.info(f"copying {total} files from {src} to {dst}")
 
     for dirpath, dirnames, filenames in os.walk(src):
-        if not wantAbandon():
-            for filename in filenames:
-                src_path = os.path.join(dirpath, filename)
-                dst_path = os.path.join(dst, os.path.relpath(src_path, src))
-                # Create destination directory structure if needed
-                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                update = 0
-                if force or not os.path.exists(dst_path):
-                    update = 1
+        # if not wantAbandon():
+        for filename in filenames:
+            src_path = os.path.join(dirpath, filename)
+            dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+            # Create destination directory structure if needed
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            update = 0
+            if force or not os.path.exists(dst_path):
+                update = 1
 
-                if copy_file(
-                    src_path,
-                    dst_path,
-                    force,
-                    copy_stats={"copied": copied, "total": total},
-                ):
-                    # only update the copy count if there was a file to copy
-                    copied += update
-                else:
-                    fails += 1
-                    if wantAbandon():
-                        logger.info("abandon copying")
-                        break
-                logger.debug(f"({copied}/{total})")
+            if copy_file(
+                src_path,
+                dst_path,
+                force,
+                copy_stats={"copied": copied, "total": total},
+            ):
+                # only update the copy count if there was a file to copy
+                copied += update
+            else:
+                fails += 1
+                # if wantAbandon():
+                #     logger.info("abandon copying")
+                #     break
+            logger.debug(f"({copied}/{total})")
     if fails:
         logger.error(f"failed to copy {fails} files in {total}")
     update_drive_stats()
@@ -320,7 +328,7 @@ def umount_drive(mount):
                 # remove the mount point to keep the drive tidy, no other reason
                 os.rmdir(mount)
             else:
-                logger.info("unmount failed")
+                logger.error("unmount failed")
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to umount drive: {e}")
@@ -333,12 +341,15 @@ def make_dest(dest):
     """
     make destination directory set ownership to that of parent directory
     """
-    logger.debug(f"making {dest} if needed")
-    os.makedirs(dest, exist_ok=True)
-    parent = os.path.dirname(dest)
-    stat = os.stat(parent)
-    os.chown(dest, stat.st_uid, stat.st_gid)
-
+    try: 
+        logger.debug(f"making {dest} if needed")
+        os.makedirs(dest, exist_ok=True)
+        parent = os.path.dirname(dest)
+        stat = os.stat(parent)
+        os.chown(dest, stat.st_uid, stat.st_gid)
+    except Exception as e:
+        logger.error(f"Failed to make destination {dest}: {e}")
+        wait_forever("cannot make dir", 4, "check logs")
 
 # ----------------------------------------------------------------------------
 # find attached devices
@@ -396,7 +407,6 @@ def copyFromDevice(device, useTheForce):
     # Get list of currently mounted devices under /dev/disk/by-label
     mount_point = os.path.join(HOME, "mounts", os.path.basename(device))
     if not os.path.exists(mount_point):
-        logger.info(f"make mount point {mount_point}")
         make_dest(mount_point)
 
     # Check if device isn't already mounted
@@ -410,7 +420,6 @@ def copyFromDevice(device, useTheForce):
                 rCopy(camera_dir, FILES_DIR, useTheForce)
             else:
                 logger.debug("drive does not contain photo files")
-                logger.info("no files")
             # Unmount the drive
             update_drive_stats()
             umount_drive(mount_point)
@@ -425,7 +434,7 @@ def copyFromDevice(device, useTheForce):
 # ----------------------------------------------------------------------------
 def wait_drive_inserted():
     while True:
-        status.ready("Insert SD card")
+        status.ready("")
         update_drive_stats()
 
         devices = getDevices()
@@ -442,34 +451,34 @@ def setStatusCopying(flag=True):
 
 
 # ----------------------------------------------------------------------------
-def setAbandonCopying(flag=True):
-    copy_status.copy_abandon = flag
+# def setAbandonCopying(flag=True):
+#     copy_status.copy_abandon = flag
 
 
 # ----------------------------------------------------------------------------
-def wantAbandon():
-    return copy_status.copy_abandon
+# def wantAbandon():
+#     return copy_status.copy_abandon
 
 
 # ----------------------------------------------------------------------------
 # handle a button press, we can allow A/B/C while waiting to copy
 # BUT just C (cancel) during the copy process
-def status_button(topic, dData):
-    data = DotWiz(dData)
-    if not copy_status.in_copy_process:
-        logger.info(f"button '{data.button}' received")
-    else:
-        if data.button == "C":
-            setAbandonCopying()
+# def status_button(topic, dData):
+#     data = DotWiz(dData)
+#     if not copy_status.in_copy_process:
+#         logger.info(f"button '{data.button}' received")
+#     else:
+#         if data.button == "C":
+#             setAbandonCopying()
 
-        logger.info(f"discarding button '{data.button}'")
+#         logger.info(f"discarding button '{data.button}'")
 
 
 # ----------------------------------------------------------------------------
 # re-draw the main screen
 def status_app_resume(topic, data):
     status.clear()
-    status.ready("Insert SD card")
+    status.ready("")
     update_drive_stats()
 
 
@@ -478,21 +487,21 @@ def status_app_resume(topic, data):
 msg = Messaging()
 
 
-def thread_buttons():
+# def thread_buttons():
 
-    # Define a dictionary to map topics to handling functions
-    handlers = {
-        "/photos/button": status_button,
-        "/photos/app_resume": status_app_resume,
-    }
+#     # Define a dictionary to map topics to handling functions
+#     handlers = {
+#         "/photos/button": status_button,
+#         "/photos/app_resume": status_app_resume,
+#     }
 
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
+#     # if we pass handlers, then we will also kickoff the loop
+#     msg.connect(handlers)
 
 
 # ----------------------------------------------------------------------------
 # start the status apps, assumes we are in bin dir
-def start_status():
+def start_status_apps():
     apps = config.get("status.devices")
     if apps and len(apps) != 0:
       for app in apps:
@@ -540,7 +549,6 @@ def daemonise():
         os.dup2(devnull.fileno(), sys.stdout.fileno())
         os.dup2(devnull.fileno(), sys.stderr.fileno())
 
-
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
@@ -561,46 +569,45 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    start_status()
-    # start these after the status, as they may report status on startup
+    start_status_apps()
+
+    if not TARGET_DIR or not len(TARGET_DIR):
+        logger.error(f"Missing photo dir ${TARGET_DIR}")
+        wait_forever("Missing photo dir", 2, "Fix and reboot")
+        
+    make_dest(TARGET_DIR)
+
+    if not os.path.isdir(TARGET_DIR):
+        logger.error(f"Bad TARGET dir ${TARGET_DIR}")
+        wait_forever("Bad photo dir", 3, "Fix and reboot")
+
+    logger.info(f"Using photo dir {TARGET_DIR}")
+    status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
+
     start_apps()
     daemonise()
-
-    # lets allow our apps time to settle in
-    time.sleep(3)
+    # time to let things settle and the user see the copyright message
+    wait_time(3)
 
     # get the list of devices already mounted at startup
     # so we can ignore them later
     startup_devices = getDevices()
     logger.info(f"startup devices {startup_devices}")
 
-    if not TARGET_DIR or not len(TARGET_DIR):
-        status.error("Missing photo dir", 2, "Fix and reboot")
-
-    status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
-    # lets allow our info to display
-    time.sleep(3)
-
-    make_dest(TARGET_DIR)
-
-    if not os.path.isdir(TARGET_DIR):
-        status.error("Bad photo dir", 3, "Fix and reboot")
-        while True:
-            time.sleep(1)
-
     status.clear()
 
-    thButtons = threading.Thread(target=thread_buttons)
-    thButtons.start()
+    # thButtons = threading.Thread(target=thread_buttons)
+    # thButtons.start()
 
     status.show_mode( {  "copy": True })
     # main thread performing file copies
     # Loop to continuously monitor for USB drives
+    
     while True:
-        if wantAbandon():
-            break
+        # if wantAbandon():
+        #     break
 
-        status.ready( "Insert SD card")
+        status.ready("")
         update_drive_stats()
         wait_drive_inserted()
         
@@ -611,10 +618,11 @@ if __name__ == "__main__":
         logger.debug("waiting for lock")
         lock.waitLock()
         logger.debug("got lock")
+
         # Get list of devices via blkid
         for device in getDevices():
-            if not wantAbandon():
-                copyFromDevice(device, config.get("gnarlypi.force"))
+            # if not wantAbandon():
+            copyFromDevice(device, config.get("gnarlypi.force"))
 
         wait_remove_all_devices()
         setStatusCopying(False)

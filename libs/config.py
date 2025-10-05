@@ -31,23 +31,25 @@ class Config:
         self.updated = False
         self._load()
 
-    def _substitute_env_vars(self, content):
-        """Substitute environment variables in the YAML content."""
-        # Environment variable pattern ${HOME}
+    def _substitute_references(self):
+        """Substitute references to other fields (e.g., $(key)) and environment variables (e.g., ${VAR})
+        in the loaded YAML data.
+        """
+        ref_pattern = re.compile(r"\$\(([^)]+)\)")
+        # New pattern for environment variables: ${VAR}
         env_pattern = re.compile(r"\$\{([^}^{]+)\}")
-        # Substitute environment variables
-        def env_replace(match):
+
+        def replace_env_var(match):
+            """Helper to replace ${VAR} with os.getenv('VAR')."""
             var = match.group(1)
             value = os.getenv(var)
             return value if value is not None else match.group(0)
-        return env_pattern.sub(env_replace, content)
 
-    def _substitute_references(self):
-        """Substitute references to other fields in the loaded YAML data."""
-        ref_pattern = re.compile(r"\$\(([^)]+)\)")
-
-        def replace_ref(value):
+        def replace_all(value):
             if isinstance(value, str):
+                # First, substitute environment variables
+                value = env_pattern.sub(replace_env_var, value)
+                # Second, substitute internal references
                 return ref_pattern.sub(
                     lambda match: self.get(match.group(1), match.group(0)), value
                 )
@@ -60,35 +62,36 @@ class Config:
                         walk_and_substitute(value)
                     elif isinstance(value, list):
                         data[key] = [
-                            replace_ref(item) if isinstance(item, str) else item
+                            replace_all(item) if isinstance(item, str) else item
                             for item in value
                         ]
                     else:
-                        data[key] = replace_ref(value)
+                        data[key] = replace_all(value)
             elif isinstance(data, list):
                 for index, item in enumerate(data):
                     if isinstance(item, dict):
                         walk_and_substitute(item)
                     elif isinstance(item, str):
-                        data[index] = replace_ref(item)
+                        data[index] = replace_all(item)
 
         walk_and_substitute(self.data)
 
+
     def _load(self):
-        """Load the YAML file into the data dictionary and substitute environment variables."""
+        """Load the YAML file into the data dictionary.""" # Removed old reference to env var sub
         if os.path.exists(self.filepath):
             with open(self.filepath, "r") as file:
                 content = file.read()
-                content = self._substitute_env_vars(content)
+                # content = self._substitute_env_vars(content) # REMOVE THIS LINE
                 self.data = yaml.load(content) or {}
-                self._substitute_references()
+                self._substitute_references() # This now handles both env vars and internal references
                 if not self.data:
                     raise ValueError(
                         f"Invalid YAML content in configuration file {self.filepath}"
                     )
         else:
             raise ValueError(f"Invalid path to config file {self.filepath}")
-
+        
     def _get_nested(self, keys, default=None):
         """Get a value from a nested dictionary using a list of keys."""
         data = self.data
