@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 
 from .messaging import Messaging
 
@@ -35,11 +35,14 @@ class Status:
         self.msg.publish(
             "/photos/error", {"msg": error_msg, "level": error_lvl, "msg2": msg2}
         )
+        print(f"status.py Status error: {error_msg} level: {error_lvl} msg2: {msg2}")
 
     # ----------------------------------------------------------------------------
     def ready(self, msg):
         """show that the system is ready to accept an SD card insertion"""
-        print( f"ststus.py Status ready: {msg}" )
+        if not msg or msg is None:
+            msg = "Insert SD Card"
+        print( f"status.py Status ready: {msg}" )
         self.msg.publish("/photos/ready", {"msg": msg})
 
     # ----------------------------------------------------------------------------
