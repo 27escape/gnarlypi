@@ -27,17 +27,14 @@ logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.l
 
 copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
 
+
 # ----------------------------------------------------------------------------
 
 
 def signal_handler(sig, frame):
     """ """
-
-    logger.info("You pressed Ctrl+C!")
-
-    status.fivelines(("", APP_NAME, "", "offline", ""))
-    lock.releaseLock()
-    sys.exit(3)
+    logger.info(f"Exit requested for {APP_NAME} by signal {sig}")
+    sys.exit(1)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
@@ -77,7 +74,6 @@ def run_rsync_with_progress(source, destination):
     """
 
     status.clear()
-    status.show_mode( { "sync" : True})
 
     try:
         current_file = ""
@@ -96,8 +92,8 @@ def run_rsync_with_progress(source, destination):
         proc = subprocess.Popen(rsync_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         while proc.poll() is None:
-            if wantAbandon():
-              raise Exception( 'Abandon required')
+            # if wantAbandon():
+            #   raise Exception( 'Abandon required')
 
             # line = proc.stdout.readline().decode("utf-8").strip()
             line = proc.stdout.readline().strip()
@@ -113,7 +109,9 @@ def run_rsync_with_progress(source, destination):
                   0,
                   filesize,
                   (total - left),
-                  total
+                  total,
+                  0,
+                  True
                 )
 
             # catch updates to file copy stats
@@ -149,12 +147,18 @@ def run_rsync_with_progress(source, destination):
                   bytes_copied,
                   (total - left),
                   total,
-                  int(bps)
+                  int(bps),
+                  True
                 )
+                
         if total:
           logger.info( f"backed up {total} files/folders")
-        status.show_mode( { "sync" : False })
-        # status.fivelines(( "", "Completed", "", f"{total} files", ""))
+
+        # let the user know things have been copied 
+        if total:
+          status.fivelines(( "", "Completed", "", f"{total} files", ""))
+          time.sleep(5)
+          status.fivelines(( "", "", "", "", ""))
 
 
     except subprocess.CalledProcessError as e:
@@ -163,67 +167,48 @@ def run_rsync_with_progress(source, destination):
 
 
 # ----------------------------------------------------------------------------
-def setStatusCopying(flag=True):
-    copy_status.in_copy_process = flag
-
-# ----------------------------------------------------------------------------
-def setAbandonCopying(flag=True):
-  copy_status.copy_abandon = flag
-
-# ----------------------------------------------------------------------------
-def wantAbandon():
-  return copy_status.copy_abandon
-
-
-# ----------------------------------------------------------------------------
-# handle a button press, we can allow A/B/C while waiting to copy
-# BUT just C (cancel) during the copy process
-def status_button(topic, dData):
-    data = DotWiz(dData)
-    if data.button == 'C':
-      setAbandonCopying()
-      logger.info(f"abandoning button '{data.button}'")
-      # end the listening loop
-      msg.client_disconnect()
-
-def status_error(topic, dData):
-  print("ignoreme")
-
-
-# ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
 
     if USER == "root":
         logger.info("Do not run this script as root")
-        sys.exit(1)
-
-    source = config.get('rsync.source').replace("//", "/")
-    target = config.get('rsync.target').replace("//", "/")
-
-    parser = argparse.ArgumentParser(
-        description=f"Copy backed up photos from {source} to a {target} using rsync, change values in config file"
-    )
-
-    # Check if source dierctory exists
-    if not os.path.exists(source) or not os.path.isdir( source):
-        logger.info(f"Error: Source '{source}' is not a directory.")
-        print(f"Error: Source '{source}' is not a directory.")
         sys.exit(2)
 
+    try:
 
-    while True:
-      time.sleep( int(config.get('rsync.sleep')))
+      source = config.get('rsync.source').replace("//", "/")
+      target = config.get('rsync.target')
 
+      parser = argparse.ArgumentParser(
+          description=f"Copy backed up photos from {source} to a {target} using rsync, change values in config file"
+      )    
+      args = parser.parse_args()
+
+      # Check if source dierctory exists
+      if not os.path.exists(source) or not os.path.isdir( source):
+          logger.info(f"Error: Source '{source}' is not a directory.")
+          print(f"Error: Source '{source}' is not a directory.")
+          sys.exit(3)
+      
       status = Status()
-      lock = Lock()
+      
+      while True:
+        # default to 10 mins
+        time.sleep( int(config.get('rsync.sleep', 600)))
 
-      # we cannot check the target, this will be down to the user
-      logger.debug( "rsync waitlock")
-      lock.waitLock()
-      logger.debug("rsync got lock")
-      run_rsync_with_progress(source, target)
-      lock.releaseLock()
-      logger.debug( "rsync released lock")
-      status.app_resume() ;
+        lock = Lock()
 
+        # we cannot check the target, this will be down to the user
+        logger.debug( "rsync waitlock")
+        lock.waitLock()
+        logger.debug("rsync got lock")
+        status.ready("running rsync...")
+        run_rsync_with_progress(source, target)
+        lock.releaseLock()
+        logger.debug( "rsync released lock")
+        status.ready("INSERT SD CARD")
+        
+    except Exception as e:
+      logger.error(f"Error: {e}")
+      print(f"Error: {e}")
+      sys.exit(1)

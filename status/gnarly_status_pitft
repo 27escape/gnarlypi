@@ -21,6 +21,8 @@ DISPLAY_HEIGHT = 135
 DISPLAY_WIDTH = 240
 X_OFFSET = 53
 Y_OFFSET = 40
+# where perc bars etc start
+STAT_OFFSET = 70
 ROTATION = 90
 NEW_LINE = FONT_SIZE + 2
 
@@ -44,9 +46,6 @@ FILE_COLOR = YELLOW
 COPY_COLOR = RED
 SD_COLOR = MAGENTA
 HD_COLOR = CYAN
-
-current_mode = {}
-
 
 # ----------------------------------------------------------------------------
 # this is the board hardware
@@ -150,7 +149,7 @@ def progress_bar(x, y, width, height, progress, fg=WHITE, bg=BLACK):
 def show_progress_bar(text, y, progress, color=WHITE, bg=BLACK):
     draw.text((0, y), text, font=font, fill=color)
     offset = FONT_SIZE / 2
-    progress_bar(70, y + (offset / 2), 170, FONT_SIZE - offset, progress, color)
+    progress_bar(STAT_OFFSET, y + (offset / 2), 170, FONT_SIZE - offset, progress, color)
 
 
 # ----------------------------------------------------------------------------
@@ -199,37 +198,15 @@ def print_line(txt, line=2, color=WHITE, txt2=""):
     # print( f"print_line {txt}")
     draw.text((0, line * NEW_LINE), txt, font=font, fill=color)
     if txt2 != "":
-        draw.text((70, line * NEW_LINE), txt2, font=font, fill=color)
+        draw.text((STAT_OFFSET, line * NEW_LINE), txt2, font=font, fill=color)
     # disp.image(image, ROTATION)
 
-# ----------------------------------------------------------------------------
-# current mode flags
-# COPY, SYNC, INDEX, HOTSPOT, WIFI
-# it all happens on line 0
-
-mode_flags = [
-    "copy",
-    "sync",
-    "index",
-    "hotspot",
-    "wifi",
-]
 
 # ----------------------------------------------------------------------------
 # this will perform the slow disp.image call for all the other small writes to the display
 # it should only be called after all the other draw calls have been performed
 def update_display():
-    mode_str = ""
-    
-    for key in mode_flags:
-        if key and current_mode and current_mode.get(key):
-            mode_str += key[0].upper()
-        else:
-            mode_str += " "     
-
-    now = mode_str + time.strftime("%X")
-    # center_line(now, 0)
-    print_line(now, 0)
+    center_line(time.strftime("%X"), 0)
     disp.image(image, ROTATION)
 
 
@@ -255,6 +232,9 @@ def show_hd(percent, line=4):
 
 def show_file_stats(filenum, total):
     print_line("File", 6, WHITE, f"{filenum}/{total}")
+
+def show_remain_stats(left):
+    print_line("Left", 6, WHITE, f"{left}")
 
 
 def show_tx_stats(filename, bps):
@@ -301,7 +281,8 @@ def status_ready(topic, data):
     if data and "msg" in data:
         center_line(data["msg"], 2, GREEN)
     else:
-        center_line("--Insert SD Card", 2, GREEN)
+        # center_line("Insert SD Card", 2, GREEN)
+        center_line("", 2, WHITE, GREEN)
     update_display()
 
 
@@ -336,7 +317,10 @@ def status_copydata(topic, data):
         show_copy(data["copied"] / data["size"])
 
     show_files(data["files_copied"] / data["files_total"])
-    show_file_stats(data["files_copied"], data["files_total"])
+    if data["rsync"]:
+        show_remain_stats(data["files_total"] - data["files_copied"])
+    else:
+        show_file_stats(data["files_copied"], data["files_total"])
 
     if not data["copied"]:
         start_copy_time = time.time()
@@ -415,14 +399,6 @@ def status_cls(topic, data):
 
 
 # ----------------------------------------------------------------------------
-# set the current mode
-def status_update_mode(topic, data):
-    global current_mode
-
-    for key, value in data.items():
-        current_mode[key] = value
-    update_display()
-
 
 # ----------------------------------------------------------------------------
 def mqtt_listener():
@@ -439,7 +415,6 @@ def mqtt_listener():
         "/photos/keepalive": status_keepalive,
         "/photos/fivelines": status_fivelines,
         "/photos/cls": status_cls,
-        "/photos/show_mode": status_update_mode,
     }
 
     msg = Messaging()

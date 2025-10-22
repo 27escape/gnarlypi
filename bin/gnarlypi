@@ -75,6 +75,29 @@ signal.signal(signal.SIGHUP, signal_handler)
 
 
 # ----------------------------------------------------------------------------
+
+def get_rpi_model():
+    """Get the Raspberry Pi hardware model. Return None if not a Pi."""
+    try:
+        with open('/proc/cpuinfo', 'r') as f:
+            for line in f:
+                if line.startswith('Model'):
+                    model = line.strip().split(':')[1].strip()
+                    return model
+    except FileNotFoundError:
+        logger.error("Could not read /proc/cpuinfo. Are you running on a Raspberry Pi?")
+        return None
+
+
+def is_zero():
+    """Check if the Raspberry Pi is a Zero model."""
+    model = get_rpi_model()
+    if model and 'Zero' in model:
+        return True
+    return False
+
+
+# ----------------------------------------------------------------------------
 def is_program_running(program_name, kill=False):
     """
     Check if a program is already running and optionally kill it.
@@ -158,7 +181,6 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
     Returns:
         True if the file is copied successfully or already exists, False otherwise.
     """
-    logger.debug(f"copy {src_path} to {dst_path} with force as {force}")
     # Check if source file exists
     if not os.path.isfile(src_path):
         logger.warning(f"Error: Source file '{src_path}' does not exist.")
@@ -177,8 +199,10 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
         if src_stat.st_mtime == os.stat(
             dst_path
         ).st_mtime and src_stat.st_size == os.path.getsize(dst_path):
-            return True
+            logger.debug(f"skipping copy {src_path} as {dst_path}, already exists")    
+            return False
 
+    logger.debug(f"copy {src_path} to {dst_path} with force as {force}")
     # use a temp file in case of failure, so would not overwrite an existing file
     tmpdest = f"{dst_path}.tmp"
     # Copy the file
@@ -200,11 +224,7 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
             )
 
             while chunk := f_in.read(READ_SIZE):
-                # if wantAbandon():
-                #     raise Exception("Abandon required")
-
                 f_out.write(chunk)  
-                # logger.info(f"copying {src_path} to {dst_path} size {total}, chunk {len(chunk)}, total copied {copied}")
                 copied += len(chunk)
                 status.copydata(
                     src_path,
@@ -280,14 +300,15 @@ def rCopy(src, dst, force):
             ):
                 # only update the copy count if there was a file to copy
                 copied += update
+                logger.debug(f"({copied}/{total})")
             else:
                 fails += 1
                 # if wantAbandon():
                 #     logger.info("abandon copying")
                 #     break
-            logger.debug(f"({copied}/{total})")
     if fails:
         logger.error(f"failed to copy {fails} files in {total}")
+    logger.debug(f"total ({copied}/{total})")
     update_drive_stats()
     status.indextrip()
     status.endcopy(files_copied=copied, file_count=total)
@@ -433,8 +454,8 @@ def copyFromDevice(device, useTheForce):
 
 # ----------------------------------------------------------------------------
 def wait_drive_inserted():
+    status.ready("Insert SD card")
     while True:
-        status.ready("")
         update_drive_stats()
 
         devices = getDevices()
@@ -444,59 +465,8 @@ def wait_drive_inserted():
 
 
 # ----------------------------------------------------------------------------
-def setStatusCopying(flag=True):
-    copy_status.in_copy_process = flag
-    status.show_mode( {  "copy": flag })
-
-
-
-# ----------------------------------------------------------------------------
-# def setAbandonCopying(flag=True):
-#     copy_status.copy_abandon = flag
-
-
-# ----------------------------------------------------------------------------
-# def wantAbandon():
-#     return copy_status.copy_abandon
-
-
-# ----------------------------------------------------------------------------
-# handle a button press, we can allow A/B/C while waiting to copy
-# BUT just C (cancel) during the copy process
-# def status_button(topic, dData):
-#     data = DotWiz(dData)
-#     if not copy_status.in_copy_process:
-#         logger.info(f"button '{data.button}' received")
-#     else:
-#         if data.button == "C":
-#             setAbandonCopying()
-
-#         logger.info(f"discarding button '{data.button}'")
-
-
-# ----------------------------------------------------------------------------
-# re-draw the main screen
-def status_app_resume(topic, data):
-    status.clear()
-    status.ready("")
-    update_drive_stats()
-
-
-# ----------------------------------------------------------------------------
 # thread to listen for button press messages
 msg = Messaging()
-
-
-# def thread_buttons():
-
-#     # Define a dictionary to map topics to handling functions
-#     handlers = {
-#         "/photos/button": status_button,
-#         "/photos/app_resume": status_app_resume,
-#     }
-
-#     # if we pass handlers, then we will also kickoff the loop
-#     msg.connect(handlers)
 
 
 # ----------------------------------------------------------------------------
@@ -504,10 +474,12 @@ msg = Messaging()
 def start_status_apps():
     apps = config.get("status.devices")
     if apps and len(apps) != 0:
-      for app in apps:
-          if not is_program_running(app, True):
-              logger.info(f"starting {app}")
-              subprocess.Popen([os.path.join("..", "status", app)])
+        for app in apps:
+            if not is_program_running(app, True):
+                logger.info(f"starting {app}")
+                #   ensure environment is passed to the new process
+                env = os.environ.copy()
+                subprocess.Popen([os.path.join("..", "status", app)], env=env)
 
     # give them a sec to start and settle
     time.sleep(1)
@@ -518,10 +490,11 @@ def start_status_apps():
 def start_apps():
     apps = config.get("gnarlypi.apps")
     if apps and len(apps) != 0:
-      for app in apps:
-          if not is_program_running(app, True):
-              logger.info(f"starting {app}")
-              subprocess.Popen([os.path.join("..", "bin", app)])
+        for app in apps:
+            if not is_program_running(app, True):
+                logger.info(f"starting {app}")
+                env = os.environ.copy()
+                subprocess.Popen([os.path.join("..", "bin", app)], env=env)
 
 
 # ----------------------------------------------------------------------------
@@ -559,77 +532,77 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    status = Status()
-    TARGET_DIR = config.get("gnarlypi.store").replace("//", "/")
-    FILES_DIR = os.path.join(TARGET_DIR, "files")
-    INDEX_DIR = os.path.join(TARGET_DIR, "index")
+    try:
 
-    parser = argparse.ArgumentParser(
-        description=f"Watch for USB drive insertions and copy any photo files from them to {TARGET_DIR}, change this in config file"
-    )
-    args = parser.parse_args()
+        status = Status()
+        TARGET_DIR = config.get("gnarlypi.store")
+        FILES_DIR = os.path.join(TARGET_DIR, "files")
+        INDEX_DIR = os.path.join(TARGET_DIR, "index")
 
-    start_status_apps()
+        parser = argparse.ArgumentParser(
+            description=f"Watch for USB drive insertions and copy any photo files from them to {TARGET_DIR}, change this in config file"
+        )
+        args = parser.parse_args()
 
-    if not TARGET_DIR or not len(TARGET_DIR):
-        logger.error(f"Missing photo dir ${TARGET_DIR}")
-        wait_forever("Missing photo dir", 2, "Fix and reboot")
-        
-    make_dest(TARGET_DIR)
+        start_status_apps()
 
-    if not os.path.isdir(TARGET_DIR):
-        logger.error(f"Bad TARGET dir ${TARGET_DIR}")
-        wait_forever("Bad photo dir", 3, "Fix and reboot")
+        if not TARGET_DIR or not len(TARGET_DIR):
+            logger.error(f"Missing photo dir ${TARGET_DIR}")
+            wait_forever("Missing photo dir", 2, "Fix and reboot")
+            
+        make_dest(TARGET_DIR)
 
-    logger.info(f"Using photo dir {TARGET_DIR}")
-    status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
+        if not os.path.isdir(TARGET_DIR):
+            logger.error(f"Bad TARGET dir ${TARGET_DIR}")
+            wait_forever("Bad photo dir", 3, "Fix and reboot")
 
-    start_apps()
-    daemonise()
-    # time to let things settle and the user see the copyright message
-    wait_time(3)
+        logger.info(f"Using photo dir {TARGET_DIR}")
 
-    # get the list of devices already mounted at startup
-    # so we can ignore them later
-    startup_devices = getDevices()
-    logger.info(f"startup devices {startup_devices}")
+        pause_time = 1
+        if is_zero():
+            logger.info("Running on a Pi Zero")
+            # time to let things settle and the user see the copyright message
+            pause_time = 3
+        time.sleep( pause_time)
 
-    status.clear()
+        status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
 
-    # thButtons = threading.Thread(target=thread_buttons)
-    # thButtons.start()
+        start_apps()
+        daemonise()
+        wait_time(3)
 
-    status.show_mode( {  "copy": True })
-    # main thread performing file copies
-    # Loop to continuously monitor for USB drives
+        # get the list of devices already mounted at startup
+        # so we can ignore them later
+        startup_devices = getDevices()
+        logger.info(f"startup devices {startup_devices}")
+
+        status.clear()
+
+        # main thread performing file copies
+        # Loop to continuously monitor for USB drives
     
-    while True:
-        # if wantAbandon():
-        #     break
+        while True:
 
-        status.ready("")
-        update_drive_stats()
-        wait_drive_inserted()
-        
-        # this will prevent any button presses from being actioned
-        setStatusCopying(True)
-        # only aquire the lock when we are ready to copy
-        lock = Lock()
-        logger.debug("waiting for lock")
-        lock.waitLock()
-        logger.debug("got lock")
+            update_drive_stats()
+            wait_drive_inserted()
+            
+            # only aquire the lock when we are ready to copy
+            lock = Lock()
+            logger.debug("waiting for lock")
+            lock.waitLock()
+            logger.debug("got lock")
 
-        # Get list of devices via blkid
-        for device in getDevices():
-            # if not wantAbandon():
-            copyFromDevice(device, config.get("gnarlypi.force"))
+            # Get list of devices via blkid
+            for device in getDevices():
+                # if not wantAbandon():
+                copyFromDevice(device, config.get("gnarlypi.force"))
 
-        wait_remove_all_devices()
-        setStatusCopying(False)
-        lock.releaseLock()
-        logger.debug( "released lock")
-        
+            wait_remove_all_devices()
+            lock.releaseLock()
+            logger.debug( "released lock")
+            
 
-    status.fivelines((APP_NAME, "", "Abandoned", "", "POWER OFF"))
-    # force the end of the messages
-    msg.client_disconnect()
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(f"Error: {e}")
+        sys.exit(1)        

@@ -43,7 +43,10 @@ class Config:
             """Helper to replace ${VAR} with os.getenv('VAR')."""
             var = match.group(1)
             value = os.getenv(var)
-            return value if value is not None else match.group(0)
+            if value is None:
+                raise Exception(f"Environment variable {var} not set for configuration substitution in f{match}.")
+            # return value if value is not None else match.group(0)
+            return value
 
         def replace_all(value):
             if isinstance(value, str):
