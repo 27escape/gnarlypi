@@ -14,7 +14,8 @@ class Status:
         server (str)            defaults to localhost
 
     """
-
+    
+    
     def __init__(self, server="localhost") -> None:
         self.server = server
         self.msg = Messaging()
@@ -40,8 +41,6 @@ class Status:
     # ----------------------------------------------------------------------------
     def ready(self, msg):
         """show that the system is ready to accept an SD card insertion"""
-        if not msg or msg is None:
-            msg = "Insert SD Card"
         print( f"status.py Status ready: {msg}" )
         self.msg.publish("/photos/ready", {"msg": msg})
 
@@ -85,6 +84,7 @@ class Status:
         files_copied=0,
         file_count=0,
         bps=0,
+        rsync=False,
     ):
         """update data during a file copy process
 
@@ -97,6 +97,7 @@ class Status:
             file_count      (int)   total number of files to be copied
             bps             (int)   for secondary programs that perform copy processes,
                                     send the bytes per second
+            
         """
         self.msg.publish(
             "/photos/copydata",
@@ -108,6 +109,7 @@ class Status:
                 "files_copied": files_copied,
                 "files_total": file_count,
                 "bps": bps,
+                "rsync": rsync,
             },
         )
 
@@ -214,13 +216,3 @@ class Status:
 
 
     # ----------------------------------------------------------------------------
-    def show_mode( self, data ):
-        """send the mode to the display, while anything can be sent
-        copy, index and sync are currently the usual ones, they should be True
-        or False
-
-        Args:
-            data (dict)     mode data to be displayed
-        """
-        # print( f"show_mode {data}")
-        self.msg.publish( "/photos/show_mode", data )
