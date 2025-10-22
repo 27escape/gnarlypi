@@ -243,18 +243,8 @@ def index_by_date( filename, imgdate):
     
     # YYYY-MM-DD
     imgdate = imgdate.split(' ')[0]
-    # destdir = os.path.join( INDEX_DIR, 'date', imgdate)
-    # make_dest(destdir)
-    # create_unique_symlink( filename, destdir)
    
     yyyy,mm,dd = imgdate.split('-')
-    # YYYY
-    # destdir = os.path.join( INDEX_DIR, 'yyyy', y)
-    # make_dest(destdir)
-    # create_unique_symlink( filename, destdir)
-
-    # YYYY/MM
-    # destdir = os.path.join( INDEX_DIR, 'yyyy-mm', y, m)
     destdir = os.path.join( INDEX_DIR, yyyy, imgdate)
     make_dest(destdir)
     create_unique_symlink( filename, destdir)
@@ -282,7 +272,6 @@ def index_file(topic, data):
             utc = UTC_from_exif( tags["DateTimeOriginal"], tags.get("OffsetTimeOriginal", "00:00"))
     except Exception as e:
         logger.error(f"Error extracting EXIF data: {e}")
-        # print( f'no date in {data["filename"]}')
         utc = get_file_ctime( data["filename"])
 
     index_by_date( data["filename"],  utc)
@@ -349,32 +338,36 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    SOURCE_DIR = config.get("indexer.files")
-    SOURCE_DIR = SOURCE_DIR.replace("//", "/")
-    INDEX_DIR = config.get("indexer.index")
-    INDEX_DIR = INDEX_DIR.replace("//", "/")
-    # VARIANCE = config.get("indexer.trip_variance")
+    try:
+        SOURCE_DIR = config.get("indexer.files")
+        SOURCE_DIR = SOURCE_DIR.replace("//", "/")
+        INDEX_DIR = config.get("indexer.index")
+        INDEX_DIR = INDEX_DIR.replace("//", "/")
 
-    parser = argparse.ArgumentParser(
-        description=f"photo indexer to read mqtt messages and create index for photo files, runs forever, indexes from {SOURCE_DIR} to {INDEX_DIR}"
-    )
-    parser.add_argument(
-        "-r",
-        "--reindex",
-        action="store_true",
-        help="Re-index the entire source tree",
-    )
+        parser = argparse.ArgumentParser(
+            description=f"photo indexer to read mqtt messages and create index for photo files, runs forever, indexes from {SOURCE_DIR} to {INDEX_DIR}"
+        )
+        parser.add_argument(
+            "-r",
+            "--reindex",
+            action="store_true",
+            help="Re-index the entire source tree",
+        )
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    status = Status()
+        status = Status()
 
-    # start the listener thread
-    thIndexer = threading.Thread(target=mqtt_listener)
-    thIndexer.start()
+        # start the listener thread
+        thIndexer = threading.Thread(target=mqtt_listener)
+        thIndexer.start()
 
-    if( args.reindex):
-        logger.info( 'reindexing')
-        index_dir(None, None)
-        
+        if( args.reindex):
+            logger.info( 'reindexing')
+            index_dir(None, None)
+            
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(f"Error: {e}")
+        sys.exit(1)        
 
