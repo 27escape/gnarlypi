@@ -99,7 +99,7 @@ The pitft display is larger display, if this is being used, replace the `pitft` 
 
 **logfile** where should any log file be written, if this is empty or the field does not exist, then there will not be a logfile created. If needed, write it to the `/tmp` directory, so that it will be wiped on system reboot, there is generally no need to maintain this and not writing it to your storage device would be advantageous.
 
-**loglevel** what level of debug is needed, default to "debug", the usual levels can be used, "info", "error" etc.
+**loglevel** what level of debug is needed, default to "debug", the usual levels can be used, "info", "warn", "error" etc.
 
 **apps** - this is an array of the other gnarlypi applications that should be started up when the main gnarlypi application starts, these applications reside in the `bin` directory. Currently `gnarly_rsync` and `gnarly_indexer` are the only programs available
 
@@ -111,8 +111,6 @@ If the indexer application has been declared as one of the apps to run from the 
 
 **index** this is where symlinks to the original files will be created, symlinks are valid on linux drives (ext2, ext3 and ext4) and use very little space, these symlinks will be available either when connecting to the system over Samba or may be used when copying to a remote system, such as a NAS.
 
-**trip_variance** The indexer creates creates directories for each day that photos were taken, as well as each year-month. In addition to this it attempts to decide if consecutive days of photographs create a 'trip' that is a collection of days of photos, the variance is the number of days that are allowed to be empty of photographs before a collection is considered to be closed. The default is **0**, so each day needs to follow the next, **1** would allow gaps of 1 day and **2** 2 days etc. 
-
 ### rsync section
 
 If the rsync application has been declared as one of the apps to run from the gnarlypi section, then it will read this section of the config.
@@ -121,6 +119,6 @@ If the rsync application has been declared as one of the apps to run from the gn
 
 **target** This is where files will be copied to, this could be a remote system that allows a SSH/SFTP or rsync connection as is shown in the example but could also be a local path that is a mount point for a remote system such as a NAS
 
-**sleep** This is the time in seconds before rsync backup attempts. If the system is not connected to a network, then nothing happens with the rsync. If it is connected to a network, such as when you are at home, then its useful for this to be a shortish value such as **300** i.e. 5 minutes, so that your images will be backed up quite quicly after you have copied them from your SD card.
+**sleep** This is the time in seconds before rsync backup attempts. If the system is not connected to a network, then nothing happens with the rsync. If it is connected to a network, such as when you are at home, then its useful for this to be a shortish value such as **300** i.e. 5 minutes, so that your images will be backed up quite quickly after you have copied them from your SD card.
 
 
