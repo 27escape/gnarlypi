@@ -25,5 +25,10 @@ done
 # remove any previous log files
 rm -f /tmp/gnarlypi* 2>/dev/null
 
+if [ -z "$USER" ]; then
+  echo "USER not set, must be running from cron, setting to LOGNAME $LOGNAME" >> $GNARLY_ERR_LOG
+  export USER=$LOGNAME
+fi
+
 # this will start up other apps as required, inc the status displays
 "./gnarlypi"  >> $GNARLY_ERR_LOG 2>&1
