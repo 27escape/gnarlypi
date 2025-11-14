@@ -310,7 +310,7 @@ def rCopy(src, dst, force):
         logger.error(f"failed to copy {fails} files in {total}")
     logger.debug(f"total ({copied}/{total})")
     update_drive_stats()
-    status.indextrip()
+    # status.indextrip()
     status.endcopy(files_copied=copied, file_count=total)
 
 
