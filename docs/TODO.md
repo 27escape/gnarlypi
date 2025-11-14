@@ -56,3 +56,19 @@ Something like the [Micro Journal rev 2](https://liliputing.com/micro-journal-re
 [Planet Computers](https://www.www3.planetcom.co.uk/) may have a suitable device but would need to a USB hub to have bigger external storage. The Gemini and Cosmo models are kinda at the top end of the price range for what I am trying to achieve. _Not sure if they are still in operation_
 
 For something that is not rPi based, then the linux based https://www.unihiker.com/, its around $80, so may be interesting, not as powerful but built in screen and memory, would still need to add an SD card reader, maybe something nice could be done with a 3D printer here
+
+
+### Alternatives to the pi
+
+An interesting alternative to using Pi's could be to use an OrangePi with just a large SD card and connect to the camera using USB cables, which I have been doing more often than removing SD cards anyway.
+The OrangePi has USBC which means one less cable type to carry
+
+The Orange Pi Zero 2W (£25) https://www.amazon.co.uk/Allwinner-Quad-core-Cortex-A53-Zero2W-1G/dp/B0F5LZ348Z
+and a suitable case (£5) https://www.amazon.co.uk/Bewinner-Acrylic-Protector-Transparent-Development/dp/B0CQ5HZNGV
+Storage to a micro SD (£31 for 512GB), should be plenty for individual trips or a number of months  https://www.amazon.co.uk/SanDisk-512GB-microSDXC-adapter-Performance/dp/B0B7NVXLLM
+Male GPIO hammer in headers (£2) https://thepihut.com/products/gpio-hammer-header-solderless?variant=28950973009
+Adafruit MiniPiTFT 1.3inch 240x240 (£15) https://thepihut.com/products/adafruit-mini-pitft-1-3-240x240-tft-add-on-for-raspberry-pi
+
+This gets a complete usable systems for less than £80!
+
+This could also be accomplished with a regular Pi setup if a suitable case can be found that can include the display, the Pi 5 Layer case could work as could the pibow case for the pi zero but in that latter instance you would also need to create extra layers and get long screws to hold it together. Of course if you have a 3D printer, then you are sorted :)
