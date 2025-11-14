@@ -28,7 +28,7 @@ gnarlypi:
   store: "${HOME}/usb_data/"
   force: false
   logfile: "/tmp/gnarlypi.log"
-  loglevel: "debug"
+  loglevel: "info"
   apps:
     # - gnarly_indexer
     # - gnarly_rsync
@@ -37,8 +37,6 @@ indexer:
   trip_variance: 2
   files: "${HOME}/Pictures"
   index: "${HOME}/tmp/index"
-  files-o: "$(gnarlypi.store)/files"
-  index-o: "$(gnarlypi.store)/index"
 
 rsync:
   sleep: 300

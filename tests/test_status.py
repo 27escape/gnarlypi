@@ -21,14 +21,10 @@ print( f"sending MQTT status messages\nMessage action happens AFTER keypress\n")
 
 status = Status()
 
-status.show_mode( {
-    "copy": True,
-    "sync": True,
-    "index": True,
-    "hotspot": True,
-    "wifi": True,
-})
 status.keepalive()
+
+delay_action( "welcome message")
+status.fivelines( ("", "", "starting", "", ""))
 
 delay_action( "status.error")
 status.error("cannot do something", 3, "second error line")

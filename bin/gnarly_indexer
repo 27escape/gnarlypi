@@ -20,7 +20,7 @@ from libs.messaging import Messaging
 from libs.config import Config
 from libs.debug import Debug
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 APP_NAME = os.path.basename(__file__) + " v" + VERSION
 CREATOR = "27escape"
 COPYRIGHT = "©️2025"
@@ -46,10 +46,10 @@ EXTENSIONS = [
     "JPG", "JPEG",
     "ORF", "OIF",
     "CR2", "CR3",
-    "RAW","RW2", 
-    "FFF", "3PR", "3FR", 
+    "RAW","RW2",
+    "FFF", "3PR", "3FR",
     "ARW", "SR2", "SRF", "CRAW",
-    "RWL", 
+    "RWL",
     "RAF",
     "SRW",
     "AVI",
@@ -165,7 +165,7 @@ def get_file_ctime(file_path):
         file_path (str): The path to the file.
 
     Returns:
-        datetime: The creation date of the file.
+        datetime: The creation date of the file as YYYY:MM:DD HH:MM:SS
     """
     try:
         # Get the file's status
@@ -173,7 +173,7 @@ def get_file_ctime(file_path):
         # Get the creation time (st_ctime) and convert it to a datetime object
         creation_time = datetime.fromtimestamp(stat_info.st_ctime)
         # put it in the same format that exif uses
-        return creation_time.strftime("%Y-%m-%d %H:%M:%S")
+        return creation_time.strftime("%Y:%m:%d %H:%M:%S")
     except Exception as e:
         logger.error(f"Error getting creation date: {e}")
         return None
@@ -210,12 +210,38 @@ def extract_exif(file_path):
         # print(f"Error extracting EXIF data: {e}")
         info["DateTimeOriginal"] = get_file_ctime(file_path)
         info["OffsetTimeOriginal"] = "00:00"
-    
+
     # some cameras set a partially empty time offset
     if re.match(r"^\s*:", info.get("OffsetTimeOriginal", "")):
         info["OffsetTimeOriginal"] = "00:00"
-    
+
     return info
+
+# ----------------------------------------------------------------------------
+def create_symlink(target_file, symlink_name):
+    """
+    Creates a symbolic link and sets its access and modification times
+    to match those of the target file.
+    """
+    try:
+        target_stat = os.stat(target_file)
+        atime = target_stat.st_atime
+        mtime = target_stat.st_mtime
+
+        # create the symlink
+        os.symlink(target_file, symlink_name)
+        logger.debug(f"Created symlink: '{symlink_name}' -> '{target_file}'")
+
+        # set the time on the symlink, not the target
+        os.utime(symlink_name, (atime, mtime), follow_symlinks=False)
+        logger.debug(f"Times of '{symlink_name}' to match '{target_file}'.")
+
+    except FileNotFoundError:
+        logger.error(f"Error: Target file '{target_file}' not found.")
+    except FileExistsError:
+        logger.error(f"Error: Symlink '{symlink_name}' already exists.")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
 
 
 # ----------------------------------------------------------------------------
@@ -232,7 +258,7 @@ def create_unique_symlink(src_file, target_dir):
         i += 1
         logger.error(f"Symlink already exists, creating new symlink: {symlink_path} {i}")
 
-    os.symlink(src_file, symlink_path)
+    create_symlink(src_file, symlink_path)
 
 # ----------------------------------------------------------------------------
 # add a single file to the index
@@ -240,10 +266,10 @@ def create_unique_symlink(src_file, target_dir):
 
 def index_by_date( filename, imgdate):
     """index symlink file by date in image metadata"""
-    
+
     # YYYY-MM-DD
     imgdate = imgdate.split(' ')[0]
-   
+
     yyyy,mm,dd = imgdate.split('-')
     destdir = os.path.join( INDEX_DIR, yyyy, imgdate)
     make_dest(destdir)
@@ -274,6 +300,8 @@ def index_file(topic, data):
         logger.error(f"Error extracting EXIF data: {e}")
         utc = get_file_ctime( data["filename"])
 
+    if( topic == "direct"):
+        logger.info( f"indexing {data['filename']} date {utc}")
     index_by_date( data["filename"],  utc)
 
 
@@ -306,12 +334,13 @@ def index_dir(topic, data):
     logger.info(f"re-index to {INDEX_DIR}")
     # we re-enable the indexer before we start adding the new files
     indexer_ignore_files = False
-    done = 0 
+    done = 0
     for dirpath, dirnames, filenames in os.walk(SOURCE_DIR):
         for filename in filenames:
             src_path = os.path.join(dirpath, filename)
-            # send it to mqtt for processing
-            status.indexfile(src_path)
+            # direct processing
+            index_file( "direct", { "filename": src_path})
+    logger.info( 're-index completed')
 
 
 # ----------------------------------------------------------------------------
@@ -320,7 +349,6 @@ def mqtt_listener():
     # Define a dictionary to map topics to handling functions
     handlers = {
         "/photos/indexfile": index_file,
-        "/photos/indexdir": index_dir
     }
 
     msg = Messaging()
@@ -345,7 +373,7 @@ if __name__ == "__main__":
         INDEX_DIR = INDEX_DIR.replace("//", "/")
 
         parser = argparse.ArgumentParser(
-            description=f"photo indexer to read mqtt messages and create index for photo files, runs forever, indexes from {SOURCE_DIR} to {INDEX_DIR}"
+            description=f"photo indexer to read mqtt messages and create index for photo files, runs forever, indexes from {SOURCE_DIR} to {INDEX_DIR}\nif re-indexing, will exit when finished"
         )
         parser.add_argument(
             "-r",
@@ -358,16 +386,19 @@ if __name__ == "__main__":
 
         status = Status()
 
-        # start the listener thread
-        thIndexer = threading.Thread(target=mqtt_listener)
-        thIndexer.start()
-
         if( args.reindex):
             logger.info( 'reindexing')
             index_dir(None, None)
-            
+            print( 're-index complete')
+            sys.exit(0)
+        else:
+            # start the listener thread
+            thIndexer = threading.Thread(target=mqtt_listener)
+            thIndexer.start()
+
+
     except Exception as e:
         logger.error(f"Error: {e}")
         print(f"Error: {e}")
-        sys.exit(1)        
+        sys.exit(1)
 

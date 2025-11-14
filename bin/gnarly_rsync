@@ -15,6 +15,7 @@ from libs.status import Status
 from libs.locking import Lock
 from libs.config import Config
 from libs.debug import Debug
+
 # ----------------------------------------------------------------------------
 
 USER = os.getenv("USER")
@@ -156,9 +157,9 @@ def run_rsync_with_progress(source, destination):
 
         # let the user know things have been copied 
         if total:
-          status.fivelines(( "", "Completed", "", f"{total} files", ""))
+          status.fivelines(( "", "Completed", "", f"{total} files", ""), "blue")
           time.sleep(5)
-          status.fivelines(( "", "", "", "", ""))
+          status.fivelines(( "", "", "", "", ""), "black")
 
 
     except subprocess.CalledProcessError as e:

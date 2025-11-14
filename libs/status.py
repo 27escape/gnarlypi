@@ -201,18 +201,4 @@ class Status:
         """
         self.msg.publish("/photos/indexfile", {"filename": filename})
 
-    # ----------------------------------------------------------------------------
-    def indexdir(self):
-        """re-create index symlinks, config file holds directory info,
-        all previous index should be removed
-
-        """
-        self.msg.publish("/photos/indexdir")
-
-    # ----------------------------------------------------------------------------
-    def indextrip(self):
-        """create trip index symlinks from files in index/date/{YYYY-MM-DD}"""
-        self.msg.publish("/photos/indextrip")
-
-
-    # ----------------------------------------------------------------------------
+   
