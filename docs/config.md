@@ -16,6 +16,7 @@ status:
     # - gnarly_status_curses
     # - gnarly_status_ledshim
     - gnarly_status_pitft
+    - gnarly_status_web
   pitft:
     rotation: 0
     font_size: 24
@@ -31,13 +32,15 @@ gnarlypi:
   logfile: "/tmp/gnarlypi.log"
   loglevel: "debug"
   apps:
-    # - gnarly_indexer
+    - gnarly_indexer
     - gnarly_rsync
 
 indexer:
   files: "$(gnarlypi.store)/files"
   index: "$(gnarlypi.store)/index"
-  trip_variance: 2
+
+status_web:
+  port: 8027
 
 rsync:
   source: "$(indexer.index)"
@@ -49,46 +52,46 @@ In this example, we can see that all of the status devices are commented out exc
 
 ### status section
 
-**devices** this is an array of the device status programs to start when the main gnarlypi application starts, these can be found in the `status` directory, only start the ones that are relevant to the devices that you have connected to your rPI, it is unlikely that you have both the pitft and the mnini_pitft connected at the same time. Also the gnarly_status_basic is generally used for debugging and is not otherwise useful for the running of the system.
+**devices** this is an array of the device status programs to start when the main gnarlypi application starts, these can be found in the `status` directory, only start the ones that are relevant to the devices that you have connected to your rPI.
 
+- `gnarly_status_pitft` - uses either the 135x240 or 240x240 Adafruit MiniTFT display (https://thepihut.com/products/adafruit-mini-pitft-135x240-color-tft-add-on-for-raspberry-pi-ada4393 or https://thepihut.com/products/adafruit-mini-pitft-1-3-240x240-tft-add-on-for-raspberry-pi)
+- `gnarly_status_web` - runs a webserver that your computer browser can connect to
+- `gnarly_status_ledshim` - uses the basic light bar https://thepihut.com/products/led-shim
+- `gnarly_status_blinkt` - uses the extra basic light bar https://thepihut.com/products/blinkt
+- `gnarly_status_curses` - should not be run via gnarlypi as it reports to the console
+- `gnarly_status_basic` - should not be run via gnarlypi as it reports to the console 
 
-**devices.pitft** this subsection is used by the mini_pitft and the pitft devices
+**devices.pitft** this subsection is used by the mini_pitft (135x240) and the pitft devices (240x240)
 
-- rotation is 90, 270 for the mini_pitft and, 0 or 180 for the pitft 
-- font_size hopefully its descriptive enough
-- newline is a bit more than the font_size, where the next line should follow on the display
-- display_height and display_width set the size of the display
-- x_offset and y_offset are used to show where the writable area starts
+- `rotation` is 90, 270 for the mini_pitft and, 0 or 180 for the pitft 
+- `font_size` is the size of the font
+- `newline` is the vertical line spacing, slightly more than the font size
+- `display_height` and `display_width` set the size of the display
+- `x_offset` and `y_offset` are used to show where the writable area starts
 
-#### settings for mini_pitft
-
-The mini_pitft display is a different size, if this is being used, replace the `pitft` section in `status` with the following
-
+For the 135x240 display the section would be
 ```yaml
+ # mini pitft config
   pitft:
-    rotation: 90
+    rotation: 270
     font_size: 14
-    newline: 16
     display_height: 135
     display_width: 240
     x_offset: 53
     y_offset: 40
+    newline: 16
 ```
-
-
-#### settings for pitft
-
-The pitft display is larger display, if this is being used, replace the `pitft` section in `status` with the following
-
+and for the 240x240 display the section is
 ```yaml
+  # full size pitft
   pitft:
     rotation: 0
     font_size: 24
-    newline: 28
     display_height: 240
     display_width: 240
     x_offset: 0
     y_offset: 80
+    newline: 28
 ```
 
 ### gnarlypi section
@@ -121,4 +124,9 @@ If the rsync application has been declared as one of the apps to run from the gn
 
 **sleep** This is the time in seconds before rsync backup attempts. If the system is not connected to a network, then nothing happens with the rsync. If it is connected to a network, such as when you are at home, then its useful for this to be a shortish value such as **300** i.e. 5 minutes, so that your images will be backed up quite quickly after you have copied them from your SD card.
 
+### status_web section
+
+If using the web status reporter, it is possible to define the port that the web server is listening on
+
+**port** This is the port number, in this config example we are using port 8027. You would connect to it from your browser as `http://devicename:8027/` replacing device name with either the name that your system knows the gnarlypi as or its IP address e.g. `http://192.168.0.128:8027/`
 

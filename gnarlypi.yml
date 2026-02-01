@@ -1,11 +1,12 @@
 status:
   devices:
-    # - gnarly_status_basic
-    # - gnarly_status_blinkt
-    # - gnarly_status_curses
-    # - gnarly_status_ledshimrm
-    # - gnarly_status_mini_pitft
     - gnarly_status_pitft
+    - gnarly_status_web
+    # - gnarly_status_blinkt
+    # - gnarly_status_ledshim
+    # these should only be run via the console
+    # - gnarly_status_curses
+    # - gnarly_status_basic
   pitft:
     rotation: 0
     font_size: 24
@@ -16,7 +17,7 @@ status:
     newline: 28
 
   # settings for the mini_pitft, copy these to the pitft section if needed
-    # rotation: 90
+    # rotation: 270
     # font_size: 14
     # display_height: 135
     # display_width: 240
@@ -30,11 +31,11 @@ gnarlypi:
   logfile: "/tmp/gnarlypi.log"
   loglevel: "info"
   apps:
-    # - gnarly_indexer
-    # - gnarly_rsync
+    - gnarly_indexer
+    - gnarly_rsync
+    - gnarly_web
 
 indexer:
-  trip_variance: 2
   files: "${HOME}/Pictures"
   index: "${HOME}/tmp/index"
 
@@ -42,6 +43,9 @@ rsync:
   sleep: 300
   source: "$(indexer.index)"
   target: ${USER}@homeassistant:/forSamba/NVME
+
+status_web:
+  port: 8027
 
 # hotspot:
 #   name: "gnarly
