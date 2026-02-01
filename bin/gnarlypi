@@ -169,7 +169,7 @@ def update_drive_stats():
 # ----------------------------------------------------------------------------
 
 
-def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total": 0}):
+def copy_file(src_path, dst_path, force=False, copy_stats=None):
     """
     Copies a file from source to destination, checking existence, size, and modification time.
 
@@ -186,6 +186,10 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
         logger.warning(f"Error: Source file '{src_path}' does not exist.")
         return False
 
+    # initialize copy stats if not provided
+    if copy_stats is None:
+        copy_stats = {"copied": 0, "total": 0}
+        
     # Get source file stats
     src_stat = os.stat(src_path)
     # Check if destination file exists
@@ -200,7 +204,7 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
             dst_path
         ).st_mtime and src_stat.st_size == os.path.getsize(dst_path):
             logger.debug(f"skipping copy {src_path} as {dst_path}, already exists")    
-            return False
+            return True
 
     logger.debug(f"copy {src_path} to {dst_path} with force as {force}")
     # use a temp file in case of failure, so would not overwrite an existing file
@@ -271,7 +275,7 @@ def rCopy(src, dst, force):
     logger.info(f"copying files from {src} to {dst} with force {force}")
 
     update_drive_stats()
-    # count files that we need to copy
+    # only count files that we need to copy
     for dirpath, dirnames, filenames in os.walk(src):
         for filename in filenames:
             src_path = os.path.join(dirpath, filename)
@@ -282,30 +286,24 @@ def rCopy(src, dst, force):
     status.startcopy(file_count=total)
 
     for dirpath, dirnames, filenames in os.walk(src):
-        # if not wantAbandon():
         for filename in filenames:
             src_path = os.path.join(dirpath, filename)
             dst_path = os.path.join(dst, os.path.relpath(src_path, src))
             # Create destination directory structure if needed
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            update = 0
+            
+            # only attempt copy if file does not exist or force is set
             if force or not os.path.exists(dst_path):
-                update = 1
-
-            if copy_file(
-                src_path,
-                dst_path,
-                force,
-                copy_stats={"copied": copied, "total": total},
-            ):
-                # only update the copy count if there was a file to copy
-                copied += update
-                logger.debug(f"({copied}/{total})")
-            else:
-                fails += 1
-                # if wantAbandon():
-                #     logger.info("abandon copying")
-                #     break
+                if copy_file(
+                    src_path,
+                    dst_path,
+                    force,
+                    copy_stats={"copied": copied, "total": total},
+                ):
+                    copied += 1
+                    logger.debug(f"({copied}/{total})")
+                else:
+                    fails += 1
     if fails:
         logger.error(f"failed to copy {fails} files in {total}")
     logger.debug(f"total ({copied}/{total})")
@@ -453,8 +451,8 @@ def copyFromDevice(device, useTheForce):
 
 # ----------------------------------------------------------------------------
 def wait_drive_inserted():
-    status.ready("Insert SD card")
     while True:
+        status.ready("Insert SD card")
         update_drive_stats()
 
         devices = getDevices()
@@ -585,7 +583,7 @@ if __name__ == "__main__":
             update_drive_stats()
             wait_drive_inserted()
             
-            # only aquire the lock when we are ready to copy
+            # only acquire the lock when we are ready to copy
             lock = Lock()
             logger.debug("waiting for lock")
             lock.waitLock()
@@ -593,8 +591,7 @@ if __name__ == "__main__":
 
             # Get list of devices via blkid
             for device in getDevices():
-                # if not wantAbandon():
-                copyFromDevice(device, config.get("gnarlypi.force"))
+                copyFromDevice(device, config.get("gnarlypi.force", False))
 
             wait_remove_all_devices()
             lock.releaseLock()
