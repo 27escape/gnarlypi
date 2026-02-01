@@ -154,7 +154,8 @@ class Messaging:
             self.connect()
 
         if self.connected:
-            data["_epoch"] = time.time()
+            # time in seconds since epoch
+            data["_epoch"] = int(time.time())
             self.client.publish(f"{subtopic}",  json.dumps(data))
 
 
