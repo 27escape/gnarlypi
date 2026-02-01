@@ -177,7 +177,6 @@ def display_center_text(txt, color=WHITE):
     draw.text(
         (DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2), txt, font=font, fill=color, anchor="mm"
     )
-    # disp.image(image, ROTATION)
 
 
 # center text on the middle of the given line
@@ -190,7 +189,7 @@ def center_line(txt, line=2, color=WHITE, bg=BLACK):
         fill=color,
         anchor="mm",
     )
-    # disp.image(image, ROTATION)
+
 
 
 def print_line(txt, line=2, color=WHITE, txt2=""):
@@ -199,35 +198,38 @@ def print_line(txt, line=2, color=WHITE, txt2=""):
     draw.text((0, line * NEW_LINE), txt, font=font, fill=color)
     if txt2 != "":
         draw.text((STAT_OFFSET, line * NEW_LINE), txt2, font=font, fill=color)
-    # disp.image(image, ROTATION)
+
 
 
 # ----------------------------------------------------------------------------
 # this will perform the slow disp.image call for all the other small writes to the display
 # it should only be called after all the other draw calls have been performed
-def update_display():
-    center_line(time.strftime("%X"), 0)
+def update_display( seconds=None):
+    if seconds is not None:
+        center_line(time.strftime("%X", time.localtime(seconds)), 0)
+    else:
+        center_line(time.strftime("%X"), 0)
     disp.image(image, ROTATION)
 
 
 def show_copy(percent, line=1):
     show_progress_bar("Copy", line * NEW_LINE, percent, COPY_COLOR)
-    # disp.image(image, ROTATION)
+
 
 
 def show_files(percent, line=2):
     show_progress_bar("Files", line * NEW_LINE, percent, FILE_COLOR)
-    # disp.image(image, ROTATION)
+
 
 
 def show_sd(percent, line=3):
     show_progress_bar("SD", line * NEW_LINE, percent, SD_COLOR)
-    # disp.image(image, ROTATION)
+
 
 
 def show_hd(percent, line=4):
     show_progress_bar("HD", line * NEW_LINE, percent, HD_COLOR)
-    # disp.image(image, ROTATION)
+
 
 
 def show_file_stats(filenum, total):
@@ -249,10 +251,9 @@ def show_tx_stats(filename, bps):
 
 # ----------------------------------------------------------------------------
 def signal_handler(sig, frame):
-    # print("You pressed Ctrl+C!")
     cls()
     display_center_text("system offline", PURPLE)
-    update_display()
+    update_display(time.time())
     sys.exit(0)
 
 
@@ -262,8 +263,7 @@ signal.signal(signal.SIGINT, signal_handler)
 # ----------------------------------------------------------------------------
 def status_error(topic, data):
     """status_error"""
-    # cls()
-    update_display()
+    update_display( int(data["_epoch"]))
     msg = "Error"
     if "level" in data:
         msg += f":{data['level']}"
@@ -271,7 +271,7 @@ def status_error(topic, data):
     center_line(data["msg"], 3, WHITE, RED)
     if "msg2" in data and len(data["msg2"]):
         center_line(data["msg2"], 4, RED)
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
@@ -281,25 +281,22 @@ def status_ready(topic, data):
     if data and "msg" in data:
         center_line(data["msg"], 2, GREEN)
     else:
-        # center_line("Insert SD Card", 2, GREEN)
         center_line("", 2, WHITE, GREEN)
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
 def status_startcopy(topic, data):
     """status_startcopy"""
-    # print_line("start copy")
     cls()
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
 def status_endcopy(topic, data):
     """status_endcopy"""
-    # print_line("end copy ")
     cls()
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 start_copy_time = 0
@@ -331,14 +328,14 @@ def status_copydata(topic, data):
     # assuming photo filenames are 13 chars long
     filename = os.path.basename(data["fromfile"])[:13]
     show_tx_stats(filename, bps)
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
 def status_waitremove(topic, data):
     """status_waitremove"""
     center_line("Remove SD Card", 2, ORANGE)
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
@@ -357,7 +354,7 @@ def status_devicedata(topic, data):
 
     if data["hd_size"]:
         show_hd(quick_perc(data["hd_free"], data["hd_size"]))
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
@@ -365,7 +362,7 @@ def status_diskfull(topic, data):
     """status_devicedata"""
     cls()
     center_line("HD disk full", 2, "#FFFFFF", "#FF0000")
-    update_display()
+    update_display( int(data["_epoch"]))
 
 # display a small message
 def status_fivelines(topic, data):
@@ -379,7 +376,7 @@ def status_fivelines(topic, data):
     # get index and the array value, max 5 lines
     for line, txt in enumerate(data["lines"][:5]):
         center_line(txt, line, color)
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
@@ -387,7 +384,7 @@ def status_fivelines(topic, data):
 # we can update the time
 def status_keepalive(topic, data):
     """status_devicedata"""
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
@@ -395,7 +392,7 @@ def status_keepalive(topic, data):
 def status_cls(topic, data):
     """status_devicedata"""
     cls()
-    update_display()
+    update_display( int(data["_epoch"]))
 
 
 # ----------------------------------------------------------------------------
