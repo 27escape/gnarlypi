@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+from datetime import datetime
 import curses
 import signal
 import logging
@@ -177,9 +178,9 @@ def print_msg(txt, line=2):
 
 
 # ----------------------------------------------------------------------------
-def show_time():
+def show_time(seconds):
     global time_area
-    time_area = time.strftime("%X").rjust(TIME_WIDTH-2, ' ')
+    time_area = datetime.fromtimestamp(seconds).strftime("%X").rjust(TIME_WIDTH-2, ' ')
     update_display()
 
 # ----------------------------------------------------------------------------
@@ -306,7 +307,7 @@ def status_fivelines(topic, data):
 
 
 # ----------------------------------------------------------------------------
-# clea the display
+# clear the display
 def status_cls(topic, data):
     """status_cls"""
     cls()
@@ -384,7 +385,7 @@ def curses_display(stdscr):
     )
 
     while True:
-        show_time()
+        show_time( last_keep_alive)
         time.sleep(1)
 
 # ----------------------------------------------------------------------------
