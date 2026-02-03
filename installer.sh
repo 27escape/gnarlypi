@@ -172,7 +172,7 @@ function install_crontab() {
 # ----------------------------------------------------------------------------
 function install_gnarly() {
   echo "Installing gnarly code"
-  pip3 install -r requirements.txt
+  pip3 install .
 }
 
 function link_usbdata() {
