@@ -234,7 +234,7 @@ def create_symlink(target_file, symlink_name):
 
         # set the time on the symlink, not the target
         os.utime(symlink_name, (atime, mtime), follow_symlinks=False)
-        logger.debug(f"Times of '{symlink_name}' to match '{target_file}'.")
+        logger.debug(f"Set time of '{symlink_name}' to match '{target_file}'.")
 
     except FileNotFoundError:
         logger.error(f"Error: Target file '{target_file}' not found.")
