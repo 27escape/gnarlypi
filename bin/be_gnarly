@@ -8,19 +8,32 @@
 
 source "$HOME/gnarlypi/setenv.sh"
 
+
+# ----------------------------------------------------------------------------
+function kill_processes() {
+  local proc_name="$1"
+
+  # ask pgrep for matches, then filter out our own PID
+  local pids
+  # We don't want to kill the script itself, so exclude our PID
+  pids=$(pgrep -f "$proc_name" | grep -v -x "$$" || true)
+
+  if [ -n "$pids" ]; then
+    # echo "Killing processes for '$proc_name' (excluding $$): $pids"
+    kill $pids 2>/dev/null || echo "Failed to kill some processes for '$proc_name'"
+  # else
+    # echo "No processes found for $proc_name (or only the current script)"
+  fi
+}
+
+# ----------------------------------------------------------------------------
+
 cd "$BIN_PATH" || (echo "cannot find dir $BIN_PATH" && exit 1)
 
 SELF=$(basename "$0")
-processes_to_kill=$(ps ax | grep "gnarly" | grep -v grep | grep -v "$SELF")
 
-# bash 4 and later map text into array
-mapfile -t lines <<< "$processes_to_kill"
-
-for line in "${lines[@]}"; do
-  # Process the line here
-  pid=$(echo "$line" | awk '{print $1}')
-  kill $pid 2>/dev/null
-done
+kill_processes "gnarly" 
+kill_processes "gnarly" 
 
 # remove any previous log files
 rm -f /tmp/gnarlypi* 2>/dev/null
