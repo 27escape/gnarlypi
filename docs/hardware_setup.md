@@ -80,17 +80,31 @@ Attach the USB drive to your rPi and run `blkid` this will give us info about co
 
 As we can see, there is a drive connected to `/dev/sda1`, the important part of this output is the "UUID" field with the value `E432-FDBC`. This is for my drive, yours will be different, take a note of it
 
-Now we will create the mount point for this drive and add it to `/etc/fstab` so that it will mount whenever the system is rebooted 
+Now we will create the mount point for this drive and add it to `/etc/fstab` so that it will mount whenever the system is rebooted, we are going to set the ownership of the mount point to ourselves - we should be user ID 1000, as this is needed if we are mounting linux drives
 
 ```
-sudo mkdir /mnt/fstab
+sudo mkdir /mnt/usb_data
+sudo chown -R 1000:1000 /mnt/usb_data
 sudo vi /etc/fstab
 ```
 
 and then, replacing your UUID value, add the following to the end of the fstab file
+
+
+### fstab for windows formatted (EXFAT) drives
+
+This includes setting access for user 1000 - which should be your user
 ```
 UUID=E432-FDBC /mnt/usb_data   exfat    defaults,noatime,user,rw,exec,auto,rw,nofail,x-systemd.automount,nosuid,nodev,uid=1000,gid=1000,fmask=0022,dmask=0022,iocharset=utf8,errors=remount-ro        1 1
 ```
+
+### fstab for linux formatted (ext4) drives
+
+```
+UUID=E432-FDBC /mnt/usb_data   ext4    defaults,noatime,user,nofail,errors=remount-ro        0 0
+```
+
+### Check and mount
 
 To check things are working, we need to reload `/etc/fstab` and we can do that with the following command
 
