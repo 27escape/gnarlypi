@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 
+UPDATE_KEEP_ALIVE = 1
 BLOCK_SIZE = 1024 * 1024 * 1024
 ONE_MINUTE = 60
 
@@ -178,6 +179,7 @@ def print_msg(txt, line=2):
 
 
 # ----------------------------------------------------------------------------
+# this is time from the epoch provided in the message stream
 def show_time(seconds):
     global time_area
     time_area = datetime.fromtimestamp(seconds).strftime("%X").rjust(TIME_WIDTH-2, ' ')
@@ -285,14 +287,15 @@ def status_diskfull(topic, data):
 
 # ----------------------------------------------------------------------------
 # we only get keep alives when the system is not doing anything else, so
-#  we can track an amount of these, lets try for one in 30
-last_keep_alive = time.time()
+# we can track an amount of these, lets try for one in UPDATE_KEEP_ALIVE seconds, 
+# and if we miss one then we can show a message that the system is still working
+last_keep_alive = int(time.time())
 
 
 def status_keepalive(topic, data):
     """status_keepalive"""
     global last_keep_alive
-    if not int(data["_epoch"] - last_keep_alive) % 30:
+    if not int(data["_epoch"] - last_keep_alive) % UPDATE_KEEP_ALIVE:
         print_msg("system still working", 4)
         last_keep_alive = data["_epoch"]
 
