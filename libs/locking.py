@@ -32,3 +32,6 @@ class Lock:
         if os.path.exists(self.lockfile):
             os.remove(self.lockfile)
         
+    """test if the lockfile is present"""
+    def isLocked( self):
+        return os.path.exists(self.lockfile)
