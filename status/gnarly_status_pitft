@@ -417,7 +417,7 @@ def status_fivelines(topic, data):
 # we can update the time - use local system time instead of MQTT timestamp
 def status_keepalive(topic, data):
     """status_keepalive"""
-    logger.info(f"status_keepalive: {data}")
+    # logger.info(f"status_keepalive: {data}")
     update_display()
 
 
