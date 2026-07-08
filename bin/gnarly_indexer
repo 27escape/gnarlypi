@@ -384,7 +384,7 @@ if __name__ == "__main__":
 
         args = parser.parse_args()
 
-        status = Status()
+        status = Status( client_id=APP_NAME)
 
         if( args.reindex):
             logger.info( 'reindexing')
