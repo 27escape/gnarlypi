@@ -38,9 +38,9 @@ gnarlypi:
     - gnarly_web
 
 indexer:
-  files: "${HOME}/Pictures"
-  index: "${HOME}/tmp/index"
-
+  files: "$(gnarlypi.store)/files"
+  index: "$(gnarlypi.store)/index"
+  
 rsync:
   sleep: 300
   source: "$(indexer.index)"
