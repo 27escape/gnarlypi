@@ -23,7 +23,6 @@ class Messaging:
         self.topic_handlers = {}
         self.server =  ""
 
-
     # ----------------------------------------------------------------------------
     def on_disconnect(self, client, userdata, flags, rc, properties):
         """
@@ -116,19 +115,40 @@ class Messaging:
 
     def connect(self, handlers=None, server="localhost", port=1883):
         """
+        Connect to MQTT server with exponential backoff retry.
+        Useful for Raspberry Pi startups where MQTT service may not be ready immediately.
         """
         self.server = server
+        logger.debug(f"Connecting to MQTT server: {server}:{port}")
 
         self.client = paho.Client(paho.CallbackAPIVersion.VERSION2)
+        logger.debug("MQTT client created")
         # if we need a username and password
         # client.username_pw_set(server, pwd)
 
-        # keep alive is 300s
-        if self.client.connect(server, port, 300) != 0:
-            logger.error(f"Couldn't connect to the MQTT server: {server}")
-            self.connected = False
-        else:
-            self.connected = True
+        # Retry logic with exponential backoff
+        reconnect_count = 0
+        reconnect_delay = FIRST_RECONNECT_DELAY
+        
+        while reconnect_count < MAX_RECONNECT_COUNT:
+            try:
+                # keep alive is 300s
+                if self.client.connect(server, port, 300) == 0:
+                    self.connected = True
+                    logger.info(f"Connected to MQTT server: {server}:{port}")
+                    break
+                else:
+                    raise Exception(f"Connection failed with return code {self.client._sock}")
+            except Exception as err:
+                reconnect_count += 1
+                if reconnect_count >= MAX_RECONNECT_COUNT:
+                    logger.error(f"Couldn't connect to the MQTT server after {reconnect_count} attempts: {err}")
+                    self.connected = False
+                    break
+                logger.warning(f"Connection attempt {reconnect_count} failed: {err}. Retrying in {reconnect_delay}s...")
+                time.sleep(reconnect_delay)
+                reconnect_delay *= RECONNECT_RATE
+                reconnect_delay = min(reconnect_delay, MAX_RECONNECT_DELAY)
 
         # put these after the connect, so that they subscribe after re-connecting
         self.client.on_disconnect = self.on_disconnect
@@ -140,14 +160,17 @@ class Messaging:
             self.client.on_connect = self.on_connect
 
         # now to the subscription loop
-        if handlers:
+        if handlers and self.connected:
             self.client.loop_forever()
 
 
     # ----------------------------------------------------------------------------
-    def publish(self, subtopic, data={}):
+    def publish(self, subtopic, data=None, qos=0, retain=False):
         """
+        Publish a message with optional MQTT QoS and retained delivery settings.
         """
+        if data is None:
+            data = {}
 
         # attempt a reconnect if needed
         if not self.connected:
@@ -156,7 +179,7 @@ class Messaging:
         if self.connected:
             # time in seconds since epoch
             data["_epoch"] = int(time.time())
-            self.client.publish(f"{subtopic}",  json.dumps(data))
+            self.client.publish(f"{subtopic}", json.dumps(data), qos=qos, retain=retain)
 
 
     # ----------------------------------------------------------------------------
