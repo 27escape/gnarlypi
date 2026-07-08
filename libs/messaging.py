@@ -21,7 +21,8 @@ class Messaging:
         self.connected = False
         self.client = None
         self.topic_handlers = {}
-        self.server =  ""
+        self.server = ""
+        self.subscribe_qos = 1
 
     # ----------------------------------------------------------------------------
     def on_disconnect(self, client, userdata, flags, rc, properties):
@@ -80,11 +81,11 @@ class Messaging:
         """
         if reason_code == 0:
             logger.info("Connected to MQTT Broker!")
-            # Subscribe toknown  multiple topics
+            # Subscribe to known multiple topics
             for topic, handler in self.topic_handlers.items():
-                self.client.subscribe(topic, qos=1)
-            #  catch anything else
-            self.client.subscribe("#", qos=1)
+                self.client.subscribe(topic, qos=self.subscribe_qos)
+            # Catch anything else
+            self.client.subscribe("#", qos=self.subscribe_qos)
         else:
             logger.info("Failed to connect, return code: {}".format(reason_code))
 
@@ -113,15 +114,20 @@ class Messaging:
     # will then loop forever waiting for topics to be pubished
 
 
-    def connect(self, handlers=None, server="localhost", port=1883):
+    def connect(self, handlers=None, server="localhost", port=1883, client_id=None, clean_session=True, subscribe_qos=1):
         """
         Connect to MQTT server with exponential backoff retry.
         Useful for Raspberry Pi startups where MQTT service may not be ready immediately.
         """
         self.server = server
+        self.subscribe_qos = subscribe_qos
         logger.debug(f"Connecting to MQTT server: {server}:{port}")
 
-        self.client = paho.Client(paho.CallbackAPIVersion.VERSION2)
+        self.client = paho.Client(
+            paho.CallbackAPIVersion.VERSION2,
+            client_id=client_id or "gnarlypi",
+            clean_session=clean_session,
+        )
         logger.debug("MQTT client created")
         # if we need a username and password
         # client.username_pw_set(server, pwd)
@@ -165,7 +171,7 @@ class Messaging:
 
 
     # ----------------------------------------------------------------------------
-    def publish(self, subtopic, data=None, qos=0, retain=False):
+    def publish(self, subtopic, data=None, retain=False):
         """
         Publish a message with optional MQTT QoS and retained delivery settings.
         """
@@ -179,7 +185,7 @@ class Messaging:
         if self.connected:
             # time in seconds since epoch
             data["_epoch"] = int(time.time())
-            self.client.publish(f"{subtopic}", json.dumps(data), qos=qos, retain=retain)
+            self.client.publish(f"{subtopic}", json.dumps(data), qos=1, retain=retain)
 
 
     # ----------------------------------------------------------------------------
