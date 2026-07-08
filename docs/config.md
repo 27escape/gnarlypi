@@ -119,6 +119,7 @@ If the indexer application has been declared as one of the apps to run from the 
 If the rsync application has been declared as one of the apps to run from the gnarlypi section, then it will read this section of the config.
 
 **source** This is where the files will be read from and if using the indexer, this would be the place to read them from
+The example reads the files linked in the index on a date basis, however, if you have a Sony camera or maybe a Panasonic and you require the full set of files in an expected order of folders, then change this to be `source: "$(indexer.files)"` so that the *DCIM* and *PRIVATE* folders will be copied over to your NAS.
 
 **target** This is where files will be copied to, this could be a remote system that allows a SSH/SFTP or rsync connection as is shown in the example but could also be a local path that is a mount point for a remote system such as a NAS
 
