@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Message Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #0056b3;
+        }
+        #messages-container {
+            border: 1px solid #ccc;
+            padding: 15px;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .message-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .message-item:last-child {
+            border-bottom: none;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #777;
+            margin-right: 10px;
+        }
+        #status {
+            margin: 0px;
+            padding: 0px;
+            background-color: black;
+            width: 25rem;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>GnarlyPi</h1>
+    <div id="status">
+        <div id="line0" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line1" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line2" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line3" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line4" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line5" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line6" style="background-color: black;">
+            &nbsp;
+        </div>
+        <div id="line7" style="background-color: black;">
+            &nbsp;
+        </div>
+        
+    </div>
+    <br />
+    <br />
+    <br />
+
+    <!-- <div id="messages-container">
+        <p>Waiting for MQTT messages...</p>
+    </div> -->
+
+    <script src="/static/gnarly_status.js"></script>
+
+    <script>
+        // const messagesContainer = document.getElementById('messages-container');
+        const eventSource = new EventSource('/stream');
+
+        eventSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                const message = data.message;
+                const topic = message.topic || "Unknown Topic";
+                const payload = message.payload;
+
+                if (topic !== "Unknown Topic" && payload !== null && payload !== undefined) {
+                    handle_msg(topic, payload);
+                }
+
+                // // the rest is old stuff
+                // const messageElement = document.createElement('div');
+                // messageElement.classList.add('message-item');
+
+                // const timestamp = new Date().toLocaleTimeString();
+                // messageElement.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${topic}`;
+
+                // // Prepend new messages to the top
+                // if (messagesContainer.firstChild && messagesContainer.firstChild.tagName === 'P') {
+                //     // Remove "Waiting for messages..." if it's there
+                //     messagesContainer.innerHTML = '';
+                // }
+                // messagesContainer.prepend(messageElement);
+
+                // // Optional: Limit the number of displayed messages
+                // while (messagesContainer.children.length > 50) {
+                //     messagesContainer.removeChild(messagesContainer.lastChild);
+                // }
+            } catch (e) {
+                console.error("Error parsing message:", e, event.data);
+            }
+        };
+
+        // eventSource.onopen = function(error) {
+        //     console.info("opened connection to server");
+        //     messagesContainer.innerHTML = "<p style='color: red;'>Connection to server established</p>";
+        // };
+
+
+        // eventSource.onerror = function(error) {
+        //     console.error("EventSource failed:", error);
+        //     messagesContainer.innerHTML = "<p style='color: red;'>Connection to server failed. Retrying...</p>";
+        // };
+
+        
+
+
+</script>
+</body>
+</html>

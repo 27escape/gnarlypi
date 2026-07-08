@@ -1,0 +1,172 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import time
+import queue
+import signal
+import argparse
+import threading
+from flask import Flask, render_template, Response
+
+# ----------------------------------------------------------------------------
+sys.path.insert( 0, '../')
+from libs.messaging import Messaging
+from libs.config import Config
+from libs.debug import Debug
+
+# ----------------------------------------------------------------------------
+USER = os.getenv("USER")
+HOME = os.getenv("HOME")
+APP_NAME = os.path.basename(__file__)
+
+# get config from default location $GNARLYPI_CONFIG
+config = Config()
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+# get web port from config with a default of 8027
+WEBPORT = config.get('status_web.port', 8027)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ----------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    """ """
+    logger.info(f"Exit requested for {APP_NAME} by signal {sig}")
+    sys.exit(1)
+
+# ----------------------------------------------------------------------------
+# Flask App starts here
+
+app = Flask(__name__,
+    template_folder=os.path.join(BASE_DIR, 'web/templates'),
+    static_folder=os.path.join(BASE_DIR, 'web/static'),
+    static_url_path='/static' )
+
+#Flask Routes
+@app.route('/')
+def index():
+    """Serves the main HTML page."""
+    logger.debug("Index endpoint hit")
+    return render_template('index.html')
+
+@app.route('/stream')
+def stream():
+    """
+    Endpoint for Server-Sent Events (SSE) to push MQTT messages to the browser.
+    Each client gets its own queue so they don't see messages that were sent
+    before they connected.
+    """
+    q = queue.Queue()
+    with clients_lock:
+        client_queues.append(q)
+
+    def generate_messages():
+        try:
+            while True:
+                # block until a message is available
+                message = q.get()
+                logger.info("Sending message to client: %s", message)
+                yield f"data: {json.dumps({'message': message})}\n\n"
+                time.sleep(0.1)
+        finally:
+            # remove queue when client disconnects
+            with clients_lock:
+                if q in client_queues:
+                    client_queues.remove(q)
+
+    response = Response(generate_messages(), mimetype='text/event-stream')
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Content-Type"] = "text/event-stream"
+    response.headers["Connection"] = "keep-alive"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
+#Flask Routes
+@app.route('/status')
+def status():
+    """Serves a status page."""
+    logger.debug("Status endpoint hit")
+    return "status ok"
+
+
+# @app.after_request
+# def after(response):
+#     # todo with response
+#     logger.debug(response.status)
+#     logger.debug(response.headers)
+#     logger.debug(response.get_data())
+#     return response
+
+
+# maintain one queue per connected SSE client
+client_queues = []               # list of queue.Queue instances
+clients_lock = threading.Lock()  # protects client_queues
+MAX_HISTORY = 20                 # keep only the last N messages per client
+
+# handle all the photo messages; broadcast to every connected queue
+# each queue is trimmed to MAX_HISTORY before inserting a new item
+
+def status_all(topic, data):
+    """status_all"""
+    msg = {"topic": topic, "payload": data}
+    # logger.debug(f"status_all received topic: {topic} data: {data}")
+    with clients_lock:
+        # iterate over a copy to avoid modification during send
+        for q in list(client_queues):
+            try:
+                # if the queue is already full, drop oldest entry
+                if q.qsize() >= MAX_HISTORY:
+                    try:
+                        q.get_nowait()
+                    except queue.Empty:
+                        pass
+                q.put_nowait(msg)
+            except Exception:
+                # if a queue is bad, we'll drop it later when its generator exits
+                pass
+
+# setup connection to MQTT
+msg = Messaging()
+
+def thread_subscriptions():
+
+    logger.info("Starting MQTT subscriptions thread")
+    # Define a dictionary to map topics to handling functions
+    handlers = {
+        # we need to define all the topics as msg.connect does not handle wildcards 
+        # "/photos/#": status_all,
+        "/photos/error": status_all,
+        "/photos/ready": status_all,
+        "/photos/startcopy": status_all,
+        "/photos/endcopy": status_all,
+        "/photos/copydata": status_all,
+        "/photos/waitremove": status_all,
+        "/photos/devicedata": status_all,
+        "/photos/diskfull": status_all,
+        "/photos/keepalive": status_all,
+        "/photos/fivelines": status_all,
+        "/photos/cls": status_all 
+    }
+
+    # if we pass handlers, then we will also kickoff the loop
+    msg.connect(handlers)
+
+
+if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGHUP, signal_handler)
+
+    parser = argparse.ArgumentParser(
+        description=f"Display gnarlypi status using a web server on port ${WEBPORT}"
+    )
+    args = parser.parse_args()
+
+    # Start MQTT client in a separate thread
+    sub = threading.Thread(target=thread_subscriptions)
+    sub.start()
+    time.sleep(2)  # Give MQTT client time to connect
+
+    # Start Flask web server
+    logger.info("Starting Flask web server...")
+    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=WEBPORT)
+    
