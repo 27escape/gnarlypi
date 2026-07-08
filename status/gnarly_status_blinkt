@@ -184,6 +184,13 @@ def mqtt_listener():
 
     # if we pass handlers, then we will also kickoff the loop
     msg.connect(handlers)
+    # Keep a persistent MQTT session so retained messages are available after reconnects.
+    msg.connect(
+        handlers,
+        client_id="gnarly-status-blinkt",
+        clean_session=False,
+        subscribe_qos=1,
+    )
 
 
 # ----------------------------------------------------------------------------

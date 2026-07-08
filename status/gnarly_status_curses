@@ -338,8 +338,13 @@ def thread_subscriptions():
         "/photos/cls": status_cls,
     }
 
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
+    # Keep a persistent MQTT session so retained messages are available after reconnects.
+    msg.connect(
+        handlers,
+        client_id="gnarly-status-curses",
+        clean_session=False,
+        subscribe_qos=1,
+    )
 
 
 # ----------------------------------------------------------------------------

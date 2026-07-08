@@ -14,6 +14,9 @@ from adafruit_rgb_display import st7789
 sys.path.insert(0, "../")
 from libs.messaging import Messaging
 from libs.config import Config
+from libs.debug import Debug
+
+APP_NAME = "pitft"
 
 # ----------------------------------------------------------------------------
 # these are the defaults for the mini_pitft, ensuring things work even if config not read
@@ -204,17 +207,21 @@ def update_display(seconds=None, force=False, skip_time=False):
     # Only use the provided seconds for specific operations where timing matters
     if not skip_time:
         time_string = time.strftime("%X")
+        # logger.debug(f"Current time: {time_string}, Last displayed time: {LAST_DISPLAYED_TIME_STRING}")
         
         # Only redraw time if it has actually changed
         if time_string != LAST_DISPLAYED_TIME_STRING:
             center_line(time_string, 0)
             LAST_DISPLAYED_TIME_STRING = time_string
+            # logger.debug(f"Time updated to {time_string}")
     
     # Throttle hardware updates to prevent lag - only call disp.image() if enough time has passed
     current_time = time.time()
+    # logger.debug( 'got time')
     if force or (current_time - LAST_DISPLAY_UPDATE_TIME) >= DISPLAY_UPDATE_MIN_INTERVAL:
         disp.image(image, ROTATION)
         LAST_DISPLAY_UPDATE_TIME = current_time
+        # logger.debug(f"Display updated at {time.strftime('%X')}")
 
 
 # ----------------------------------------------------------------------------
@@ -288,6 +295,8 @@ def status_error(topic, data):
 # ----------------------------------------------------------------------------
 def status_ready(topic, data):
     """status_ready"""
+    logger.info(f"status_ready: {data}")
+    
     clr_line(2)
     if data and "msg" in data:
         center_line(data["msg"], 2, BLACK, YELLOW)
@@ -319,12 +328,15 @@ def status_copydata(topic, data):
     global start_copy_time
     elapsed = 0
 
+    def safe_ratio(numerator, denominator):
+        return numerator / denominator if denominator else 0
+
     # assumption is that if size is 0, then rsync or similar is happening
     # and we are not getting per file copy updates, so we won't show it
     if data["size"]:
-        show_copy(data["copied"] / data["size"])
+        show_copy(safe_ratio(data["copied"], data["size"]))
 
-    show_files(data["files_copied"] / data["files_total"])
+    show_files(safe_ratio(data["files_copied"], data["files_total"]))
     if data["rsync"]:
         # show_file_stats(data["files_copied"], data["files_total"])
         # show_remain_stats(data["files_total"] - data["files_copied"])
@@ -334,10 +346,17 @@ def status_copydata(topic, data):
 
     if not data["copied"]:
         start_copy_time = time.time()
-        last_copy_size = 0
     else:
         elapsed = time.time() - start_copy_time
-    bps = data["bps"] or int(data["copied"] / elapsed)
+
+    bps = data.get("bps")
+    if bps:
+        bps = int(bps)
+    elif elapsed > 0 and data["copied"]:
+        bps = int(data["copied"] / elapsed)
+    else:
+        bps = 0
+
     # assuming photo filenames are 13 chars long
     filename = os.path.basename(data["fromfile"])[:13]
     show_tx_stats(filename, bps)
@@ -398,6 +417,7 @@ def status_fivelines(topic, data):
 # we can update the time - use local system time instead of MQTT timestamp
 def status_keepalive(topic, data):
     """status_keepalive"""
+    logger.info(f"status_keepalive: {data}")
     update_display()
 
 
@@ -430,7 +450,7 @@ def mqtt_listener():
     # Keep a persistent MQTT session so retained messages are available after reconnects.
     msg.connect(
         handlers,
-        client_id="gnarlypi-status",
+        client_id="gnarly-status-pitft",
         clean_session=False,
         subscribe_qos=1,
     )
@@ -441,6 +461,7 @@ def mqtt_listener():
 if __name__ == "__main__":
     # get config from default location $GNARLYPI_CONFIG
     config = Config()
+    logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
     # print(f"Config file: {config.get('status.pitft')}")
     # get display settings from config or use defaults

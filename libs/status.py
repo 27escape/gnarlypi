@@ -1,5 +1,6 @@
  #!/usr/bin/env python3
 
+import uuid
 from .messaging import Messaging
 
 # ----------------------------------------------------------------------------
@@ -12,14 +13,23 @@ class Status:
 
     Args:
         server (str)            defaults to localhost
-
+        client_id (str)         unique MQTT client ID. Defaults to a random UUID.
     """
     
     
-    def __init__(self, server="localhost") -> None:
+    def __init__(self, server="localhost", client_id=None) -> None:
         self.server = server
+        
+        # Generate a unique UUID-based client ID if none is provided
+        if client_id is None:
+            self.client_id = f"status-{uuid.uuid4().hex[:8]}"
+        else:
+            self.client_id = client_id
+
         self.msg = Messaging()
-        self.msg.connect(None, self.server)
+        
+        # Pass the client_id explicitly to the Messaging connect method
+        self.msg.connect(None, self.server, client_id=self.client_id)
 
     # ----------------------------------------------------------------------------
     def error(self, error_msg, error_lvl=0, msg2=""):

@@ -6,8 +6,9 @@ import paho.mqtt.client as paho
 import json
 import time
 import logging
+import uuid
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("messaging")
 
 FIRST_RECONNECT_DELAY = 1
 RECONNECT_RATE = 2
@@ -23,16 +24,21 @@ class Messaging:
         self.topic_handlers = {}
         self.server = ""
         self.subscribe_qos = 1
+        self.loop_started = False
 
     # ----------------------------------------------------------------------------
-    def on_disconnect(self, client, userdata, flags, rc, properties):
+    def on_disconnect(self, client, userdata, rc, properties):
         """
+        MQTT on_disconnect callback for MQTT v5.
         """
-        if rc != "Normal disconnection":
-            print("Unexpected MQTT disconnection. Will auto-reconnect")
+        self.connected = False
+        if rc == 0:
+            logger.info("MQTT disconnected normally")
+        else:
+            logger.warning("Unexpected MQTT disconnection (%s). Will auto-reconnect", rc)
 
 
-    def on_disconnect_retry(self, client, userdata, flags, rc, properties):
+    def on_disconnect_retry(self, client, userdata, rc, properties):
         logger.info("Disconnected with result code: %s", rc)
         reconnect_count, reconnect_delay = 0, FIRST_RECONNECT_DELAY
         while reconnect_count < MAX_RECONNECT_COUNT:
@@ -41,10 +47,10 @@ class Messaging:
 
             try:
                 self.client.reconnect()
-                logging.info("Reconnected successfully!")
+                logger.info("Reconnected successfully!")
                 return
             except Exception as err:
-                logging.error("%s. Reconnect failed. Retrying...", err)
+                logger.error("%s. Reconnect failed. Retrying...", err)
 
             reconnect_delay *= RECONNECT_RATE
             reconnect_delay = min(reconnect_delay, MAX_RECONNECT_DELAY)
@@ -80,7 +86,7 @@ class Messaging:
         """
         """
         if reason_code == 0:
-            logger.info("Connected to MQTT Broker!")
+            # logger.info("Connected to MQTT Broker!")
             # Subscribe to known multiple topics
             for topic, handler in self.topic_handlers.items():
                 self.client.subscribe(topic, qos=self.subscribe_qos)
@@ -103,7 +109,7 @@ class Messaging:
             try:
                 self.topic_handlers[topic](topic=topic, data=json.loads(message.payload.decode()))
             except Exception as err:
-                # logger.info( f"likely message is not JSON topic:{topic}, message:{message.payload.decode()}")
+                logger.info( f"likely message is not JSON topic:{topic}, message:{message.payload.decode()}")
                 logger.info(f"{type(err).__name__} was raised eventually in topics_on_message: {err}")
         # else:
         #     self.handle_all(client, userdata, message)
@@ -121,14 +127,18 @@ class Messaging:
         """
         self.server = server
         self.subscribe_qos = subscribe_qos
-        logger.debug(f"Connecting to MQTT server: {server}:{port}")
+        
+        self.loop_started = False
+        
+        # logger.debug(f"Connecting to MQTT server: {server}:{port}")
 
         self.client = paho.Client(
             paho.CallbackAPIVersion.VERSION2,
-            client_id=client_id or "gnarlypi",
+            client_id=client_id or f"status-{uuid.uuid4().hex[:8]}",
             clean_session=clean_session,
         )
-        logger.debug("MQTT client created")
+        self.client.reconnect_delay_set(FIRST_RECONNECT_DELAY, MAX_RECONNECT_DELAY)
+        # logger.debug("MQTT client created")
         # if we need a username and password
         # client.username_pw_set(server, pwd)
 
@@ -141,7 +151,7 @@ class Messaging:
                 # keep alive is 300s
                 if self.client.connect(server, port, 300) == 0:
                     self.connected = True
-                    logger.info(f"Connected to MQTT server: {server}:{port}")
+                    logger.info(f"Re-connected to MQTT server: {server}:{port}")
                     break
                 else:
                     raise Exception(f"Connection failed with return code {self.client._sock}")
@@ -156,7 +166,7 @@ class Messaging:
                 reconnect_delay *= RECONNECT_RATE
                 reconnect_delay = min(reconnect_delay, MAX_RECONNECT_DELAY)
 
-        # put these after the connect, so that they subscribe after re-connecting
+        # Attach callbacks before starting the network loop.
         self.client.on_disconnect = self.on_disconnect
         if handlers:
             self.topic_handlers = handlers
@@ -168,6 +178,10 @@ class Messaging:
         # now to the subscription loop
         if handlers and self.connected:
             self.client.loop_forever()
+        elif self.connected and not self.loop_started:
+            # Publisher-only clients still need a network loop to process outgoing packets.
+            self.client.loop_start()
+            self.loop_started = True
 
 
     # ----------------------------------------------------------------------------
@@ -185,8 +199,14 @@ class Messaging:
         if self.connected:
             # time in seconds since epoch
             data["_epoch"] = int(time.time())
-            self.client.publish(f"{subtopic}", json.dumps(data), qos=1, retain=retain)
+            stats = self.client.publish(f"{subtopic}", json.dumps(data), qos=1, retain=retain)
+            # logger.debug(f"Published to {subtopic}: {data}, stats {stats}")
+        else:
+            logger.error(f"Failed to publish to {subtopic}: Not connected to MQTT server")
 
+
+    def on_publish(self, client, userdata, mid):
+        logger.debug(f"Message {mid} published successfully.")
 
     # ----------------------------------------------------------------------------
     def client_disconnect(self):

@@ -149,5 +149,10 @@ if __name__ == "__main__":
         "/photos/button": status_button,
     }
 
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
+    # Keep a persistent MQTT session so retained messages are available after reconnects.
+    msg.connect(
+        handlers,
+        client_id="gnarly-status-basic",
+        clean_session=False,
+        subscribe_qos=1,
+    )
