@@ -41,7 +41,7 @@ class Status:
     # ----------------------------------------------------------------------------
     def ready(self, msg):
         """show that the system is ready to accept an SD card insertion"""
-        print( f"status.py Status ready: {msg}" )
+        # print( f"status.py Status ready: {msg}" )
         self.msg.publish("/photos/ready", {"msg": msg})
 
     # ----------------------------------------------------------------------------
@@ -174,16 +174,6 @@ class Status:
         self.msg.publish("/photos/cls")
 
     # ----------------------------------------------------------------------------
-    def buttonpress(self, button):
-        """send a single button press
-
-        Args:
-            button (str)   single button character to send
-        """
-        # slice to a single character
-        self.msg.publish("/photos/button", {"button": button[:1]})
-
-    # ----------------------------------------------------------------------------
     def app_resume(self):
         """tell the main app, that a sub app has completed
 
@@ -199,6 +189,9 @@ class Status:
         Args:
             filename (str)  full path to the file to be index
         """
-        self.msg.publish("/photos/indexfile", {"filename": filename})
+        # we are going to have the MQTT server remember all the files to be indexed
+        # this allows the system to be rebooted etc without losing the filepaths
+        # that need indexing, the retained messages will be sent to any new clients that connect
+        self.msg.publish("/photos/indexfile", {"filename": filename}, retain=True)
 
    
