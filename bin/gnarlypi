@@ -15,12 +15,12 @@ from dotwiz import DotWiz
 
 sys.path.insert(0, "../")
 from libs.status import Status
-from libs.messaging import Messaging
+# from libs.messaging import Messaging
 from libs.locking import Lock
 from libs.config import Config
 from libs.debug import Debug
 
-VERSION = "0.2.0"
+VERSION = "0.5.0"
 APP_NAME = os.path.basename(__file__) + " v" + VERSION
 CREATOR = "27escape"
 COPYRIGHT = "©️2025"
@@ -35,6 +35,29 @@ ONE_MB = 1024 * 1024
 READ_SIZE = 16 * ONE_MB
 # time between checks for card mounted
 WAIT_TIME = 1
+
+# ----------------------------------------------------------------------------
+# Supported file extensions (case-insensitive)
+# Includes common image, RAW, and some video formats
+ALL_EXTENSIONS = (
+    # Standard Images
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.tif', '.webp', '.heic', '.heif',
+    # RAW Formats
+    '.dng',                                 # Adobe Digital Negative
+    '.cib',                                 # CorelDRAW CIB (less common as camera RAW)
+    '.nef', '.nrw',                         # Nikon
+    '.orf',                                 # Olympus
+    '.oif',                                 # Olympus Image Format (container)
+    '.cr2', '.cr3', '.craw',                # Canon
+    '.raw', '.rw2',                         # Panasonic
+    '.fff', '.3pr', '.3fr',                 # Hasselblad, Imacon
+    '.arw', '.sr2', '.srf',                 # Sony
+    '.rwl',                                 # Leica
+    '.raf',                                 # Fujifilm
+    '.srw',                                 # Samsung
+    # Video Formats
+    '.avi', '.mp4', '.mov', '.m4v', '.xml'
+)
 
 # ----------------------------------------------------------------------------
 
@@ -275,35 +298,81 @@ def rCopy(src, dst, force):
     logger.info(f"copying files from {src} to {dst} with force {force}")
 
     update_drive_stats()
-    # only count files that we need to copy
+
+    # # only count files that we need to copy
+    # for dirpath, dirnames, filenames in os.walk(src):
+    #     for filename in filenames:
+    #         src_path = os.path.join(dirpath, filename)
+    #         dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+    #         if force or not os.path.exists(dst_path):
+    #             total += 1
+
+    # status.startcopy(file_count=total)
+
+    # for dirpath, dirnames, filenames in os.walk(src):
+    #     for filename in filenames:
+    #         src_path = os.path.join(dirpath, filename)
+    #         dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+    #         # Create destination directory structure if needed
+    #         os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            
+    #         # only attempt copy if file does not exist or force is set
+    #         if force or not os.path.exists(dst_path):
+    #             if copy_file(
+    #                 src_path,
+    #                 dst_path,
+    #                 force,
+    #                 copy_stats={"copied": copied, "total": total},
+    #             ):
+    #                 copied += 1
+    #                 logger.debug(f"({copied}/{total})")
+    #             else:
+    #                 fails += 1
+
+# Store pending operations in memory to prevent double os.walk traversal
+    pending_copies = []
+
+    status.fivelines(("", "", "Scanning for files", "", ""))
+
+
+    # Phase 1: Discovery & Evaluation
     for dirpath, dirnames, filenames in os.walk(src):
         for filename in filenames:
+            # Extract extension and convert to lowercase for caseless matching
+            ext = os.path.splitext(filename)[1].lower()
+            
+            # Skip any file that does not match our supported extensions list
+            if ext not in ALL_EXTENSIONS:
+                continue
+                
             src_path = os.path.join(dirpath, filename)
             dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+            
             if force or not os.path.exists(dst_path):
+                logger.debug(f"Pending copy: {src_path} -> {dst_path}")
+                pending_copies.append((src_path, dst_path))
                 total += 1
 
     status.startcopy(file_count=total)
 
-    for dirpath, dirnames, filenames in os.walk(src):
-        for filename in filenames:
-            src_path = os.path.join(dirpath, filename)
-            dst_path = os.path.join(dst, os.path.relpath(src_path, src))
-            # Create destination directory structure if needed
-            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            
-            # only attempt copy if file does not exist or force is set
-            if force or not os.path.exists(dst_path):
-                if copy_file(
-                    src_path,
-                    dst_path,
-                    force,
-                    copy_stats={"copied": copied, "total": total},
-                ):
-                    copied += 1
-                    logger.debug(f"({copied}/{total})")
-                else:
-                    fails += 1
+    # Phase 2: Execution
+    for src_path, dst_path in pending_copies:
+        # Create destination directory structure if needed
+        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+        
+        # Concurrency guard: Only attempt copy if file does not exist or force is set
+        if force or not os.path.exists(dst_path):
+            if copy_file(
+                src_path,
+                dst_path,
+                force,
+                copy_stats={"copied": copied, "total": total},
+            ):
+                copied += 1
+                logger.debug(f"({copied}/{total})")
+            else:
+                fails += 1
+
     if fails:
         logger.error(f"failed to copy {fails} files in {total}")
     logger.debug(f"total ({copied}/{total})")
@@ -430,12 +499,15 @@ def copyFromDevice(device, useTheForce):
     # Check if device isn't already mounted
     if not os.path.ismount(mount_point):
         if mount_drive(device, mount_point):
-            camera_dir = os.path.join(mount_point, "DCIM")
+            camera_dir = os.path.join(mount_point)
             # test if we have a camera related folder structure
             # Copy files only if its a photo drive
             if os.path.isdir(camera_dir):
                 # and we only copy the DCIM files
                 rCopy(camera_dir, FILES_DIR, useTheForce)
+                # sonyVideo_dir = os.path.join(mount_point, "PRIVATE", "M4ROOT", "CLIP")
+                # rCopy(camera_dir, FILES_DIR, useTheForce)
+                # sonyVideo_dir = os.path.join(mount_point, "PRIVATE", "SONY", "AVCHD")
             else:
                 logger.debug("drive does not contain photo files")
             # Unmount the drive
@@ -450,20 +522,20 @@ def copyFromDevice(device, useTheForce):
 
 
 # ----------------------------------------------------------------------------
-def wait_drive_inserted():
+def wait_drive_inserted( lock):
+    # if we are running this after we have copied files
+    #  we need to get rid of the sd percentage bar
+    update_drive_stats()
+    status.clear()
     while True:
-        status.ready("Insert SD card")
-        update_drive_stats()
+        if not lock.isLocked():
+            status.ready("Insert SD card / Connect Camera")
+            update_drive_stats()
 
-        devices = getDevices()
-        if len(devices) != 0:
-            break
+            devices = getDevices()
+            if len(devices) != 0:
+                break
         wait_time(1)
-
-
-# ----------------------------------------------------------------------------
-# thread to listen for button press messages
-msg = Messaging()
 
 
 # ----------------------------------------------------------------------------
@@ -541,6 +613,8 @@ if __name__ == "__main__":
         )
         args = parser.parse_args()
 
+        logger.info(f"starting status apps")
+
         start_status_apps()
 
         if not TARGET_DIR or not len(TARGET_DIR):
@@ -565,7 +639,9 @@ if __name__ == "__main__":
         status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
 
         start_apps()
+        logger.debug("started apps")
         daemonise()
+        logger.debug("daemonised")
         wait_time(3)
 
         # get the list of devices already mounted at startup
@@ -580,14 +656,12 @@ if __name__ == "__main__":
     
         while True:
 
-            update_drive_stats()
-            wait_drive_inserted()
+            lock = Lock()
+            # update_drive_stats()
+            wait_drive_inserted( lock)
             
             # only acquire the lock when we are ready to copy
-            lock = Lock()
-            logger.debug("waiting for lock")
             lock.waitLock()
-            logger.debug("got lock")
 
             # Get list of devices via blkid
             for device in getDevices():
@@ -595,7 +669,6 @@ if __name__ == "__main__":
 
             wait_remove_all_devices()
             lock.releaseLock()
-            logger.debug( "released lock")
             
 
     except Exception as e:
