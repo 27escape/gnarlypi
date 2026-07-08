@@ -12,17 +12,34 @@ source "$HOME/gnarlypi/setenv.sh"
 # ----------------------------------------------------------------------------
 function kill_processes() {
   local proc_name="$1"
-
-  # ask pgrep for matches, then filter out our own PID
+  local force="${2:-false}"
   local pids
-  # We don't want to kill the script itself, so exclude our PID
-  pids=$(pgrep -f "$proc_name" | grep -v -x "$$" || true)
+  local current_pid="$$"
+  local proc_lines
+  local kill_signal="-TERM"
+
+  if [ "$force" = "true" ]; then
+    kill_signal="-KILL"
+  fi
+
+  proc_lines=$(ps ax -o pid= -o command= | grep "$proc_name" | grep -v grep | grep -v "$SELF" || true)
+  pids=$(echo "$proc_lines" | awk '{print $1}' | grep -v "^$current_pid$" || true)
+
+  if [ -z "$pids" ]; then
+    return 0
+  fi
+
+  # echo "Killing processes for '$proc_name' (excluding self: $current_pid, force: $force): $pids"
+
+  for pid in $pids; do
+    kill "$kill_signal" "$pid" 2>/dev/null || true
+  done
+
+  proc_lines=$(ps ax -o pid= -o command= | grep "$proc_name" | grep -v grep | grep -v "$SELF" || true)
+  pids=$(echo "$proc_lines" | awk '{print $1}' | grep -v "^$current_pid$" || true)
 
   if [ -n "$pids" ]; then
-    # echo "Killing processes for '$proc_name' (excluding $$): $pids"
-    kill $pids 2>/dev/null || echo "Failed to kill some processes for '$proc_name'"
-  # else
-    # echo "No processes found for $proc_name (or only the current script)"
+    echo "Failed to kill some processes for '$proc_name': $pids"
   fi
 }
 
@@ -33,7 +50,9 @@ cd "$BIN_PATH" || (echo "cannot find dir $BIN_PATH" && exit 1)
 SELF=$(basename "$0")
 
 kill_processes "gnarly" 
-kill_processes "gnarly" 
+kill_processes "gnarly" "true"  # Force kill any remaining gnarly processes
+
+# exit
 
 # remove any previous log files
 rm -f /tmp/gnarlypi* 2>/dev/null
