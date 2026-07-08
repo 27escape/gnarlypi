@@ -1,3 +1,5 @@
+name: gnarlypi
+
 status:
   devices:
     - gnarly_status_pitft
@@ -43,6 +45,7 @@ rsync:
   sleep: 300
   source: "$(indexer.index)"
   target: ${USER}@homeassistant:/forSamba/NVME
+  complete_command: mosquitto_pub -h homeserver -t gnarlypi/rsync -m "complete"
 
 status_web:
   port: 8027
