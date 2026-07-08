@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# display messages on the Adafruit Mini PiTFT - 240x240 Color TFT
 
 import os
 import sys
@@ -47,6 +48,12 @@ COPY_COLOR = RED
 SD_COLOR = MAGENTA
 HD_COLOR = CYAN
 
+# Display update throttling to prevent lag
+LAST_DISPLAY_UPDATE_TIME = 0
+DISPLAY_UPDATE_MIN_INTERVAL = 0.1  # minimum 100ms between hardware updates
+LAST_DISPLAYED_TIME_STRING = ""
+
+
 # ----------------------------------------------------------------------------
 # this is the board hardware
 def init_board():
@@ -71,15 +78,11 @@ def init_board():
         x_offset=X_OFFSET,
         y_offset=Y_OFFSET,
     )
+    # display = disp
     # Turn on the backlight
     backlight = digitalio.DigitalInOut(board.D22)
     backlight.switch_to_output()
     backlight.value = True
-    # enable the buttons    #
-    buttonA = digitalio.DigitalInOut(board.D23)
-    buttonB = digitalio.DigitalInOut(board.D24)
-    buttonA.switch_to_input()
-    buttonB.switch_to_input()
 
     # Create blank image for drawing.
     # Make sure to create image with mode 'RGB' for full color.
@@ -124,20 +127,6 @@ def init_board():
 
 
 # ----------------------------------------------------------------------------
-def button_actions():
-    if buttonA.value and buttonB.value:
-        backlight.value = False  # turn off backlight
-    else:
-        backlight.value = True  # turn on backlight
-    if buttonB.value and not buttonA.value:  # just button A pressed
-        display.fill(color565(255, 0, 0))  # red
-    if buttonA.value and not buttonB.value:  # just button B pressed
-        display.fill(color565(0, 0, 255))  # blue
-    if not buttonA.value and not buttonB.value:  # none pressed
-        display.fill(color565(0, 255, 0))  # green
-
-
-# ----------------------------------------------------------------------------
 # version of https://stackoverflow.com/questions/71773998/how-to-draw-a-progress-bar-with-pillow
 def progress_bar(x, y, width, height, progress, fg=WHITE, bg=BLACK):
     # Draw the background for the full width
@@ -149,7 +138,9 @@ def progress_bar(x, y, width, height, progress, fg=WHITE, bg=BLACK):
 def show_progress_bar(text, y, progress, color=WHITE, bg=BLACK):
     draw.text((0, y), text, font=font, fill=color)
     offset = FONT_SIZE / 2
-    progress_bar(STAT_OFFSET, y + (offset / 2), 170, FONT_SIZE - offset, progress, color)
+    progress_bar(
+        STAT_OFFSET, y + (offset / 2), 170, FONT_SIZE - offset, progress, color
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -162,12 +153,14 @@ def cls():
     disp.image(image, ROTATION)
 
 
+# ----------------------------------------------------------------------------
 def clr_line(line=0, fill="#000000"):
     y = line * NEW_LINE
     # Draw the background for the full width
     draw.rectangle((0, y, DISPLAY_WIDTH, y + NEW_LINE), fill=fill)
 
 
+# ----------------------------------------------------------------------------
 # center text on the middle of the display
 # see https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html
 # for centering and justification of text
@@ -179,6 +172,7 @@ def display_center_text(txt, color=WHITE):
     )
 
 
+# ----------------------------------------------------------------------------
 # center text on the middle of the given line
 def center_line(txt, line=2, color=WHITE, bg=BLACK):
     clr_line(line, bg)
@@ -191,7 +185,7 @@ def center_line(txt, line=2, color=WHITE, bg=BLACK):
     )
 
 
-
+# ----------------------------------------------------------------------------
 def print_line(txt, line=2, color=WHITE, txt2=""):
     clr_line(line)
     # print( f"print_line {txt}")
@@ -200,45 +194,63 @@ def print_line(txt, line=2, color=WHITE, txt2=""):
         draw.text((STAT_OFFSET, line * NEW_LINE), txt2, font=font, fill=color)
 
 
-
 # ----------------------------------------------------------------------------
 # this will perform the slow disp.image call for all the other small writes to the display
 # it should only be called after all the other draw calls have been performed
-def update_display( seconds=None):
-    if seconds is not None:
-        center_line(time.strftime("%X", time.localtime(seconds)), 0)
-    else:
-        center_line(time.strftime("%X"), 0)
-    disp.image(image, ROTATION)
+def update_display(seconds=None, force=False, skip_time=False):
+    global LAST_DISPLAY_UPDATE_TIME, LAST_DISPLAYED_TIME_STRING
+    
+    # Always use current local time for display - MQTT timestamps are stale by time message is processed
+    # Only use the provided seconds for specific operations where timing matters
+    if not skip_time:
+        time_string = time.strftime("%X")
+        
+        # Only redraw time if it has actually changed
+        if time_string != LAST_DISPLAYED_TIME_STRING:
+            center_line(time_string, 0)
+            LAST_DISPLAYED_TIME_STRING = time_string
+    
+    # Throttle hardware updates to prevent lag - only call disp.image() if enough time has passed
+    current_time = time.time()
+    if force or (current_time - LAST_DISPLAY_UPDATE_TIME) >= DISPLAY_UPDATE_MIN_INTERVAL:
+        disp.image(image, ROTATION)
+        LAST_DISPLAY_UPDATE_TIME = current_time
 
 
+# ----------------------------------------------------------------------------
 def show_copy(percent, line=1):
     show_progress_bar("Copy", line * NEW_LINE, percent, COPY_COLOR)
 
 
-
+# ----------------------------------------------------------------------------
 def show_files(percent, line=2):
     show_progress_bar("Files", line * NEW_LINE, percent, FILE_COLOR)
 
 
-
+# ----------------------------------------------------------------------------
 def show_sd(percent, line=3):
     show_progress_bar("SD", line * NEW_LINE, percent, SD_COLOR)
 
 
-
+# ----------------------------------------------------------------------------
 def show_hd(percent, line=4):
     show_progress_bar("HD", line * NEW_LINE, percent, HD_COLOR)
 
 
-
+# ----------------------------------------------------------------------------
 def show_file_stats(filenum, total):
     print_line("File", 6, WHITE, f"{filenum}/{total}")
 
+def show_rsync():
+    center_line( "RSYNC", 4, "BLACK", "CYAN")
+
+
+# ----------------------------------------------------------------------------
 def show_remain_stats(left):
     print_line("Left", 6, WHITE, f"{left}")
 
 
+# ----------------------------------------------------------------------------
 def show_tx_stats(filename, bps):
     bps = int(bps)
     if bps >= 1024 * 1024:
@@ -263,7 +275,6 @@ signal.signal(signal.SIGINT, signal_handler)
 # ----------------------------------------------------------------------------
 def status_error(topic, data):
     """status_error"""
-    update_display( int(data["_epoch"]))
     msg = "Error"
     if "level" in data:
         msg += f":{data['level']}"
@@ -271,7 +282,7 @@ def status_error(topic, data):
     center_line(data["msg"], 3, WHITE, RED)
     if "msg2" in data and len(data["msg2"]):
         center_line(data["msg2"], 4, RED)
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"], force=True)
 
 
 # ----------------------------------------------------------------------------
@@ -279,24 +290,24 @@ def status_ready(topic, data):
     """status_ready"""
     clr_line(2)
     if data and "msg" in data:
-        center_line(data["msg"], 2, GREEN)
+        center_line(data["msg"], 2, BLACK, YELLOW)
     else:
         center_line("", 2, WHITE, GREEN)
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
 
 
 # ----------------------------------------------------------------------------
 def status_startcopy(topic, data):
     """status_startcopy"""
     cls()
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
 
 
 # ----------------------------------------------------------------------------
 def status_endcopy(topic, data):
     """status_endcopy"""
     cls()
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
 
 
 start_copy_time = 0
@@ -315,9 +326,11 @@ def status_copydata(topic, data):
 
     show_files(data["files_copied"] / data["files_total"])
     if data["rsync"]:
-        show_remain_stats(data["files_total"] - data["files_copied"])
-    else:
-        show_file_stats(data["files_copied"], data["files_total"])
+        # show_file_stats(data["files_copied"], data["files_total"])
+        # show_remain_stats(data["files_total"] - data["files_copied"])
+        show_rsync()
+    # else:
+    show_file_stats(data["files_copied"], data["files_total"])
 
     if not data["copied"]:
         start_copy_time = time.time()
@@ -328,14 +341,14 @@ def status_copydata(topic, data):
     # assuming photo filenames are 13 chars long
     filename = os.path.basename(data["fromfile"])[:13]
     show_tx_stats(filename, bps)
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
 
 
 # ----------------------------------------------------------------------------
 def status_waitremove(topic, data):
     """status_waitremove"""
-    center_line("Remove SD Card", 2, ORANGE)
-    update_display( int(data["_epoch"]))
+    center_line("Remove SD Card / Camera", 2, WHITE, PURPLE)
+    update_display(data["_epoch"])
 
 
 # ----------------------------------------------------------------------------
@@ -354,7 +367,7 @@ def status_devicedata(topic, data):
 
     if data["hd_size"]:
         show_hd(quick_perc(data["hd_free"], data["hd_size"]))
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
 
 
 # ----------------------------------------------------------------------------
@@ -362,7 +375,8 @@ def status_diskfull(topic, data):
     """status_devicedata"""
     cls()
     center_line("HD disk full", 2, "#FFFFFF", "#FF0000")
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
+
 
 # display a small message
 def status_fivelines(topic, data):
@@ -376,15 +390,15 @@ def status_fivelines(topic, data):
     # get index and the array value, max 5 lines
     for line, txt in enumerate(data["lines"][:5]):
         center_line(txt, line, color)
-    update_display( int(data["_epoch"]))
+    update_display(data["_epoch"])
 
 
 # ----------------------------------------------------------------------------
 # we only get keep alives when the system is not doing anything else, so
-# we can update the time
+# we can update the time - use local system time instead of MQTT timestamp
 def status_keepalive(topic, data):
-    """status_devicedata"""
-    update_display( int(data["_epoch"]))
+    """status_keepalive"""
+    update_display()
 
 
 # ----------------------------------------------------------------------------
@@ -392,10 +406,7 @@ def status_keepalive(topic, data):
 def status_cls(topic, data):
     """status_devicedata"""
     cls()
-    update_display( int(data["_epoch"]))
-
-
-# ----------------------------------------------------------------------------
+    update_display(data["_epoch"])
 
 # ----------------------------------------------------------------------------
 def mqtt_listener():
@@ -416,8 +427,13 @@ def mqtt_listener():
 
     msg = Messaging()
 
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
+    # Keep a persistent MQTT session so retained messages are available after reconnects.
+    msg.connect(
+        handlers,
+        client_id="gnarlypi-status",
+        clean_session=False,
+        subscribe_qos=1,
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -425,7 +441,7 @@ def mqtt_listener():
 if __name__ == "__main__":
     # get config from default location $GNARLYPI_CONFIG
     config = Config()
-    
+
     # print(f"Config file: {config.get('status.pitft')}")
     # get display settings from config or use defaults
     ROTATION = config.get("status.pitft.rotation", ROTATION)
