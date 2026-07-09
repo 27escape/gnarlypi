@@ -8,19 +8,51 @@
 
 source "$HOME/gnarlypi/setenv.sh"
 
+
+# ----------------------------------------------------------------------------
+function kill_processes() {
+  local proc_name="$1"
+  local force="${2:-false}"
+  local pids
+  local current_pid="$$"
+  local proc_lines
+  local kill_signal="-TERM"
+
+  if [ "$force" = "true" ]; then
+    kill_signal="-KILL"
+  fi
+
+  proc_lines=$(ps ax -o pid= -o command= | grep "$proc_name" | grep -v grep | grep -v "$SELF" || true)
+  pids=$(echo "$proc_lines" | awk '{print $1}' | grep -v "^$current_pid$" || true)
+
+  if [ -z "$pids" ]; then
+    return 0
+  fi
+
+  # echo "Killing processes for '$proc_name' (excluding self: $current_pid, force: $force): $pids"
+
+  for pid in $pids; do
+    kill "$kill_signal" "$pid" 2>/dev/null || true
+  done
+
+  proc_lines=$(ps ax -o pid= -o command= | grep "$proc_name" | grep -v grep | grep -v "$SELF" || true)
+  pids=$(echo "$proc_lines" | awk '{print $1}' | grep -v "^$current_pid$" || true)
+
+  if [ -n "$pids" ]; then
+    echo "Failed to kill some processes for '$proc_name': $pids"
+  fi
+}
+
+# ----------------------------------------------------------------------------
+
 cd "$BIN_PATH" || (echo "cannot find dir $BIN_PATH" && exit 1)
 
 SELF=$(basename "$0")
-processes_to_kill=$(ps ax | grep "gnarly" | grep -v grep | grep -v "$SELF")
 
-# bash 4 and later map text into array
-mapfile -t lines <<< "$processes_to_kill"
+kill_processes "gnarly" 
+kill_processes "gnarly" "true"  # Force kill any remaining gnarly processes
 
-for line in "${lines[@]}"; do
-  # Process the line here
-  pid=$(echo "$line" | awk '{print $1}')
-  kill $pid 2>/dev/null
-done
+# exit
 
 # remove any previous log files
 rm -f /tmp/gnarlypi* 2>/dev/null

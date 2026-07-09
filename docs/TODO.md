@@ -7,8 +7,13 @@ Interaction:
     - **decision**: do not implement, leave SD card/camera storage manage to user
   - [ ] delete files from storage? could be done via Samba, could be done via web
   - [x] rsync to NAS/computer - target defined in some config file, check target available before attempt 
+  - [ ] mount SMB share and use as rsync target, allow connection to some NAS and windows shares
 
-During copy process:
+Other Cameras:
+- check where other cameras keep files, 
+  - [ ] SONY RX100 keeps video files in `/PRIVATE/M4ROOT/CLIP/C*.MP4` ignore other files, though `/PRIVATE/M4ROOT/THMBNL` holds a thumbnail for the video which could be handy for the indexer
+
+During index process:
 - extract image thumbnails for 
 - [ ] Create day/trip indexes to each file that can be accessed via Samba/smb shares
   - Create folder for each day/trip with symlinks to the relevant images

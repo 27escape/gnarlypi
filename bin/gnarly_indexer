@@ -54,7 +54,7 @@ EXTENSIONS = [
     "SRW",
     "AVI",
     "MP4", ".M4V",
-    "MOV"
+    "MOV", 
 ]
 
 REQUIRED_TAGS = [
@@ -93,7 +93,7 @@ def make_dest(dest):
     """
     make destination directory set ownership to that of parent directory
     """
-    logger.debug(f"making {dest}")
+    # logger.debug(f"making {dest}")
     os.makedirs(dest, exist_ok=True)
     parent = os.path.dirname(dest)
     stat = os.stat(parent)
@@ -230,11 +230,11 @@ def create_symlink(target_file, symlink_name):
 
         # create the symlink
         os.symlink(target_file, symlink_name)
-        logger.debug(f"Created symlink: '{symlink_name}' -> '{target_file}'")
+        # logger.debug(f"Created symlink: '{symlink_name}' -> '{target_file}'")
 
         # set the time on the symlink, not the target
         os.utime(symlink_name, (atime, mtime), follow_symlinks=False)
-        logger.debug(f"Times of '{symlink_name}' to match '{target_file}'.")
+        # logger.debug(f"Set time of '{symlink_name}' to match '{target_file}'.")
 
     except FileNotFoundError:
         logger.error(f"Error: Target file '{target_file}' not found.")
@@ -290,7 +290,7 @@ def index_file(topic, data):
         logger.debug(f'ignore {data["filename"]}')
         return
 
-    logger.info(f'index {data["filename"]} into {INDEX_DIR}')
+    # logger.info(f'index {data["filename"]} into {INDEX_DIR}')
 
     try:
         tags = extract_exif( data["filename"])
@@ -312,7 +312,7 @@ def index_dir(topic, data):
     """index_dir"""
     global indexer_ignore_files
 
-    logger.info( 'drain the swamp')
+    # logger.info( 'drain the swamp')
     # allow the index files to drain
     indexer_ignore_files = True
     # give it a few seconds to drain them all
@@ -384,7 +384,7 @@ if __name__ == "__main__":
 
         args = parser.parse_args()
 
-        status = Status()
+        status = Status( client_id=APP_NAME)
 
         if( args.reindex):
             logger.info( 'reindexing')

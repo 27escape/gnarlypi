@@ -119,8 +119,8 @@ last_keep_alive = time.time()
 def status_keepalive(topic, data):
     """status_devicedata"""
     global last_keep_alive
-    if not int(data["_epoch"] - last_keep_alive) % 30:
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - system still working") 
+    if not (data["_epoch"] - last_keep_alive) % 30:
+        print(f"{datetime.fromtimestamp(data['_epoch']).strftime('%Y-%m-%d %H:%M:%S')} - system still working") 
     last_keep_alive = data["_epoch"]
 
 
@@ -149,5 +149,10 @@ if __name__ == "__main__":
         "/photos/button": status_button,
     }
 
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
+    # Keep a persistent MQTT session so retained messages are available after reconnects.
+    msg.connect(
+        handlers,
+        client_id="gnarly-status-basic",
+        clean_session=False,
+        subscribe_qos=1,
+    )

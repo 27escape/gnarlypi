@@ -1,5 +1,6 @@
  #!/usr/bin/env python3
 
+import uuid
 from .messaging import Messaging
 
 # ----------------------------------------------------------------------------
@@ -12,14 +13,23 @@ class Status:
 
     Args:
         server (str)            defaults to localhost
-
+        client_id (str)         unique MQTT client ID. Defaults to a random UUID.
     """
     
     
-    def __init__(self, server="localhost") -> None:
+    def __init__(self, server="localhost", client_id=None) -> None:
         self.server = server
+        
+        # Generate a unique UUID-based client ID if none is provided
+        if client_id is None:
+            self.client_id = f"status-{uuid.uuid4().hex[:8]}"
+        else:
+            self.client_id = client_id
+
         self.msg = Messaging()
-        self.msg.connect(None, self.server)
+        
+        # Pass the client_id explicitly to the Messaging connect method
+        self.msg.connect(None, self.server, client_id=self.client_id)
 
     # ----------------------------------------------------------------------------
     def error(self, error_msg, error_lvl=0, msg2=""):
@@ -41,7 +51,7 @@ class Status:
     # ----------------------------------------------------------------------------
     def ready(self, msg):
         """show that the system is ready to accept an SD card insertion"""
-        print( f"status.py Status ready: {msg}" )
+        # print( f"status.py Status ready: {msg}" )
         self.msg.publish("/photos/ready", {"msg": msg})
 
     # ----------------------------------------------------------------------------
@@ -174,16 +184,6 @@ class Status:
         self.msg.publish("/photos/cls")
 
     # ----------------------------------------------------------------------------
-    def buttonpress(self, button):
-        """send a single button press
-
-        Args:
-            button (str)   single button character to send
-        """
-        # slice to a single character
-        self.msg.publish("/photos/button", {"button": button[:1]})
-
-    # ----------------------------------------------------------------------------
     def app_resume(self):
         """tell the main app, that a sub app has completed
 
@@ -199,6 +199,9 @@ class Status:
         Args:
             filename (str)  full path to the file to be index
         """
-        self.msg.publish("/photos/indexfile", {"filename": filename})
+        # we are going to have the MQTT server remember all the files to be indexed
+        # this allows the system to be rebooted etc without losing the filepaths
+        # that need indexing, the retained messages will be sent to any new clients that connect
+        self.msg.publish("/photos/indexfile", {"filename": filename}, retain=True)
 
    

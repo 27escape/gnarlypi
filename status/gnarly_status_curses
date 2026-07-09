@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+from datetime import datetime
 import curses
 import signal
 import logging
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 
+UPDATE_KEEP_ALIVE = 1
 BLOCK_SIZE = 1024 * 1024 * 1024
 ONE_MINUTE = 60
 
@@ -177,9 +179,10 @@ def print_msg(txt, line=2):
 
 
 # ----------------------------------------------------------------------------
-def show_time():
+# this is time from the epoch provided in the message stream
+def show_time(seconds):
     global time_area
-    time_area = time.strftime("%X").rjust(TIME_WIDTH-2, ' ')
+    time_area = datetime.fromtimestamp(seconds).strftime("%X").rjust(TIME_WIDTH-2, ' ')
     update_display()
 
 # ----------------------------------------------------------------------------
@@ -284,14 +287,15 @@ def status_diskfull(topic, data):
 
 # ----------------------------------------------------------------------------
 # we only get keep alives when the system is not doing anything else, so
-#  we can track an amount of these, lets try for one in 30
-last_keep_alive = time.time()
+# we can track an amount of these, lets try for one in UPDATE_KEEP_ALIVE seconds, 
+# and if we miss one then we can show a message that the system is still working
+last_keep_alive = int(time.time())
 
 
 def status_keepalive(topic, data):
     """status_keepalive"""
     global last_keep_alive
-    if not int(data["_epoch"] - last_keep_alive) % 30:
+    if not int(data["_epoch"] - last_keep_alive) % UPDATE_KEEP_ALIVE:
         print_msg("system still working", 4)
         last_keep_alive = data["_epoch"]
 
@@ -306,7 +310,7 @@ def status_fivelines(topic, data):
 
 
 # ----------------------------------------------------------------------------
-# clea the display
+# clear the display
 def status_cls(topic, data):
     """status_cls"""
     cls()
@@ -334,8 +338,13 @@ def thread_subscriptions():
         "/photos/cls": status_cls,
     }
 
-    # if we pass handlers, then we will also kickoff the loop
-    msg.connect(handlers)
+    # Keep a persistent MQTT session so retained messages are available after reconnects.
+    msg.connect(
+        handlers,
+        client_id="gnarly-status-curses",
+        clean_session=False,
+        subscribe_qos=1,
+    )
 
 
 # ----------------------------------------------------------------------------
@@ -384,7 +393,7 @@ def curses_display(stdscr):
     )
 
     while True:
-        show_time()
+        show_time( last_keep_alive)
         time.sleep(1)
 
 # ----------------------------------------------------------------------------

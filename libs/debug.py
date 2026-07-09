@@ -43,7 +43,7 @@ class DebugLogger:
 
 
 
-def Debug(name, logfile=None, level=logging.INFO):
+def Debug(name, logfile=None, level="INFO"):
     """Initialize logging for the application."""
 
     # logger = logging.getLogger(name=__file__)      

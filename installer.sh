@@ -38,10 +38,12 @@ function install_tools() {
 # ----------------------------------------------------------------------------
 # lets us use pip3 to install things
 function override_system_python() {
-
-  if [ -f "/usr/lib/python3.11/EXTERNALLY-MANAGED" ] ; then
-    sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED
-  fi
+  # manage different minor versions of python
+  for file in /usr/lib/python3.*/EXTERNALLY-MANAGED; do
+      if [ -f "$file" ]; then
+          sudo rm "$file"
+      fi
+  done
 }
 
 # ----------------------------------------------------------------------------
@@ -68,6 +70,8 @@ function install_device_ledshim() {
 
 # ----------------------------------------------------------------------------
 function install_device_mini_pitft() {
+FIRMWARE_FILE="/boot/firmware/config.txt"
+SPI_OVERLAY="dtoverlay=spi0-0cs"
     echo "Installing mini_pitft"
     # 0 means ON
     sudo raspi-config nonint do_i2c 0
@@ -78,8 +82,8 @@ function install_device_mini_pitft() {
   grep -q "$SPI_OVERLAY" "$FIRMWARE_FILE"
   if [ "$?" == "1" ] ; then
     REBOOT_REQUIRED=1
-      echo "# gnarly pi enabling tis for the mini PiTFT display" >> $FIRMWARE_FILE
-      sudo echo "$SPI_OVERLAY" >> $FIRMWARE_FILE
+    echo "# gnarly pi enabling tis for the mini PiTFT display" | sudo tee -a $FIRMWARE_FILE > /dev/null
+    echo "$SPI_OVERLAY" | sudo tee -a $FIRMWARE_FILE > /dev/null
   fi
 }
 
@@ -172,7 +176,7 @@ function install_crontab() {
 # ----------------------------------------------------------------------------
 function install_gnarly() {
   echo "Installing gnarly code"
-  pip3 install -r requirements.txt
+  pip3 install .
 }
 
 function link_usbdata() {
@@ -182,6 +186,21 @@ function link_usbdata() {
       mkdir "/home/$USER/usb_data"
     fi
     sudo ln -s "/mnt/usb_data" "/home/$USER/usb_data"
+  fi
+}
+
+# persistence true
+# persistence_location /var/lib/mosquitto/
+
+function check_mosquitto_persistence() {
+  # check if mosquitto messages are persistent
+  if ! grep -q "persistence true" "/etc/mosquitto/mosquitto.conf" ; then
+    echo "mosquitto messages not persistent, making it so"
+    sudo systemctl stop mosquitto
+    # we need to append to mosquitto.conf as root
+    echo "persistence true
+persistence_location /var/lib/mosquitto/" | sudo tee -a /etc/mosquitto/mosquitto.conf > /dev/null
+    sudo systemctl start mosquitto
   fi
 }
 
@@ -198,6 +217,7 @@ install_device_ledshim
 install_device_mini_pitft
 install_samba
 install_gnarly
+check_mosquitto_persistence
 
 ./bin/display_config.sh
 

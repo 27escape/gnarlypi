@@ -1,306 +1,306 @@
-{"time_delay": 569, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164185600, "_epoch": 1762183519.3700457}}
-{"time_delay": 3, "topic": "/photos/keepalive", "data": {"_epoch": 1762183519.3737483}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183520.3739984}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183520.377676}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183521.3779612}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183521.3815746}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183522.3818564}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183522.3855007}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183523.385744}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183523.3893955}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183524.3896477}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183524.3945594}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183525.3948555}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183525.3997483}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183526.4000437}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183526.4048705}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183527.405183}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183527.4098432}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183528.4101324}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183528.415236}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183529.4155421}}
-{"time_delay": 524, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777164177408, "_epoch": 1762183529.9393635}}
-{"time_delay": 31, "topic": "/photos/startcopy", "data": {"files_total": 25, "_epoch": 1762183529.9706578}}
-{"time_delay": 53, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107622.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "size": 18092097, "copied": 0, "files_copied": 0, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530.023261}}
-{"time_delay": 893, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107622.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "size": 18092097, "copied": 16777216, "files_copied": 0, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530.9163692}}
-{"time_delay": 52, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107622.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "size": 18092097, "copied": 18092097, "files_copied": 0, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530.9682713}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "_epoch": 1762183530.9686294}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777146081280, "_epoch": 1762183530.9687097}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107623.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "size": 18359233, "copied": 0, "files_copied": 1, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530.9689217}}
-{"time_delay": 1085, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107623.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "size": 18359233, "copied": 16777216, "files_copied": 1, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532.0543327}}
-{"time_delay": 163, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107623.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "size": 18359233, "copied": 18359233, "files_copied": 1, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532.2177167}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "_epoch": 1762183532.2184145}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777127710720, "_epoch": 1762183532.2185154}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107624.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "size": 18934063, "copied": 0, "files_copied": 2, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532.2188468}}
-{"time_delay": 737, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107624.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "size": 18934063, "copied": 16777216, "files_copied": 2, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532.9566615}}
-{"time_delay": 80, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107624.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "size": 18934063, "copied": 18934063, "files_copied": 2, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533.036504}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "_epoch": 1762183533.0372124}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777108774912, "_epoch": 1762183533.037313}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107625.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "size": 18957097, "copied": 0, "files_copied": 3, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533.0376256}}
-{"time_delay": 747, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107625.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "size": 18957097, "copied": 16777216, "files_copied": 3, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533.7840745}}
-{"time_delay": 80, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107625.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "size": 18957097, "copied": 18957097, "files_copied": 3, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533.8632562}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "_epoch": 1762183533.8639264}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777089814528, "_epoch": 1762183533.8640106}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107626.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "size": 19353057, "copied": 0, "files_copied": 4, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533.8642201}}
-{"time_delay": 659, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107626.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "size": 19353057, "copied": 16777216, "files_copied": 4, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183534.523127}}
-{"time_delay": 95, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107626.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "size": 19353057, "copied": 19353057, "files_copied": 4, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183534.618318}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "_epoch": 1762183534.6190605}}
-{"time_delay": 2, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777070456832, "_epoch": 1762183534.6191566}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107627.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "size": 18399620, "copied": 0, "files_copied": 5, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183534.6193762}}
-{"time_delay": 669, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107627.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "size": 18399620, "copied": 16777216, "files_copied": 5, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535.289317}}
-{"time_delay": 59, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107627.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "size": 18399620, "copied": 18399620, "files_copied": 5, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535.3474915}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "_epoch": 1762183535.3482823}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777052053504, "_epoch": 1762183535.3484356}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107628.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "size": 18713550, "copied": 0, "files_copied": 6, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535.3487415}}
-{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107628.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "size": 18713550, "copied": 16777216, "files_copied": 6, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535.9979763}}
-{"time_delay": 68, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107628.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "size": 18713550, "copied": 18713550, "files_copied": 6, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536.0655885}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "_epoch": 1762183536.0664759}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777033338880, "_epoch": 1762183536.066602}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107629.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "size": 19093921, "copied": 0, "files_copied": 7, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536.066983}}
-{"time_delay": 655, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107629.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "size": 19093921, "copied": 16777216, "files_copied": 7, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536.723917}}
-{"time_delay": 84, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107629.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "size": 19093921, "copied": 19093921, "files_copied": 7, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536.8059566}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "_epoch": 1762183536.8067827}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777014239232, "_epoch": 1762183536.8068879}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107630.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "size": 19260772, "copied": 0, "files_copied": 8, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536.8071575}}
-{"time_delay": 650, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107630.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "size": 19260772, "copied": 16777216, "files_copied": 8, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183537.4587615}}
-{"time_delay": 91, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107630.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "size": 19260772, "copied": 19260772, "files_copied": 8, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183537.549184}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "_epoch": 1762183537.5502677}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776994975744, "_epoch": 1762183537.5505044}}
-{"time_delay": 2, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107631.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "size": 18976876, "copied": 0, "files_copied": 9, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183537.5515523}}
-{"time_delay": 647, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107631.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "size": 18976876, "copied": 16777216, "files_copied": 9, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538.199412}}
-{"time_delay": 78, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107631.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "size": 18976876, "copied": 18976876, "files_copied": 9, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538.2772946}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "_epoch": 1762183538.2782102}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776975994880, "_epoch": 1762183538.2783437}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107632.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "size": 18355884, "copied": 0, "files_copied": 10, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538.2789292}}
-{"time_delay": 645, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107632.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "size": 18355884, "copied": 16777216, "files_copied": 10, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538.9247704}}
-{"time_delay": 56, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107632.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "size": 18355884, "copied": 18355884, "files_copied": 10, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538.9803467}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "_epoch": 1762183538.9811828}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776957632512, "_epoch": 1762183538.9813032}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107633.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "size": 18097687, "copied": 0, "files_copied": 11, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538.981826}}
-{"time_delay": 649, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107633.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "size": 18097687, "copied": 16777216, "files_copied": 11, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183539.631031}}
-{"time_delay": 47, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107633.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "size": 18097687, "copied": 18097687, "files_copied": 11, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183539.6785057}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "_epoch": 1762183539.6793287}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776939532288, "_epoch": 1762183539.6794484}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107634.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "size": 18746816, "copied": 0, "files_copied": 12, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183539.6799495}}
-{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107634.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "size": 18746816, "copied": 16777216, "files_copied": 12, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183540.328844}}
-{"time_delay": 72, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107634.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "size": 18746816, "copied": 18746816, "files_copied": 12, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183540.3999386}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "_epoch": 1762183540.4007385}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776920784896, "_epoch": 1762183540.4008455}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107635.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "size": 18439386, "copied": 0, "files_copied": 13, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183540.4011214}}
-{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107635.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "size": 18439386, "copied": 16777216, "files_copied": 13, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541.0500195}}
-{"time_delay": 59, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107635.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "size": 18439386, "copied": 18439386, "files_copied": 13, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541.1080666}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "_epoch": 1762183541.1088903}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776902340608, "_epoch": 1762183541.1089945}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107636.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "size": 18410761, "copied": 0, "files_copied": 14, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541.1092613}}
-{"time_delay": 646, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107636.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "size": 18410761, "copied": 16777216, "files_copied": 14, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541.756524}}
-{"time_delay": 58, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107636.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "size": 18410761, "copied": 18410761, "files_copied": 14, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541.814418}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "_epoch": 1762183541.8152614}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776883929088, "_epoch": 1762183541.8154104}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107637.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "size": 19795538, "copied": 0, "files_copied": 15, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541.815819}}
-{"time_delay": 646, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107637.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "size": 19795538, "copied": 16777216, "files_copied": 15, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183542.4617684}}
-{"time_delay": 112, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107637.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "size": 19795538, "copied": 19795538, "files_copied": 15, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183542.5733585}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "_epoch": 1762183542.5742848}}
-{"time_delay": 2, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776864133120, "_epoch": 1762183542.5744088}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107638.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "size": 18818905, "copied": 0, "files_copied": 16, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183542.5748134}}
-{"time_delay": 645, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107638.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "size": 18818905, "copied": 16777216, "files_copied": 16, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543.2214053}}
-{"time_delay": 72, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107638.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "size": 18818905, "copied": 18818905, "files_copied": 16, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543.2933254}}
-{"time_delay": 2, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "_epoch": 1762183543.294157}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776845307904, "_epoch": 1762183543.2942922}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107639.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "size": 19179835, "copied": 0, "files_copied": 17, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543.2948098}}
-{"time_delay": 646, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107639.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "size": 19179835, "copied": 16777216, "files_copied": 17, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543.9425447}}
-{"time_delay": 89, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107639.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "size": 19179835, "copied": 19179835, "files_copied": 17, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544.0302858}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "_epoch": 1762183544.031111}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776826126336, "_epoch": 1762183544.0312197}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107640.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "size": 18168078, "copied": 0, "files_copied": 18, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544.0315006}}
-{"time_delay": 647, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107640.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "size": 18168078, "copied": 16777216, "files_copied": 18, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544.680991}}
-{"time_delay": 48, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107640.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "size": 18168078, "copied": 18168078, "files_copied": 18, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544.7288365}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "_epoch": 1762183544.7297866}}
-{"time_delay": 4, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776807956480, "_epoch": 1762183544.7338006}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107641.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "size": 20546269, "copied": 0, "files_copied": 19, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544.7343855}}
-{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107641.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "size": 20546269, "copied": 16777216, "files_copied": 19, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183545.3828065}}
-{"time_delay": 139, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107641.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "size": 20546269, "copied": 20546269, "files_copied": 19, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183545.5213253}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "_epoch": 1762183545.5222979}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776787402752, "_epoch": 1762183545.5224345}}
-{"time_delay": 2, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107642.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "size": 20054979, "copied": 0, "files_copied": 20, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183545.5230098}}
-{"time_delay": 649, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107642.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "size": 20054979, "copied": 16777216, "files_copied": 20, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546.1735187}}
-{"time_delay": 122, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107642.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "size": 20054979, "copied": 20054979, "files_copied": 20, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546.2957213}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "_epoch": 1762183546.2965994}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776767340544, "_epoch": 1762183546.2967246}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107643.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "size": 20821725, "copied": 0, "files_copied": 21, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546.297243}}
-{"time_delay": 660, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107643.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "size": 20821725, "copied": 16777216, "files_copied": 21, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546.9581106}}
-{"time_delay": 147, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107643.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "size": 20821725, "copied": 20821725, "files_copied": 21, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547.1060483}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "_epoch": 1762183547.1069543}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776746516480, "_epoch": 1762183547.1070776}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107644.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "size": 19730231, "copied": 0, "files_copied": 22, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547.1076186}}
-{"time_delay": 645, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107644.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "size": 19730231, "copied": 16777216, "files_copied": 22, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547.7537134}}
-{"time_delay": 107, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107644.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "size": 19730231, "copied": 19730231, "files_copied": 22, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547.8603566}}
-{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "_epoch": 1762183547.8612525}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776726786048, "_epoch": 1762183547.8613763}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107645.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "size": 19676564, "copied": 0, "files_copied": 23, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547.8619285}}
-{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107645.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "size": 19676564, "copied": 16777216, "files_copied": 23, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183548.5103414}}
-{"time_delay": 108, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107645.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "size": 19676564, "copied": 19676564, "files_copied": 23, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183548.6186335}}
-{"time_delay": 2, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "_epoch": 1762183548.6195357}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776707104768, "_epoch": 1762183548.6196644}}
-{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107646.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "size": 20580153, "copied": 0, "files_copied": 24, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183548.6200116}}
-{"time_delay": 642, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107646.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "size": 20580153, "copied": 16777216, "files_copied": 24, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183549.2647417}}
-{"time_delay": 140, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107646.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "size": 20580153, "copied": 20580153, "files_copied": 24, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183549.4041877}}
-{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "_epoch": 1762183549.405112}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776686522368, "_epoch": 1762183549.4052358}}
-{"time_delay": 2, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776686518272, "_epoch": 1762183549.4069862}}
-{"time_delay": 2, "topic": "/photos/endcopy", "data": {"files_copied": 25, "files_total": 25, "_epoch": 1762183549.4077437}}
-{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776686518272, "_epoch": 1762183549.408068}}
-{"time_delay": 189, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686518272, "_epoch": 1762183549.6001048}}
-{"time_delay": 0, "topic": "/photos/waitremove", "data": {"_epoch": 1762183549.6002917}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183549.6048434}}
-{"time_delay": 1006, "topic": "/photos/keepalive", "data": {"_epoch": 1762183550.6101015}}
-{"time_delay": 1004, "topic": "/photos/keepalive", "data": {"_epoch": 1762183551.614959}}
-{"time_delay": 1005, "topic": "/photos/keepalive", "data": {"_epoch": 1762183552.6197944}}
-{"time_delay": 1005, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183553.624506}}
-{"time_delay": 1, "topic": "/photos/ready", "data": {"msg": "Insert SD card", "_epoch": 1762183553.6251523}}
-{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183553.6252706}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183553.6300416}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183554.6303327}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183554.6353076}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183555.6356113}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183555.6404}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183556.6413043}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183556.6463192}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183557.646617}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183557.6514626}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183558.6517603}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183558.656657}}
-{"time_delay": 1004, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183559.6569579}}
-{"time_delay": 1, "topic": "/photos/keepalive", "data": {"_epoch": 1762183559.661828}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183560.6621222}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183560.6670177}}
-{"time_delay": 1002, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183561.667327}}
-{"time_delay": 3, "topic": "/photos/keepalive", "data": {"_epoch": 1762183561.6725817}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183562.672885}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183562.6777594}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183563.6780636}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183563.6829422}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183564.6832433}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183564.688069}}
-{"time_delay": 1002, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183565.6888354}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183565.6936698}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183566.694389}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183566.699326}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183567.6996338}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183567.7044787}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183568.704784}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183568.7096422}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183569.7099607}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183569.7150278}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183570.7153237}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183570.7203588}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183571.7206552}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183571.7256253}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183572.7259498}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183572.730854}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183573.7311523}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183573.7359908}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183574.7367668}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183574.741674}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183575.7419958}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183575.7468944}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183576.7471955}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183576.752067}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183577.7523618}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183577.7571568}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183578.7579596}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183578.7628455}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183579.7631445}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183579.767976}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183580.7682784}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183580.7731843}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183581.773487}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183581.7783647}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183582.7786634}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183582.78362}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183583.783911}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183583.7887075}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183584.7894626}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183584.7944984}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183585.7947874}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183585.799776}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183586.8000846}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183586.804967}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183587.8052652}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183587.8101528}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183588.8104477}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183588.815296}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183589.815601}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183589.8203886}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183590.820954}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183590.8258314}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183591.8261263}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183591.8310714}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183592.831367}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183592.8362346}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183593.8368194}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183593.8416655}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183594.8419795}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183594.84686}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183595.8471556}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183595.8520415}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183596.852468}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183596.8573606}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183597.857661}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183597.8624992}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183598.8627996}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183598.8676429}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183599.868227}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183599.8730772}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183600.8733788}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183600.8782277}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183601.8785233}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183601.8834684}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183602.8837743}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183602.8886714}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183603.8889697}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183603.893877}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183604.8943067}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183604.8991868}}
-{"time_delay": 398, "topic": "/photos/ready", "data": {"msg": "running rsync...", "_epoch": 1762183605.297902}}
-{"time_delay": 1, "topic": "/photos/cls", "data": {"_epoch": 1762183605.2980886}}
-{"time_delay": 398, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 0, "copied": 20580153, "files_copied": 0, "files_total": 0, "bps": 0, "rsync": true, "_epoch": 1762183605.6964955}}
-{"time_delay": 203, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183605.8994834}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183605.9034219}}
-{"time_delay": 850, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 32768, "files_copied": 0, "files_total": 0, "bps": 0, "rsync": true, "_epoch": 1762183606.7539003}}
-{"time_delay": 150, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183606.9036744}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183606.907557}}
-{"time_delay": 861, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 4358144, "files_copied": 0, "files_total": 0, "bps": 4099932, "rsync": true, "_epoch": 1762183607.7686417}}
-{"time_delay": 139, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183607.907806}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183607.9114563}}
-{"time_delay": 877, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 6717440, "files_copied": 0, "files_total": 0, "bps": 3229614, "rsync": true, "_epoch": 1762183608.7884133}}
-{"time_delay": 123, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183608.9117029}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183608.9154158}}
-{"time_delay": 907, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 9175040, "files_copied": 0, "files_total": 0, "bps": 2956984, "rsync": true, "_epoch": 1762183609.8230336}}
-{"time_delay": 94, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183609.9160366}}
-{"time_delay": 3, "topic": "/photos/keepalive", "data": {"_epoch": 1762183609.919803}}
-{"time_delay": 913, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 11534336, "files_copied": 0, "files_total": 0, "bps": 2789212, "rsync": true, "_epoch": 1762183610.8325272}}
-{"time_delay": 88, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183610.920054}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183610.9250138}}
-{"time_delay": 946, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 13762560, "files_copied": 0, "files_total": 0, "bps": 2306867, "rsync": true, "_epoch": 1762183611.8706658}}
-{"time_delay": 55, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183611.9257915}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183611.9306214}}
-{"time_delay": 988, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 16515072, "files_copied": 0, "files_total": 0, "bps": 2390753, "rsync": true, "_epoch": 1762183612.9182353}}
-{"time_delay": 13, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183612.931395}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183612.9362779}}
-{"time_delay": 477, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 19267584, "files_copied": 0, "files_total": 0, "bps": 2443182, "rsync": true, "_epoch": 1762183613.413303}}
-{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 20580153, "files_copied": 3352, "files_total": 3352, "bps": 2663383, "rsync": true, "_epoch": 1762183613.4135358}}
-{"time_delay": 523, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183613.9365764}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183613.9415777}}
-{"time_delay": 244, "topic": "/photos/fivelines", "data": {"color": "white", "lines": ["", "Completed", "", "3352 files", ""], "_epoch": 1762183614.18575}}
-{"time_delay": 757, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183614.9425426}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183614.947625}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183615.9479275}}
-{"time_delay": 6, "topic": "/photos/keepalive", "data": {"_epoch": 1762183615.9528272}}
-{"time_delay": 999, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183616.9531214}}
-{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183616.9579809}}
-{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686489600, "_epoch": 1762183617.9582741}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183617.9632008}}
-{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686489600, "_epoch": 1762183618.9635026}}
-{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183618.9684422}}
-{"time_delay": 218, "topic": "/photos/fivelines", "data": {"color": "white", "lines": ["", "", "", "", ""], "_epoch": 1762183619.1860151}}
-{"time_delay": 0, "topic": "/photos/ready", "data": {"msg": "INSERT SD CARD", "_epoch": 1762183619.1864169}}
+{"time_delay": 569, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164185600, "_epoch": 1762183519}}
+{"time_delay": 3, "topic": "/photos/keepalive", "data": {"_epoch": 1762183519}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183520}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183520}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183521}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183521}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183522}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183522}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183523}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183523}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183524}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183524}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183525}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183525}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183526}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183526}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183527}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183527}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183528}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183528}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1777164181504, "_epoch": 1762183529}}
+{"time_delay": 524, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777164177408, "_epoch": 1762183529}}
+{"time_delay": 31, "topic": "/photos/startcopy", "data": {"files_total": 25, "_epoch": 1762183529}}
+{"time_delay": 53, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107622.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "size": 18092097, "copied": 0, "files_copied": 0, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530}}
+{"time_delay": 893, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107622.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "size": 18092097, "copied": 16777216, "files_copied": 0, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530}}
+{"time_delay": 52, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107622.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "size": 18092097, "copied": 18092097, "files_copied": 0, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107622.ORF", "_epoch": 1762183530}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777146081280, "_epoch": 1762183530}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107623.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "size": 18359233, "copied": 0, "files_copied": 1, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183530}}
+{"time_delay": 1085, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107623.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "size": 18359233, "copied": 16777216, "files_copied": 1, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532}}
+{"time_delay": 163, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107623.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "size": 18359233, "copied": 18359233, "files_copied": 1, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107623.ORF", "_epoch": 1762183532}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777127710720, "_epoch": 1762183532}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107624.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "size": 18934063, "copied": 0, "files_copied": 2, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532}}
+{"time_delay": 737, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107624.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "size": 18934063, "copied": 16777216, "files_copied": 2, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183532}}
+{"time_delay": 80, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107624.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "size": 18934063, "copied": 18934063, "files_copied": 2, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107624.ORF", "_epoch": 1762183533}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777108774912, "_epoch": 1762183533}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107625.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "size": 18957097, "copied": 0, "files_copied": 3, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533}}
+{"time_delay": 747, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107625.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "size": 18957097, "copied": 16777216, "files_copied": 3, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533}}
+{"time_delay": 80, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107625.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "size": 18957097, "copied": 18957097, "files_copied": 3, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107625.ORF", "_epoch": 1762183533}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777089814528, "_epoch": 1762183533}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107626.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "size": 19353057, "copied": 0, "files_copied": 4, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183533}}
+{"time_delay": 659, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107626.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "size": 19353057, "copied": 16777216, "files_copied": 4, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183534}}
+{"time_delay": 95, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107626.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "size": 19353057, "copied": 19353057, "files_copied": 4, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183534}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107626.ORF", "_epoch": 1762183534}}
+{"time_delay": 2, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777070456832, "_epoch": 1762183534}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107627.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "size": 18399620, "copied": 0, "files_copied": 5, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183534}}
+{"time_delay": 669, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107627.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "size": 18399620, "copied": 16777216, "files_copied": 5, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535}}
+{"time_delay": 59, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107627.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "size": 18399620, "copied": 18399620, "files_copied": 5, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107627.ORF", "_epoch": 1762183535}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777052053504, "_epoch": 1762183535}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107628.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "size": 18713550, "copied": 0, "files_copied": 6, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535}}
+{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107628.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "size": 18713550, "copied": 16777216, "files_copied": 6, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183535}}
+{"time_delay": 68, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107628.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "size": 18713550, "copied": 18713550, "files_copied": 6, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107628.ORF", "_epoch": 1762183536}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777033338880, "_epoch": 1762183536}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107629.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "size": 19093921, "copied": 0, "files_copied": 7, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536}}
+{"time_delay": 655, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107629.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "size": 19093921, "copied": 16777216, "files_copied": 7, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536}}
+{"time_delay": 84, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107629.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "size": 19093921, "copied": 19093921, "files_copied": 7, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107629.ORF", "_epoch": 1762183536}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1777014239232, "_epoch": 1762183536}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107630.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "size": 19260772, "copied": 0, "files_copied": 8, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183536}}
+{"time_delay": 650, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107630.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "size": 19260772, "copied": 16777216, "files_copied": 8, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183537}}
+{"time_delay": 91, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107630.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "size": 19260772, "copied": 19260772, "files_copied": 8, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183537}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107630.ORF", "_epoch": 1762183537}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776994975744, "_epoch": 1762183537}}
+{"time_delay": 2, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107631.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "size": 18976876, "copied": 0, "files_copied": 9, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183537}}
+{"time_delay": 647, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107631.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "size": 18976876, "copied": 16777216, "files_copied": 9, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538}}
+{"time_delay": 78, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107631.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "size": 18976876, "copied": 18976876, "files_copied": 9, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107631.ORF", "_epoch": 1762183538}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776975994880, "_epoch": 1762183538}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107632.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "size": 18355884, "copied": 0, "files_copied": 10, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538}}
+{"time_delay": 645, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107632.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "size": 18355884, "copied": 16777216, "files_copied": 10, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538}}
+{"time_delay": 56, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107632.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "size": 18355884, "copied": 18355884, "files_copied": 10, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107632.ORF", "_epoch": 1762183538}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776957632512, "_epoch": 1762183538}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107633.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "size": 18097687, "copied": 0, "files_copied": 11, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183538}}
+{"time_delay": 649, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107633.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "size": 18097687, "copied": 16777216, "files_copied": 11, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183539}}
+{"time_delay": 47, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107633.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "size": 18097687, "copied": 18097687, "files_copied": 11, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183539}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107633.ORF", "_epoch": 1762183539}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776939532288, "_epoch": 1762183539}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107634.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "size": 18746816, "copied": 0, "files_copied": 12, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183539}}
+{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107634.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "size": 18746816, "copied": 16777216, "files_copied": 12, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183540}}
+{"time_delay": 72, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107634.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "size": 18746816, "copied": 18746816, "files_copied": 12, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183540}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107634.ORF", "_epoch": 1762183540}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776920784896, "_epoch": 1762183540}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107635.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "size": 18439386, "copied": 0, "files_copied": 13, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183540}}
+{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107635.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "size": 18439386, "copied": 16777216, "files_copied": 13, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541}}
+{"time_delay": 59, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107635.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "size": 18439386, "copied": 18439386, "files_copied": 13, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107635.ORF", "_epoch": 1762183541}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776902340608, "_epoch": 1762183541}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107636.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "size": 18410761, "copied": 0, "files_copied": 14, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541}}
+{"time_delay": 646, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107636.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "size": 18410761, "copied": 16777216, "files_copied": 14, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541}}
+{"time_delay": 58, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107636.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "size": 18410761, "copied": 18410761, "files_copied": 14, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107636.ORF", "_epoch": 1762183541}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776883929088, "_epoch": 1762183541}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107637.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "size": 19795538, "copied": 0, "files_copied": 15, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183541}}
+{"time_delay": 646, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107637.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "size": 19795538, "copied": 16777216, "files_copied": 15, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183542}}
+{"time_delay": 112, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107637.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "size": 19795538, "copied": 19795538, "files_copied": 15, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183542}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107637.ORF", "_epoch": 1762183542}}
+{"time_delay": 2, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776864133120, "_epoch": 1762183542}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107638.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "size": 18818905, "copied": 0, "files_copied": 16, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183542}}
+{"time_delay": 645, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107638.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "size": 18818905, "copied": 16777216, "files_copied": 16, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543}}
+{"time_delay": 72, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107638.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "size": 18818905, "copied": 18818905, "files_copied": 16, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543}}
+{"time_delay": 2, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107638.ORF", "_epoch": 1762183543}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776845307904, "_epoch": 1762183543}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107639.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "size": 19179835, "copied": 0, "files_copied": 17, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543}}
+{"time_delay": 646, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107639.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "size": 19179835, "copied": 16777216, "files_copied": 17, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183543}}
+{"time_delay": 89, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107639.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "size": 19179835, "copied": 19179835, "files_copied": 17, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107639.ORF", "_epoch": 1762183544}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776826126336, "_epoch": 1762183544}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107640.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "size": 18168078, "copied": 0, "files_copied": 18, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544}}
+{"time_delay": 647, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107640.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "size": 18168078, "copied": 16777216, "files_copied": 18, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544}}
+{"time_delay": 48, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107640.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "size": 18168078, "copied": 18168078, "files_copied": 18, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107640.ORF", "_epoch": 1762183544}}
+{"time_delay": 4, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776807956480, "_epoch": 1762183544}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107641.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "size": 20546269, "copied": 0, "files_copied": 19, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183544}}
+{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107641.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "size": 20546269, "copied": 16777216, "files_copied": 19, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183545}}
+{"time_delay": 139, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107641.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "size": 20546269, "copied": 20546269, "files_copied": 19, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183545}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107641.ORF", "_epoch": 1762183545}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776787402752, "_epoch": 1762183545}}
+{"time_delay": 2, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107642.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "size": 20054979, "copied": 0, "files_copied": 20, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183545}}
+{"time_delay": 649, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107642.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "size": 20054979, "copied": 16777216, "files_copied": 20, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546}}
+{"time_delay": 122, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107642.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "size": 20054979, "copied": 20054979, "files_copied": 20, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107642.ORF", "_epoch": 1762183546}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776767340544, "_epoch": 1762183546}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107643.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "size": 20821725, "copied": 0, "files_copied": 21, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546}}
+{"time_delay": 660, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107643.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "size": 20821725, "copied": 16777216, "files_copied": 21, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183546}}
+{"time_delay": 147, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107643.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "size": 20821725, "copied": 20821725, "files_copied": 21, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107643.ORF", "_epoch": 1762183547}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776746516480, "_epoch": 1762183547}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107644.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "size": 19730231, "copied": 0, "files_copied": 22, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547}}
+{"time_delay": 645, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107644.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "size": 19730231, "copied": 16777216, "files_copied": 22, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547}}
+{"time_delay": 107, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107644.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "size": 19730231, "copied": 19730231, "files_copied": 22, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547}}
+{"time_delay": 1, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107644.ORF", "_epoch": 1762183547}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776726786048, "_epoch": 1762183547}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107645.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "size": 19676564, "copied": 0, "files_copied": 23, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183547}}
+{"time_delay": 648, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107645.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "size": 19676564, "copied": 16777216, "files_copied": 23, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183548}}
+{"time_delay": 108, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107645.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "size": 19676564, "copied": 19676564, "files_copied": 23, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183548}}
+{"time_delay": 2, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107645.ORF", "_epoch": 1762183548}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776707104768, "_epoch": 1762183548}}
+{"time_delay": 1, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107646.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "size": 20580153, "copied": 0, "files_copied": 24, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183548}}
+{"time_delay": 642, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107646.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "size": 20580153, "copied": 16777216, "files_copied": 24, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183549}}
+{"time_delay": 140, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/mounts/sda1/DCIM/100OLYMP/EM107646.ORF", "tofile": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "size": 20580153, "copied": 20580153, "files_copied": 24, "files_total": 25, "bps": 0, "rsync": false, "_epoch": 1762183549}}
+{"time_delay": 0, "topic": "/photos/indexfile", "data": {"filename": "/home/user/usb_data/files/100OLYMP/EM107646.ORF", "_epoch": 1762183549}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776686522368, "_epoch": 1762183549}}
+{"time_delay": 2, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776686518272, "_epoch": 1762183549}}
+{"time_delay": 2, "topic": "/photos/endcopy", "data": {"files_copied": 25, "files_total": 25, "_epoch": 1762183549}}
+{"time_delay": 1, "topic": "/photos/devicedata", "data": {"sd_size": 127831900160, "sd_free": 111055208448, "hd_size": 1969934143488, "hd_free": 1776686518272, "_epoch": 1762183549}}
+{"time_delay": 189, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686518272, "_epoch": 1762183549}}
+{"time_delay": 0, "topic": "/photos/waitremove", "data": {"_epoch": 1762183549}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183549}}
+{"time_delay": 1006, "topic": "/photos/keepalive", "data": {"_epoch": 1762183550}}
+{"time_delay": 1004, "topic": "/photos/keepalive", "data": {"_epoch": 1762183551}}
+{"time_delay": 1005, "topic": "/photos/keepalive", "data": {"_epoch": 1762183552}}
+{"time_delay": 1005, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183553}}
+{"time_delay": 1, "topic": "/photos/ready", "data": {"msg": "Insert SD card", "_epoch": 1762183553}}
+{"time_delay": 0, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183553}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183553}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183554}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183554}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183555}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183555}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183556}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183556}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183557}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183557}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183558}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183558}}
+{"time_delay": 1004, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183559}}
+{"time_delay": 1, "topic": "/photos/keepalive", "data": {"_epoch": 1762183559}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183560}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183560}}
+{"time_delay": 1002, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183561}}
+{"time_delay": 3, "topic": "/photos/keepalive", "data": {"_epoch": 1762183561}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183562}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183562}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183563}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183563}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183564}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183564}}
+{"time_delay": 1002, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183565}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183565}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183566}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183566}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686514176, "_epoch": 1762183567}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183567}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183568}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183568}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183569}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183569}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183570}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183570}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183571}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183571}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183572}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183572}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183573}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183573}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183574}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183574}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183575}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183575}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183576}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183576}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183577}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183577}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686510080, "_epoch": 1762183578}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183578}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183579}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183579}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183580}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183580}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183581}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183581}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183582}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183582}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686505984, "_epoch": 1762183583}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183583}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183584}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183584}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183585}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183585}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183586}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183586}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183587}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183587}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183588}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183588}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183589}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183589}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183590}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183590}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183591}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183591}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183592}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183592}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183593}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183593}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183594}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183594}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183595}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183595}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183596}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183596}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183597}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183597}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183598}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183598}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686501888, "_epoch": 1762183599}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183599}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183600}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183600}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183601}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183601}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183602}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183602}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183603}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183603}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183604}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183604}}
+{"time_delay": 398, "topic": "/photos/ready", "data": {"msg": "running rsync...", "_epoch": 1762183605}}
+{"time_delay": 1, "topic": "/photos/cls", "data": {"_epoch": 1762183605}}
+{"time_delay": 398, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 0, "copied": 20580153, "files_copied": 0, "files_total": 0, "bps": 0, "rsync": true, "_epoch": 1762183605}}
+{"time_delay": 203, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183605}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183605}}
+{"time_delay": 850, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 32768, "files_copied": 0, "files_total": 0, "bps": 0, "rsync": true, "_epoch": 1762183606}}
+{"time_delay": 150, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183606}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183606}}
+{"time_delay": 861, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 4358144, "files_copied": 0, "files_total": 0, "bps": 4099932, "rsync": true, "_epoch": 1762183607}}
+{"time_delay": 139, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183607}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183607}}
+{"time_delay": 877, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 6717440, "files_copied": 0, "files_total": 0, "bps": 3229614, "rsync": true, "_epoch": 1762183608}}
+{"time_delay": 123, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686497792, "_epoch": 1762183608}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183608}}
+{"time_delay": 907, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 9175040, "files_copied": 0, "files_total": 0, "bps": 2956984, "rsync": true, "_epoch": 1762183609}}
+{"time_delay": 94, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183609}}
+{"time_delay": 3, "topic": "/photos/keepalive", "data": {"_epoch": 1762183609}}
+{"time_delay": 913, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 11534336, "files_copied": 0, "files_total": 0, "bps": 2789212, "rsync": true, "_epoch": 1762183610}}
+{"time_delay": 88, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183610}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183610}}
+{"time_delay": 946, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 13762560, "files_copied": 0, "files_total": 0, "bps": 2306867, "rsync": true, "_epoch": 1762183611}}
+{"time_delay": 55, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183611}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183611}}
+{"time_delay": 988, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 16515072, "files_copied": 0, "files_total": 0, "bps": 2390753, "rsync": true, "_epoch": 1762183612}}
+{"time_delay": 13, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183612}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183612}}
+{"time_delay": 477, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 19267584, "files_copied": 0, "files_total": 0, "bps": 2443182, "rsync": true, "_epoch": 1762183613}}
+{"time_delay": 0, "topic": "/photos/copydata", "data": {"fromfile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "tofile": "/home/user/usb_data/index/2025/2025-11-02/EM107646.ORF", "size": 20580153, "copied": 20580153, "files_copied": 3352, "files_total": 3352, "bps": 2663383, "rsync": true, "_epoch": 1762183613}}
+{"time_delay": 523, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183613}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183613}}
+{"time_delay": 244, "topic": "/photos/fivelines", "data": {"color": "white", "lines": ["", "Completed", "", "3352 files", ""], "_epoch": 1762183614}}
+{"time_delay": 757, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183614}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183614}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183615}}
+{"time_delay": 6, "topic": "/photos/keepalive", "data": {"_epoch": 1762183615}}
+{"time_delay": 999, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686493696, "_epoch": 1762183616}}
+{"time_delay": 4, "topic": "/photos/keepalive", "data": {"_epoch": 1762183616}}
+{"time_delay": 1001, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686489600, "_epoch": 1762183617}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183617}}
+{"time_delay": 1000, "topic": "/photos/devicedata", "data": {"sd_size": 0, "sd_free": 0, "hd_size": 1969934143488, "hd_free": 1776686489600, "_epoch": 1762183618}}
+{"time_delay": 5, "topic": "/photos/keepalive", "data": {"_epoch": 1762183618}}
+{"time_delay": 218, "topic": "/photos/fivelines", "data": {"color": "white", "lines": ["", "", "", "", ""], "_epoch": 1762183619}}
+{"time_delay": 0, "topic": "/photos/ready", "data": {"msg": "INSERT SD CARD", "_epoch": 1762183619}}

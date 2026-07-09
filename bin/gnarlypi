@@ -1,33 +1,37 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import re
-import sys
-import time
-import psutil
 import shutil
 import signal
-import argparse
-import threading
 import subprocess
+import sys
+import time
 from stat import *
+
+import psutil
 from dotwiz import DotWiz
 
 sys.path.insert(0, "../")
-from libs.status import Status
-from libs.messaging import Messaging
-from libs.locking import Lock
 from libs.config import Config
 from libs.debug import Debug
+from libs.locking import Lock
+from libs.status import Status
 
-VERSION = "0.2.0"
+VERSION = "0.5.0"
 APP_NAME = os.path.basename(__file__) + " v" + VERSION
 CREATOR = "27escape"
 COPYRIGHT = "©️2025"
+INSERT_SD_MSG = "Insert SD card / Connect Camera"
+
+status = None
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
-logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+logger = Debug(
+    APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none")
+)
 
 # ----------------------------------------------------------------------------
 
@@ -35,6 +39,50 @@ ONE_MB = 1024 * 1024
 READ_SIZE = 16 * ONE_MB
 # time between checks for card mounted
 WAIT_TIME = 1
+
+# ----------------------------------------------------------------------------
+# Supported file extensions (case-insensitive)
+# Includes common image, RAW, and some video formats
+ALL_EXTENSIONS = (
+    # Standard Images
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".webp",
+    ".heic",
+    ".heif",
+    # RAW Formats
+    ".dng",  # Adobe Digital Negative
+    ".cib",  # CorelDRAW CIB (less common as camera RAW)
+    ".nef",
+    ".nrw",  # Nikon
+    ".orf",  # Olympus
+    ".oif",  # Olympus Image Format (container)
+    ".cr2",
+    ".cr3",
+    ".craw",  # Canon
+    ".raw",
+    ".rw2",  # Panasonic
+    ".fff",
+    ".3pr",
+    ".3fr",  # Hasselblad, Imacon
+    ".arw",
+    ".sr2",
+    ".srf",  # Sony
+    ".rwl",  # Leica
+    ".raf",  # Fujifilm
+    ".srw",  # Samsung
+    # Video Formats
+    ".avi",
+    ".mp4",
+    ".mov",
+    ".m4v",
+    ".xml",
+)
 
 # ----------------------------------------------------------------------------
 
@@ -48,13 +96,13 @@ INDEX_DIR = ""
 FILES_DIR = ""
 last_mount = ""
 
-status = None
-
 copy_status = DotWiz({"in_copy_process": False, "copy_abandon": False})
 startup_devices = []
 
+
 def print_error(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 # ----------------------------------------------------------------------------
 
@@ -76,13 +124,14 @@ signal.signal(signal.SIGHUP, signal_handler)
 
 # ----------------------------------------------------------------------------
 
+
 def get_rpi_model():
     """Get the Raspberry Pi hardware model. Return None if not a Pi."""
     try:
-        with open('/proc/cpuinfo', 'r') as f:
+        with open("/proc/cpuinfo", "r") as f:
             for line in f:
-                if line.startswith('Model'):
-                    model = line.strip().split(':')[1].strip()
+                if line.startswith("Model"):
+                    model = line.strip().split(":")[1].strip()
                     return model
     except FileNotFoundError:
         logger.error("Could not read /proc/cpuinfo. Are you running on a Raspberry Pi?")
@@ -92,7 +141,7 @@ def get_rpi_model():
 def is_zero():
     """Check if the Raspberry Pi is a Zero model."""
     model = get_rpi_model()
-    if model and 'Zero' in model:
+    if model and "Zero" in model:
         return True
     return False
 
@@ -137,10 +186,11 @@ def wait_time(sleeptime):
 
 
 # ----------------------------------------------------------------------------
-def wait_forever( msg1, level, msg2=""):
+def wait_forever(msg1, level, msg2=""):
     while True:
         status.error(msg1, level, msg2)
-        wait_time( 1)
+        wait_time(1)
+
 
 # ----------------------------------------------------------------------------
 def check_freespace(target, required):
@@ -151,7 +201,7 @@ def check_freespace(target, required):
         else:
             status.diskfull()
             logger.error(f"cannot store {target}, device is full")
-            wait_forever( "disk full", 1, "remove files")
+            wait_forever("disk full", 1, "remove files")
 
 
 # ----------------------------------------------------------------------------
@@ -169,7 +219,7 @@ def update_drive_stats():
 # ----------------------------------------------------------------------------
 
 
-def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total": 0}):
+def copy_file(src_path, dst_path, force=False, copy_stats=None):
     """
     Copies a file from source to destination, checking existence, size, and modification time.
 
@@ -186,8 +236,16 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
         logger.warning(f"Error: Source file '{src_path}' does not exist.")
         return False
 
+    # initialize copy stats if not provided
+    if copy_stats is None:
+        copy_stats = {"copied": 0, "total": 0}
+
     # Get source file stats
     src_stat = os.stat(src_path)
+
+    # Create destination directory structure if needed
+    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+
     # Check if destination file exists
     if not force and os.path.exists(dst_path):
         # Check if destination is a regular file
@@ -199,8 +257,8 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
         if src_stat.st_mtime == os.stat(
             dst_path
         ).st_mtime and src_stat.st_size == os.path.getsize(dst_path):
-            logger.debug(f"skipping copy {src_path} as {dst_path}, already exists")    
-            return False
+            logger.debug(f"skipping copy {src_path} as {dst_path}, already exists")
+            return True
 
     logger.debug(f"copy {src_path} to {dst_path} with force as {force}")
     # use a temp file in case of failure, so would not overwrite an existing file
@@ -224,7 +282,7 @@ def copy_file(src_path, dst_path, force=False, copy_stats={"copied": 0, "total":
             )
 
             while chunk := f_in.read(READ_SIZE):
-                f_out.write(chunk)  
+                f_out.write(chunk)
                 copied += len(chunk)
                 status.copydata(
                     src_path,
@@ -271,41 +329,48 @@ def rCopy(src, dst, force):
     logger.info(f"copying files from {src} to {dst} with force {force}")
 
     update_drive_stats()
-    # count files that we need to copy
+
+    # Store pending operations in memory to prevent double os.walk traversal
+    pending_copies = []
+
+    logger.debug(f"scanning {src} for files")
+    status.fivelines(("", "", "Scanning for files", "", ""))
+
+    # find files to copy
     for dirpath, dirnames, filenames in os.walk(src):
         for filename in filenames:
+            # Extract extension and convert to lowercase for caseless matching
+            ext = os.path.splitext(filename)[1].lower()
+
+            # Skip any file that does not match our supported extensions list
+            if ext not in ALL_EXTENSIONS:
+                continue
+
             src_path = os.path.join(dirpath, filename)
             dst_path = os.path.join(dst, os.path.relpath(src_path, src))
+
             if force or not os.path.exists(dst_path):
+                logger.debug(f"Pending copy: {src_path} -> {dst_path}")
+                pending_copies.append((src_path, dst_path))
                 total += 1
 
     status.startcopy(file_count=total)
 
-    for dirpath, dirnames, filenames in os.walk(src):
-        # if not wantAbandon():
-        for filename in filenames:
-            src_path = os.path.join(dirpath, filename)
-            dst_path = os.path.join(dst, os.path.relpath(src_path, src))
-            # Create destination directory structure if needed
-            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            update = 0
-            if force or not os.path.exists(dst_path):
-                update = 1
-
+    # copy the files, creating directories as needed
+    for src_path, dst_path in pending_copies:
+        # Only copy if file does not exist or force is set
+        if force or not os.path.exists(dst_path):
             if copy_file(
                 src_path,
                 dst_path,
                 force,
                 copy_stats={"copied": copied, "total": total},
             ):
-                # only update the copy count if there was a file to copy
-                copied += update
+                copied += 1
                 logger.debug(f"({copied}/{total})")
             else:
                 fails += 1
-                # if wantAbandon():
-                #     logger.info("abandon copying")
-                #     break
+
     if fails:
         logger.error(f"failed to copy {fails} files in {total}")
     logger.debug(f"total ({copied}/{total})")
@@ -361,7 +426,7 @@ def make_dest(dest):
     """
     make destination directory set ownership to that of parent directory
     """
-    try: 
+    try:
         logger.debug(f"making {dest} if needed")
         os.makedirs(dest, exist_ok=True)
         parent = os.path.dirname(dest)
@@ -370,6 +435,7 @@ def make_dest(dest):
     except Exception as e:
         logger.error(f"Failed to make destination {dest}: {e}")
         wait_forever("cannot make dir", 4, "check logs")
+
 
 # ----------------------------------------------------------------------------
 # find attached devices
@@ -432,12 +498,15 @@ def copyFromDevice(device, useTheForce):
     # Check if device isn't already mounted
     if not os.path.ismount(mount_point):
         if mount_drive(device, mount_point):
-            camera_dir = os.path.join(mount_point, "DCIM")
+            camera_dir = os.path.join(mount_point)
             # test if we have a camera related folder structure
             # Copy files only if its a photo drive
             if os.path.isdir(camera_dir):
                 # and we only copy the DCIM files
                 rCopy(camera_dir, FILES_DIR, useTheForce)
+                # sonyVideo_dir = os.path.join(mount_point, "PRIVATE", "M4ROOT", "CLIP")
+                # rCopy(camera_dir, FILES_DIR, useTheForce)
+                # sonyVideo_dir = os.path.join(mount_point, "PRIVATE", "SONY", "AVCHD")
             else:
                 logger.debug("drive does not contain photo files")
             # Unmount the drive
@@ -450,22 +519,39 @@ def copyFromDevice(device, useTheForce):
     else:
         logger.warning(f"no mount point {mount_point}")
 
+def insert_sd_msg():
+    status.clear()
+    update_drive_stats()
+    status.ready(INSERT_SD_MSG)
+
 
 # ----------------------------------------------------------------------------
-def wait_drive_inserted():
-    status.ready("Insert SD card")
-    while True:
-        update_drive_stats()
+def wait_drive_inserted(lock):
+    # if we are running this after we have copied files
+    #  we need to get rid of the sd percentage bar
 
-        devices = getDevices()
-        if len(devices) != 0:
-            break
+    insert_sd_msg()
+    lock_status = lock.isLocked()
+
+    while True:
+        if not lock.isLocked():
+            #  if another process had the lock, then refresh the display
+            if lock_status:
+                logger.debug("lock released, waiting for device to be inserted")
+                lock_status = False
+                insert_sd_msg()
+            # logger.debug("waiting for device to be inserted")
+
+            devices = getDevices()
+            if len(devices) != 0:
+                break
+        else:
+            lock_status = True
+        #     logger.debug("waiting for lock to be released")
         wait_time(1)
 
-
-# ----------------------------------------------------------------------------
-# thread to listen for button press messages
-msg = Messaging()
+    logger.info(f"device inserted {devices}")
+    status.ready( "Processing...")
 
 
 # ----------------------------------------------------------------------------
@@ -521,10 +607,10 @@ def daemonise():
         os.dup2(devnull.fileno(), sys.stdout.fileno())
         os.dup2(devnull.fileno(), sys.stderr.fileno())
 
+
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     if USER == "root":
         logger.info(
             f"Do not run this script as root, run is as one of your users, give a user permisison to mount drives with this command:  sudo usermod -aG disk {os.getenv('SUDO_USER')}"
@@ -532,8 +618,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-
-        status = Status()
+        status = Status( client_id=APP_NAME)
         TARGET_DIR = config.get("gnarlypi.store")
         FILES_DIR = os.path.join(TARGET_DIR, "files")
         INDEX_DIR = os.path.join(TARGET_DIR, "index")
@@ -543,12 +628,14 @@ if __name__ == "__main__":
         )
         args = parser.parse_args()
 
+        logger.info(f"starting status apps")
+
         start_status_apps()
 
         if not TARGET_DIR or not len(TARGET_DIR):
             logger.error(f"Missing photo dir ${TARGET_DIR}")
             wait_forever("Missing photo dir", 2, "Fix and reboot")
-            
+
         make_dest(TARGET_DIR)
 
         if not os.path.isdir(TARGET_DIR):
@@ -562,12 +649,20 @@ if __name__ == "__main__":
             logger.info("Running on a Pi Zero")
             # time to let things settle and the user see the copyright message
             pause_time = 3
-        time.sleep( pause_time)
+        time.sleep(pause_time)
 
         status.fivelines((APP_NAME, "", CREATOR, COPYRIGHT, ""))
 
         start_apps()
+        logger.debug("started apps")
+        
+        # Cleanly disconnect before the fork destroys the network thread
+        if status and status.msg:
+            status.msg.client_disconnect()
+            status.msg.connected = False # Forces the next publish() to reconnect
+        
         daemonise()
+        logger.debug("daemonised")
         wait_time(3)
 
         # get the list of devices already mounted at startup
@@ -575,33 +670,27 @@ if __name__ == "__main__":
         startup_devices = getDevices()
         logger.info(f"startup devices {startup_devices}")
 
-        status.clear()
+        # status.clear()
 
         # main thread performing file copies
         # Loop to continuously monitor for USB drives
-    
-        while True:
 
-            update_drive_stats()
-            wait_drive_inserted()
-            
-            # only aquire the lock when we are ready to copy
+        while True:
             lock = Lock()
-            logger.debug("waiting for lock")
+            wait_drive_inserted(lock)
+
+            # only acquire the lock when we are ready to copy
             lock.waitLock()
-            logger.debug("got lock")
 
             # Get list of devices via blkid
             for device in getDevices():
-                # if not wantAbandon():
-                copyFromDevice(device, config.get("gnarlypi.force"))
+                copyFromDevice(device, config.get("gnarlypi.force", False))
 
             wait_remove_all_devices()
             lock.releaseLock()
-            logger.debug( "released lock")
-            
 
     except Exception as e:
         logger.error(f"Error: {e}")
         print(f"Error: {e}")
-        sys.exit(1)        
+        sys.exit(1)
+1
