@@ -131,3 +131,23 @@ If using the web status reporter, it is possible to define the port that the web
 
 **port** This is the port number, in this config example we are using port 8027. You would connect to it from your browser as `http://devicename:8027/` replacing device name with either the name that your system knows the gnarlypi as or its IP address e.g. `http://192.168.0.128:8027/`
 
+
+## Improving rsync speeds
+
+rsync can be a bit slow, especiallly if you are using ssh, to reduce the ssh overheads (on your local network only), add the following to your `$HOME/.ssh/config` file, replacing **<REMOTE_IP_ADDRESS>** with the name or ip address of your ssh target
+
+```
+Host <REMOTE_IP_ADDRESS>
+    # Disabling encryption (if you are on a trusted local network)
+    # WARNING: This exposes data in transit to your internal network.
+    # Use 'none' only if physical security is absolute.
+    # Otherwise, stick with chacha20-poly1305.
+    Ciphers chacha20-poly1305@openssh.com
+    Compression no
+    # This keeps the connection alive and avoids the overhead of reconnecting
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 600
+```
+
+Another alternative would be to have `rsync` running in daemon mode on the target but I'm not going to get into that right now.
