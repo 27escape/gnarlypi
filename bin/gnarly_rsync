@@ -6,11 +6,10 @@ import sys
 import time
 import signal
 import argparse
-import contextlib
 import subprocess
 from dotwiz import DotWiz
 
-sys.path.insert( 0, '../')
+sys.path.insert(0, '../')
 from libs.status import Status
 from libs.locking import Lock
 from libs.config import Config
@@ -24,10 +23,9 @@ APP_NAME = os.path.basename(__file__)
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
-logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+logger = Debug(APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
-copy_status = DotWiz( { "in_copy_process": False, "copy_abandon": False})
-
+copy_status = DotWiz({"in_copy_process": False, "copy_abandon": False})
 
 # ----------------------------------------------------------------------------
 
@@ -41,130 +39,340 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
 
 # ----------------------------------------------------------------------------
-# taken from https://stackoverflow.com/questions/803265/getting-realtime-output-using-subprocess
-# Unix, Windows and old Macintosh end-of-line
-newlines = ['\n', '\r\n', '\r']
-def unbuffered(proc, stream='stdout'):
-    stream = getattr(proc, stream)
-    with contextlib.closing(stream):
-        while True:
-            out = []
-            last = stream.read(1)
-            # Don't loop forever
-            if last == '' and proc.poll() is not None:
-                break
-            while last not in newlines:
-                # Don't loop forever
-                if last == '' and proc.poll() is not None:
-                    break
-                out.append(last)
-                last = stream.read(1)
-            out = ''.join(out)
-            yield out
+
+def mount_smb(server_path, mount_point, user, password):
+    """
+    Attempts to mount an SMB share.
+    Returns: True if successful, False if failed.
+    """
+    if not os.path.exists(mount_point):
+        try:
+            os.makedirs(mount_point)
+        except OSError:
+            return False
+
+    cmd = [
+        "sudo", "mount", "-t", "cifs",
+        server_path,
+        mount_point,
+        "-o", f"username={user},password={password},uid={os.getuid()},gid={os.getgid()}"
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        print(f"✅ Successfully mounted {server_path}")
+        return True
+    else:
+        print(f"❌ Mount failed: {result.stderr.strip()}")
+        return False
+
+
+def unmount_smb(mount_point):
+    """
+    Attempts to unmount an SMB share.
+    Returns: True if successful, False if failed.
+    """
+    # -l (lazy) ensures unmount succeeds even if files are still 'busy'
+    cmd = ["sudo", "umount", "-l", mount_point]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        print(f"✅ Successfully unmounted {mount_point}")
+        return True
+    else:
+        print(f"❌ Unmount failed: {result.stderr.strip()}")
+        return False
+
+
+# --- Main Logic Example ---
+
+REMOTE_PATH = "//192.168.1.100/sharename"
+LOCAL_MOUNT = "/mnt/my_nas"
+SMB_USER = "your_username"
+SMB_PASS = "your_password"
+
+# Logic: Only proceed if the mount returns True
+if mount_smb(REMOTE_PATH, LOCAL_MOUNT, SMB_USER, SMB_PASS):
+    try:
+        print("🚀 Doing work with files...")
+        # Your code here (e.g., shutil.copy, os.listdir, etc.)
+    finally:
+        success = unmount_smb(LOCAL_MOUNT)
+        if not success:
+            print("⚠️ Warning: System was unable to clean up the mount point.")
+else:
+    print("🛑 Script aborted because the drive could not be mounted.")
+
+# ----------------------------------------------------------------------------
+
+# Itemise flag prefixes that indicate actual data was transferred.
+# '>' = file sent to remote, '<' = file received, 'c' = checksum transfer.
+# '.' means the file was checked but unchanged — no data moved.
+# 'h' means hard link created — no data transferred.
+TRANSFER_FLAGS = frozenset(['>', '<', 'c'])
+
+
+def _is_transferred_file(itemise_flag):
+    """
+    Returns True if the rsync itemise flag indicates a file whose data was
+    actually transferred (not merely checked or metadata-only updated).
+    """
+    return len(itemise_flag) >= 2 and itemise_flag[0] in TRANSFER_FLAGS and itemise_flag[1] == 'f'
+
+
+def get_transfer_count(source, destination):
+    """
+    Performs a dry run to count the number of files rsync will actually
+    transfer in the real run. This gives an accurate progress denominator,
+    unlike to-chk= which reflects the full source tree regardless of what
+    was already synced.
+
+    Returns the file count, or 0 if the dry run fails.
+    """
+    cmd = [
+        "rsync", "-ra",
+        "--no-inc-recursive",
+        "--dry-run",
+        "--itemize-changes",
+        "--exclude='.DS_store'",
+        "--exclude='leinfo.sav'",
+        "--copy-links",
+        source, destination
+    ]
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if result.returncode != 0:
+            logger.warning(f"dry-run exited {result.returncode}: {result.stderr.strip()}")
+            return 0
+
+        count = 0
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            # itemize-changes lines are: <11-char-flags> <filename>
+            parts = line.split(None, 1)
+            if len(parts) == 2 and _is_transferred_file(parts[0]):
+                count += 1
+
+        logger.info(f"dry-run: {count} file(s) will be transferred")
+        return count
+
+    except subprocess.TimeoutExpired:
+        logger.warning("dry-run timed out — progress denominator will be unavailable")
+        return 0
+    except Exception as e:
+        logger.warning(f"dry-run failed: {e}")
+        return 0
 
 
 # ----------------------------------------------------------------------------
 
-def run_rsync_with_progress(source, destination):
-    """Runs the rsync command and parses the progress output.
+def run_rsync_with_progress(source, destination, complete_command=""):
+    """
+    Runs rsync and parses its output to report per-file copy progress via
+    status messages.
+
+    Key behavioural changes from the original:
+    - A dry run is performed first to establish how many files will actually
+      be transferred in this run (rather than using to-chk= which reflects
+      the full source tree size).
+    - Transferred file count is maintained by counting itemise lines whose
+      flag indicates real data movement, not metadata-only updates.
+    - stderr is drained after the process exits and logged on non-zero
+      return codes so rsync errors are not silently swallowed.
 
     Args:
-        source: The source directory to be backed up.
-        destination: The destination directory for the backup.
-
+        source:           Source directory to be backed up.
+        destination:      Destination directory for the backup.
+        complete_command: Optional shell command to run after a successful copy.
     """
 
     status.clear()
 
     try:
         current_file = ""
-        filesize = 0
-        left = 0
-        total = 0
+        current_file_size = 0
+        transferred_count = 0   # files whose data was actually moved this run
+        current_file_done = False
 
-        # leinfo.sav is a file that is created by gopro's, we don't want to copy it
-        # we also want symlinks such as those creaed by the index to be copied as files
-        rsync_cmd = ["rsync", "-raviP", "--progress", "--no-inc-recursive", "--exclude='.DS_store'", "--exclude='leinfo.sav'", "--copy-links", source, destination]
-        logger.info( f"running [{' '.join( rsync_cmd)}]")
+        # ------------------------------------------------------------------
+        # Pre-scan: find out how many files will transfer so we have an
+        # accurate progress denominator before the real copy starts.
+        # ------------------------------------------------------------------
+        status.fivelines(("", "rsync check", "", "", ""), "blue")
+        expected_total = get_transfer_count(source, destination)
+        status.clear()
 
-        # universal_newlines -  Make all end-of-lines '\n'
-        # this means we will also get line updates during copy process that would have ended with \r
-        # also assumes output is text
-        proc = subprocess.Popen(rsync_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        # ------------------------------------------------------------------
+        # Real rsync run.
+        #
+        # Flags used:
+        #   -r   recursive
+        #   -a   archive (preserves permissions, timestamps, symlinks, etc.)
+        #   -v   verbose (needed for the itemise output to appear)
+        #   -i   itemize changes — one structured flag line per file
+        #        (replaces the old .f regex; gives unambiguous transfer info)
+        #   --progress          per-file byte-level progress
+        #   --no-inc-recursive  build full file list before starting
+        #                       (required for to-chk= to be meaningful at all)
+        #   --exclude           skip camera metadata and macOS junk
+        #   --copy-links        dereference symlinks (e.g. index symlinks)
+        #
+        # Removed -P: it is shorthand for --progress --partial; we keep
+        # --progress explicitly and do not want --partial behaviour here.
+        # ------------------------------------------------------------------
+        rsync_cmd = [
+            "rsync", "-ravi",
+            "--progress",
+            "--no-inc-recursive",
+            "--exclude='.DS_store'",
+            "--exclude='leinfo.sav'",
+            "--copy-links",
+            source, destination
+        ]
 
-        while proc.poll() is None:
-            # if wantAbandon():
-            #   raise Exception( 'Abandon required')
+        proc = subprocess.Popen(
+            rsync_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True
+        )
 
-            # line = proc.stdout.readline().decode("utf-8").strip()
-            line = proc.stdout.readline().strip()
-            # logger.info( line)
-            if file_match := re.search(r"^.f.*?\s(.*)$", line):
-                current_file = os.path.join( os.path.dirname(source), file_match.group(1))
-                logger.info( f"{total - left}/{total}  {current_file}")
-                filesize = os.path.getsize( current_file)
-                # log when we have a file, it may take some time to copy if remote
-                status.copydata(
-                  current_file,
-                  current_file,
-                  0,
-                  filesize,
-                  (total - left),
-                  total,
-                  0,
-                  True
-                )
+        while True:
+            line = proc.stdout.readline()
 
-            # catch updates to file copy stats
-            elif count_match := re.search(r"([0-9,]+).*?%\s+(.*?)B\/s\s+", line):
-              # check end of file copy info
-                bytes_copied = int(count_match.group(1).replace(',', ''))
-                bps = 0
-                bps_str = count_match.group(2)
-                bps_orig = bps_str
+            # readline() returns '' only at EOF (process has also finished)
+            if line == '':
+                break
 
-                # find file counts, this happens when the file is complete
-                if end_match := re.search(r"to-chk\=([0-9]+)\/([0-9]+)", line):
-                  # the number of files known that are still around to process
-                  left = int(end_match.group(1))
-                  # total is a combination of files and dirs locally
-                  # we are really only using it as a guide
-                  total = int(end_match.group(2))
+            line = line.strip()
+            if not line:
+                continue
 
-                if bps_str.endswith( "M"):
-                  bps_str = float(bps_str[:-1])
-                  bps = bps_str * 1024 * 1024
-                elif bps_str.endswith( "K") or bps_str.endswith( "k"):
-                  bps_str = float(bps_str[:-1])
-                  bps = bps_str * 1024
+            # --------------------------------------------------------------
+            # Itemise line: "<11-char-flags> <relative-path>"
+            # Example: ">f+++++++++ photos/IMG_001.jpg"
+            #
+            # The -i flag produces exactly one of these per file rsync
+            # examines.  We use it both to capture the filename and to
+            # decide whether data was actually transferred.
+            # --------------------------------------------------------------
+            itemise_match = re.match(r'^([<>ch.][fdLDS]\S*)\s+(.+)$', line)
+            if itemise_match:
+                flags = itemise_match.group(1)
+                rel_path = itemise_match.group(2)
+                current_file = os.path.join(os.path.dirname(source), rel_path)
+                current_file_done = False
+
+                if _is_transferred_file(flags):
+                    # Obtain file size for the progress call; guard against
+                    # the file not yet existing at the source path.
+                    try:
+                        current_file_size = os.path.getsize(current_file)
+                    except OSError:
+                        current_file_size = 0
+
+                    logger.info(f"{transferred_count}/{expected_total}  {current_file}")
+
+                    status.copydata(
+                        current_file,
+                        current_file,
+                        0,                   # bytes copied so far (starting)
+                        current_file_size,   # total size of this file
+                        transferred_count,
+                        expected_total,
+                        0,                   # speed (not yet known)
+                        True
+                    )
+                continue
+
+            # --------------------------------------------------------------
+            # Per-file progress line produced by --progress:
+            # "    1,048,576 100%   45.23MB/s    0:00:00 (xfr#3, to-chk=97/500)"
+            #
+            # We parse bytes copied and transfer speed for live updates.
+            # When the line contains "to-chk=" the file copy has just
+            # completed; we increment our own transfer counter at that point.
+            # --------------------------------------------------------------
+            progress_match = re.search(r'([\d,]+)\s+\d+%\s+([\d.]+)([MKk]?)B\/s', line)
+            if progress_match and current_file:
+                bytes_copied = int(progress_match.group(1).replace(',', ''))
+                bps_value    = float(progress_match.group(2))
+                bps_unit     = progress_match.group(3)
+
+                if bps_unit == 'M':
+                    bps = int(bps_value * 1024 * 1024)
+                elif bps_unit in ('K', 'k'):
+                    bps = int(bps_value * 1024)
                 else:
-                  bps = bps_str
-                # if we need more detail
-                logger.debug( f"  {bps_orig} {current_file}")
+                    bps = int(bps_value)
+
+                logger.debug(f"  {bps_value}{bps_unit}B/s  {current_file}")
+
+                # Detect end-of-file: rsync emits "(xfr#N, to-chk=L/T)" on
+                # the final progress line for each file.  We use this moment
+                # to bump our transferred counter — but only once per file,
+                # guarded by current_file_done.
+                if re.search(r'xfr#\d+', line) and not current_file_done:
+                    current_file_done = True
+                    transferred_count += 1
+                    logger.info(f"completed {transferred_count}/{expected_total}  {current_file}")
+
                 status.copydata(
-                  current_file,
-                  current_file,
-                  filesize,
-                  bytes_copied,
-                  (total - left),
-                  total,
-                  int(bps),
-                  True
+                    current_file,
+                    current_file,
+                    bytes_copied,
+                    current_file_size,
+                    transferred_count,
+                    expected_total,
+                    bps,
+                    True
                 )
-                
-        if total:
-          logger.info( f"backed up {total} files/folders")
 
-        # let the user know things have been copied 
-        if total:
-          status.fivelines(( "", "Completed", "", f"{total} files", ""), "blue")
-          time.sleep(5)
-          status.fivelines(( "", "", "", "", ""), "black")
+        # ------------------------------------------------------------------
+        # Drain any remaining output after the read loop exits, then check
+        # the return code and log any stderr output.
+        # ------------------------------------------------------------------
+        remaining_output = proc.communicate()[0]
+        return_code = proc.returncode
 
+        if return_code != 0:
+            logger.error(f"rsync exited with code {return_code}")
+            if remaining_output and remaining_output.strip():
+                logger.error(f"rsync output: {remaining_output.strip()}")
+            status.fivelines(("", "Error", "", "RSYNC", ""), "red")
+            return
 
-    except subprocess.CalledProcessError as e:
-        print(f"Error running rsync: {e}")
-        return 0, 0
+        if remaining_output and remaining_output.strip():
+            # Non-fatal warnings (e.g. permission errors on individual files)
+            logger.warning(f"rsync output: {remaining_output.strip()}")
+
+        # ------------------------------------------------------------------
+        # Completion
+        # ------------------------------------------------------------------
+        if transferred_count:
+            logger.info(f"backed up {transferred_count} file(s) this run")
+            status.fivelines(("", "Completed", "", f"{transferred_count} files", ""), "blue")
+            time.sleep(5)
+            # status.fivelines(("", "", "", "", ""), "black")
+
+            if complete_command and len(complete_command):
+                logger.info(f"running complete command: {complete_command}")
+                try:
+                    subprocess.run(complete_command, shell=True, check=True)
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"Error running complete command '{complete_command}': {e}")
+        else:
+            logger.info("rsync completed — no new files to transfer")
+
+    except Exception as e:
+        logger.error(f"Error running rsync command: {e}")
+        status.fivelines(("", "Error", "", "RSYNC", ""), "red")
+        raise
 
 
 # ----------------------------------------------------------------------------
@@ -176,40 +384,37 @@ if __name__ == "__main__":
         sys.exit(2)
 
     try:
+        source = config.get('rsync.source').replace("//", "/")
+        target = config.get('rsync.target')
 
-      source = config.get('rsync.source').replace("//", "/")
-      target = config.get('rsync.target')
+        parser = argparse.ArgumentParser(
+            description=f"Copy backed up photos from {source} to {target} using rsync — change values in config file"
+        )
+        args = parser.parse_args()
 
-      parser = argparse.ArgumentParser(
-          description=f"Copy backed up photos from {source} to a {target} using rsync, change values in config file"
-      )    
-      args = parser.parse_args()
+        # Check source directory exists
+        if not os.path.exists(source) or not os.path.isdir(source):
+            logger.info(f"Error: Source '{source}' is not a directory.")
+            print(f"Error: Source '{source}' is not a directory.")
+            sys.exit(3)
 
-      # Check if source dierctory exists
-      if not os.path.exists(source) or not os.path.isdir( source):
-          logger.info(f"Error: Source '{source}' is not a directory.")
-          print(f"Error: Source '{source}' is not a directory.")
-          sys.exit(3)
-      
-      status = Status()
-      
-      while True:
-        # default to 10 mins
-        time.sleep( int(config.get('rsync.sleep', 600)))
+        status = Status( client_id=APP_NAME)
 
-        lock = Lock()
+        while True:
+            # default to 10 mins between runs
+            time.sleep(int(config.get('rsync.sleep', 600)))
 
-        # we cannot check the target, this will be down to the user
-        logger.debug( "rsync waitlock")
-        lock.waitLock()
-        logger.debug("rsync got lock")
-        status.ready("running rsync...")
-        run_rsync_with_progress(source, target)
-        lock.releaseLock()
-        logger.debug( "rsync released lock")
-        status.ready("INSERT SD CARD")
-        
+            lock = Lock()
+            lock.waitLock()
+
+            status.ready("running rsync...")
+            complete_command = config.get('rsync.complete_command', "")
+            logger.debug(f"complete command: '{complete_command}'")
+            run_rsync_with_progress(source, target, complete_command)
+            status.ready("")
+            lock.releaseLock()
+
     except Exception as e:
-      logger.error(f"Error: {e}")
-      print(f"Error: {e}")
-      sys.exit(1)
+        logger.error(f"Error: {e}")
+        print(f"Error: {e}")
+        sys.exit(1)
