@@ -295,7 +295,7 @@ def status_error(topic, data):
 # ----------------------------------------------------------------------------
 def status_ready(topic, data):
     """status_ready"""
-    logger.info(f"status_ready: {data}")
+    # logger.info(f"status_ready: {data}")
     
     clr_line(2)
     if data and "msg" in data:

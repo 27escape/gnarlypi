@@ -65,7 +65,7 @@ def stream():
             while True:
                 # block until a message is available
                 message = q.get()
-                logger.info("Sending message to client: %s", message)
+                # logger.info("Sending message to client: %s", message)
                 yield f"data: {json.dumps({'message': message})}\n\n"
                 time.sleep(0.1)
         finally:
