@@ -21,13 +21,12 @@ from libs.config import Config
 from libs.debug import Debug
 
 VERSION = "0.2.0"
-APP_NAME = os.path.basename(__file__) + " v" + VERSION
+APP_NAME = os.path.basename(__file__)
 CREATOR = "27escape"
 COPYRIGHT = "©️2025"
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
-
 logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
 # tell index_file to ignore files

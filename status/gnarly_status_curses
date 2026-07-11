@@ -10,14 +10,19 @@ import signal
 import logging
 import argparse
 import threading
+import uuid
 
 sys.path.insert( 0, '../')
 from libs.messaging import Messaging
+from libs.config import Config
+from libs.debug import Debug
 
-logger = logging.getLogger(__name__)
-# set default log level to WARNING but if environment variable is available use that
-# LOGLEVEL = os.environ.get('LOGLEVEL', 'WARNING').upper()
-# logging.basicConfig(format='%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s', level=LOGLEVEL)
+APP_NAME = "status_curses"
+
+logger = logging.getLogger(APP_NAME)
+# get config from default location $GNARLYPI_CONFIG
+config = Config()
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
 # ----------------------------------------------------------------------------
 
@@ -32,9 +37,10 @@ COPY_BOX = 2
 DISK_BOX = 3
 MSG_BOX = 4
 
+MIN_BOX_WIDTH = 40  # minimum terminal width we support
 
-TIME_WIDTH = 80
-BOX_WIDTH = 80
+TIME_WIDTH = MIN_BOX_WIDTH
+BOX_WIDTH = MIN_BOX_WIDTH
 
 TIME_HEIGHT = 3
 COPY_HEIGHT = 4
@@ -54,8 +60,24 @@ DISK_Y = BOX_V_SPACE + COPY_Y + COPY_HEIGHT
 MSG_Y = BOX_V_SPACE + DISK_Y + DISK_HEIGHT
 MSG_TEXT_WIDTH = BOX_WIDTH - 2
 
+# progress bar sizing - bar length is derived from the available width
+# rather than fixed, so bars fit correctly from MIN_BOX_WIDTH upwards
+MIN_BAR_LENGTH = 6
+MAX_BAR_LENGTH = 50
+# fixed characters around the bar in "{prefix} [{bar}] {percent}% {suffix}":
+# " [" (2) + "] " (2) + percent, always 3 chars with decimals=0 (3) + "% " (2)
+BAR_FIXED_OVERHEAD = 9
+
+# Display update throttling to prevent lag - only refresh the terminal
+# (the expensive part) at most this often. addstr() calls are cheap and
+# stay unthrottled; only the physical refresh() is rate-limited.
+LAST_DISPLAY_UPDATE_TIME = 0
+DISPLAY_UPDATE_MIN_INTERVAL = 0.1  # minimum 100ms between terminal refreshes
+
 # ----------------------------------------------------------------------------
-def empty_line(width=MSG_TEXT_WIDTH):
+def empty_line(width=None):
+    if width is None:
+        width = MSG_TEXT_WIDTH
     return " ".center(width, " ")
 
 
@@ -76,13 +98,16 @@ msg_area = [
 ]  # 5 lines
 last_status_time = 0
 
+# last known data for the two MQTT-driven panels, so a terminal resize can
+# redraw them at the new width without waiting on the next MQTT message
+last_copydata = None
+last_devicedata = None
 
-# ----------------------------------------------------------------------------
-def setLogLevel(loglevel):
-    logging.basicConfig(
-        format="%(asctime)s %(module)s(%(funcName)s:%(lineno)d) %(levelname)s : %(message)s",
-        level=loglevel,
-    )
+# Guards all curses drawing calls and layout globals, since curses is not
+# thread-safe and both the MQTT subscription thread and the main curses
+# loop touch them. Reentrant so the resize handler (which recomputes
+# layout under the lock) can still call update_display() itself.
+display_lock = threading.RLock()
 
 
 # ----------------------------------------------------------------------------
@@ -108,48 +133,88 @@ def progressBar (prefix, iteration, total, length = 50, suffix = '', decimals = 
     bar = fill * filledLength + ' ' * (length - filledLength)
     return f'{prefix} [{bar}] {percent}% {suffix}'
 
+
+# ----------------------------------------------------------------------------
+# work out how long a progress bar can be so the whole line fits within
+# MSG_TEXT_WIDTH, given the fixed prefix/suffix text around it
+def compute_bar_length(prefix, suffix=''):
+    length = MSG_TEXT_WIDTH - len(prefix) - len(suffix) - BAR_FIXED_OVERHEAD
+    return max(MIN_BAR_LENGTH, min(MAX_BAR_LENGTH, length))
+
+
 # ----------------------------------------------------------------------------
 def draw_box(x, y, width, height, title, color_pair):
-    gStdscr.addstr(y, x, "┌" + "─" * (width - 2) + "┐", curses.color_pair(color_pair))
+    # chgat() explicitly sets the color attribute across the given cells,
+    # instead of relying on how ncurses chose to paint runs of plain space
+    # characters (some terminals don't honor the "background color erase"
+    # optimization ncurses uses there, leaving blank runs un-colored).
+    attr = curses.color_pair(color_pair)
+    gStdscr.addstr(y, x, "┌" + "─" * (width - 2) + "┐", attr)
+    gStdscr.chgat(y, x, width, attr)
     for i in range(y + 1, y + height - 1):
-        gStdscr.addstr(
-            i, x, "│" + " " * (width - 2) + "│", curses.color_pair(color_pair)
-        )
+        gStdscr.addstr(i, x, "│" + " " * (width - 2) + "│", attr)
+        gStdscr.chgat(i, x, width, attr)
     gStdscr.addstr(
-        y + height - 1, x, "└" + "─" * (width - 2) + "┘", curses.color_pair(color_pair)
+        y + height - 1, x, "└" + "─" * (width - 2) + "┘", attr
     )
-    gStdscr.addstr(y, x + 1, title, curses.color_pair(color_pair))
+    gStdscr.chgat(y + height - 1, x, width, attr)
+    gStdscr.addstr(y, x + 1, title[:max(0, width - 2)], attr)
 
 
 # ----------------------------------------------------------------------------
-def update_display():
-    # gStdscr.clear()
+# this will perform the relatively slow refresh() call for all the other
+# small addstr() writes to the display; it should only be called after all
+# the other draw calls have been performed.
+# 'force' bypasses throttling for things that must appear immediately (errors,
+# resize redraws).
+def update_display(force=False):
+    global LAST_DISPLAY_UPDATE_TIME
 
-    # Draw boxes for each area with different colors
-    draw_box(TIME_X, TIME_Y, TIME_WIDTH, TIME_HEIGHT, "Time", TIME_BOX)
-    draw_box(COPY_X, COPY_Y, BOX_WIDTH, COPY_HEIGHT, "File Copy Progress", COPY_BOX)
-    draw_box(DISK_X, DISK_Y, BOX_WIDTH, DISK_HEIGHT, "Disk Status", DISK_BOX)
-    draw_box(MSG_X, MSG_Y, BOX_WIDTH, MSG_HEIGHT, "Messages", MSG_BOX)
+    with display_lock:
+        # Draw boxes for each area with different colors
+        draw_box(TIME_X, TIME_Y, TIME_WIDTH, TIME_HEIGHT, "Time", TIME_BOX)
+        draw_box(COPY_X, COPY_Y, BOX_WIDTH, COPY_HEIGHT, "File Copy Progress", COPY_BOX)
+        draw_box(DISK_X, DISK_Y, BOX_WIDTH, DISK_HEIGHT, "Disk Status", DISK_BOX)
+        draw_box(MSG_X, MSG_Y, BOX_WIDTH, MSG_HEIGHT, "Messages", MSG_BOX)
 
-    gStdscr.addstr(TIME_Y + 1, 1, time_area, curses.color_pair(TIME_BOX))
+        gStdscr.addstr(TIME_Y + 1, 1, time_area, curses.color_pair(TIME_BOX))
+        gStdscr.chgat(TIME_Y + 1, 1, TIME_WIDTH - 2, curses.color_pair(TIME_BOX))
 
-    for i, line in enumerate(file_copy_area):
-        gStdscr.addstr(COPY_Y + 1 + i, 1, line, curses.color_pair(COPY_BOX))
-    for i, line in enumerate(disk_status_area):
-        gStdscr.addstr(DISK_Y + 1 + i, 1, line, curses.color_pair(DISK_BOX))
-    for i, line in enumerate(msg_area):
-        gStdscr.addstr(MSG_Y + 1 + i, 1, line, curses.color_pair(MSG_BOX))
+        for i, line in enumerate(file_copy_area):
+            gStdscr.addstr(COPY_Y + 1 + i, 1, line, curses.color_pair(COPY_BOX))
+            gStdscr.chgat(COPY_Y + 1 + i, 1, BOX_WIDTH - 2, curses.color_pair(COPY_BOX))
+        for i, line in enumerate(disk_status_area):
+            gStdscr.addstr(DISK_Y + 1 + i, 1, line, curses.color_pair(DISK_BOX))
+            gStdscr.chgat(DISK_Y + 1 + i, 1, BOX_WIDTH - 2, curses.color_pair(DISK_BOX))
+        for i, line in enumerate(msg_area):
+            gStdscr.addstr(MSG_Y + 1 + i, 1, line, curses.color_pair(MSG_BOX))
+            gStdscr.chgat(MSG_Y + 1 + i, 1, BOX_WIDTH - 2, curses.color_pair(MSG_BOX))
 
-    gStdscr.refresh()
+        current_time = time.time()
+        if force or (current_time - LAST_DISPLAY_UPDATE_TIME) >= DISPLAY_UPDATE_MIN_INTERVAL:
+            gStdscr.refresh()
+            LAST_DISPLAY_UPDATE_TIME = current_time
 
 
 # ----------------------------------------------------------------------------
-
 
 def signal_handler(sig, frame):
-    print("You pressed Ctrl+C!")
-    logger.info( 'Exit due to CTRL+C')
-    sys.exit(0)
+    global gStdscr
+    logger.info('Exit due to CTRL+C or signal received')
+    
+    # Explicitly restore the terminal state before hard-exiting
+    try:
+        curses.nocbreak()
+        curses.echo()
+        if gStdscr is not None:
+            gStdscr.keypad(False)
+        curses.endwin()
+    except Exception as e:
+        logger.debug(f"Terminal cleanup error: {e}")
+        
+    print("\nExiting Gnarly Status...")
+    # os._exit immediately terminates all threads, preventing MQTT loops from hanging
+    os._exit(0)
 
 
 # ----------------------------------------------------------------------------
@@ -157,8 +222,9 @@ def signal_handler(sig, frame):
 
 def cls():
     global msg_area
-    for i, line in enumerate(msg_area):
-        msg_area[i] = empty_line()
+    with display_lock:
+        for i, line in enumerate(msg_area):
+            msg_area[i] = empty_line()
     update_display()
 
 
@@ -174,15 +240,20 @@ def clr_line(line=0):
 def print_msg(txt, line=2):
     # global msg_area
     if line < (MSG_HEIGHT-2):
-      msg_area[line] = txt
+      # truncate to fit, and pad to the full width so shorter messages fully
+      # overwrite whatever longer text (at a possibly wider layout) was there
+      msg_area[line] = txt[:MSG_TEXT_WIDTH].ljust(MSG_TEXT_WIDTH)
       update_display()
 
 
 # ----------------------------------------------------------------------------
-# this is time from the epoch provided in the message stream
-def show_time(seconds):
+# use local system time so the clock keeps ticking even when no MQTT
+# keepalives are arriving (e.g. while a copy is in progress)
+def show_time(seconds=None):
     global time_area
-    time_area = datetime.fromtimestamp(seconds).strftime("%X").rjust(TIME_WIDTH-2, ' ')
+    if seconds is None:
+        seconds = time.time()
+    time_area = datetime.fromtimestamp(seconds).strftime("%X").center(TIME_WIDTH - 2, ' ')
     update_display()
 
 # ----------------------------------------------------------------------------
@@ -195,7 +266,7 @@ def show_tx_stats(filename, bps):
     elif bps >= 1024:
       bps = f"{int( bps / 1024)}K"
 
-    print_msg( f"{bps}B/s {filename}", 6)
+    print_msg( f" {bps}B/s {filename}", 6)
 
 # ----------------------------------------------------------------------------
 def status_error(topic, data):
@@ -206,7 +277,8 @@ def status_error(topic, data):
         if 'msg2' in data and len( data['msg2']):
            msg += f", {data['msg2']}"
 
-        print_msg(f"Error: {msg}, level {data['level']}")
+        print_msg(f" Error: {msg}, level {data['level']}")
+    update_display(force=True)
 
 
 # ----------------------------------------------------------------------------
@@ -215,35 +287,44 @@ def status_ready(topic, data):
     global last_status_time
 
     cls()
-    if data:
+    if data and "msg" in data:
         # if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
-        print_msg(data["msg"], 2)
-        last_status_time = data["_epoch"]
+        print_msg(f" {data['msg']}", 2)
+        last_status_time = data.get("_epoch", last_status_time)
 
 
 # ----------------------------------------------------------------------------
 def status_startcopy(topic, data):
     """status_startcopy"""
     cls()
-    print_msg("Starting copy process", 0)
+    print_msg(" Starting copy process", 0)
 
 
 # ----------------------------------------------------------------------------
 def status_endcopy(topic, data):
     """status_endcopy"""
     cls()
-    print_msg("Copy process completed", 0)
+    print_msg(" Copy process completed", 0)
 
 
 # ----------------------------------------------------------------------------
 def status_copydata(topic, data):
     """status_copydata"""
-    global file_copy_area
+    global file_copy_area, last_copydata
 
     if data:
+        last_copydata = data
+
+        all_suffix = f'{data["files_copied"]}/{data["files_total"]}'
         file_copy_area = [
-            progressBar("File ", data["copied"], data["size"], 50),
-            progressBar("All  ", data["files_copied"], data["files_total"], 50, f'{data["files_copied"]}/{data["files_total"]}'),
+            progressBar(
+                " File ", data["copied"], data["size"],
+                compute_bar_length("File "),
+            ),
+            progressBar(
+                " All  ", data["files_copied"], data["files_total"],
+                compute_bar_length("All  ", all_suffix), all_suffix,
+            ),
         ]
         if "bps" in data and data["bps"]:
           filename = os.path.basename(data['fromfile'])[:20]
@@ -254,17 +335,19 @@ def status_copydata(topic, data):
 def status_waitremove(topic, data):
     """status_waitremove"""
     if data:
-        print_msg("Waiting for SD card removal", 2)
+        print_msg(" Waiting for SD card removal", 2)
 
 
 # ----------------------------------------------------------------------------
 def status_devicedata(topic, data):
     """status_devicedata"""
-    global disk_status_area
+    global disk_status_area, last_devicedata
 
     logger.info("devicedata: " + json.dumps( data ))
 
     if data:
+        last_devicedata = data
+
         sd_used = int((data["sd_size"] - data["sd_free"]) / BLOCK_SIZE)
         sd_total = int(data["sd_size"] / BLOCK_SIZE)
         hd_used = int((data["hd_size"] - data["hd_free"]) / BLOCK_SIZE)
@@ -272,9 +355,11 @@ def status_devicedata(topic, data):
         logger.info(
             f"GB used on drives SD: {sd_used}/{sd_total}, target: {hd_used}/{hd_total}")
 
+        sd_suffix = f'{sd_used}/{sd_total} GB'
+        hd_suffix = f'{hd_used}/{hd_total} GB'
         disk_status_area = [
-            progressBar("SD   ", sd_used, sd_total, 50, f'{sd_used}/{sd_total} GB'),
-            progressBar("HD   ", hd_used, hd_total, 50, f'{hd_used}/{hd_total} GB')
+            progressBar(" SD  ", sd_used, sd_total, compute_bar_length("SD   ", sd_suffix), sd_suffix),
+            progressBar(" HD  ", hd_used, hd_total, compute_bar_length("HD   ", hd_suffix), hd_suffix)
         ]
         update_display()
 
@@ -282,12 +367,12 @@ def status_devicedata(topic, data):
 # ----------------------------------------------------------------------------
 def status_diskfull(topic, data):
     """status_diskfull"""
-    print_msg(f"the disk {data['diskname']} is full ", 4)
+    print_msg(f" the disk {data['diskname']} is full ", 4)
 
 
 # ----------------------------------------------------------------------------
 # we only get keep alives when the system is not doing anything else, so
-# we can track an amount of these, lets try for one in UPDATE_KEEP_ALIVE seconds, 
+# we can track an amount of these, lets try for one in UPDATE_KEEP_ALIVE seconds,
 # and if we miss one then we can show a message that the system is still working
 last_keep_alive = int(time.time())
 
@@ -295,8 +380,8 @@ last_keep_alive = int(time.time())
 def status_keepalive(topic, data):
     """status_keepalive"""
     global last_keep_alive
-    if not int(data["_epoch"] - last_keep_alive) % UPDATE_KEEP_ALIVE:
-        print_msg("system still working", 4)
+    if data["_epoch"] - last_keep_alive >= UPDATE_KEEP_ALIVE:
+        # print_msg(" system still working", 4)
         last_keep_alive = data["_epoch"]
 
 
@@ -306,7 +391,7 @@ def status_fivelines(topic, data):
     cls()
     # get index and the array value, max 5 lines
     for line, txt in enumerate(data["lines"][:5]):
-        print_msg(txt, line)
+        print_msg(f" {txt}", line)
 
 
 # ----------------------------------------------------------------------------
@@ -314,8 +399,6 @@ def status_fivelines(topic, data):
 def status_cls(topic, data):
     """status_cls"""
     cls()
-
-
 
 # ----------------------------------------------------------------------------
 
@@ -341,10 +424,70 @@ def thread_subscriptions():
     # Keep a persistent MQTT session so retained messages are available after reconnects.
     msg.connect(
         handlers,
-        client_id="gnarly-status-curses",
+        # uniq id, so we can have multiple gnarly_status_curses running
+        client_id=f"{APP_NAME}-{uuid.uuid4().hex[:8]}",
         clean_session=False,
         subscribe_qos=1,
     )
+
+
+# ----------------------------------------------------------------------------
+def check_min_size(cols, rows):
+    return cols >= MIN_BOX_WIDTH and rows >= PAGE_HEIGHT
+
+
+# ----------------------------------------------------------------------------
+def compute_layout(cols):
+    """Recompute width-dependent layout globals for the given terminal width."""
+    global TIME_WIDTH, BOX_WIDTH, MSG_TEXT_WIDTH
+    with display_lock:
+        TIME_WIDTH = cols
+        BOX_WIDTH = cols
+        MSG_TEXT_WIDTH = BOX_WIDTH - 2
+
+
+# ----------------------------------------------------------------------------
+def redraw_from_cache():
+    """Re-render the MQTT-driven panels from last known data, e.g. after a
+    terminal resize where no new MQTT message has arrived to trigger it."""
+    if last_copydata is not None:
+        status_copydata("", last_copydata)
+    if last_devicedata is not None:
+        status_devicedata("", last_devicedata)
+
+
+# ----------------------------------------------------------------------------
+def handle_resize():
+    """Handle a curses.KEY_RESIZE event: recompute layout, rebuild the
+    progress bars/messages for the new width, and force a full repaint."""
+    curses.update_lines_cols()
+    rows, cols = gStdscr.getmaxyx()
+
+    try:
+        curses.resizeterm(rows, cols)
+    except curses.error:
+        pass
+
+    if not check_min_size(cols, rows):
+        # terminal is currently too small to draw safely; leave whatever is
+        # on screen alone until it's resized back up
+        return
+
+    compute_layout(cols)
+
+    try:
+        with display_lock:
+            gStdscr.clear()
+        cls()
+        redraw_from_cache()
+        show_time()
+        update_display(force=True)
+    except curses.error:
+        # extreme/rapid resizes can still occasionally land on a size where
+        # a particular addstr call would go out of bounds; don't crash the
+        # display thread over a single dropped frame, the next resize or
+        # status update will repaint correctly
+        logger.debug("curses error while redrawing after resize", exc_info=True)
 
 
 # ----------------------------------------------------------------------------
@@ -355,21 +498,34 @@ def curses_display(stdscr):
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
+    # block for up to 1s in getch(); this both gives us our ~1s clock tick
+    # and lets us notice curses.KEY_RESIZE promptly instead of only polling
+    # for it once a second
+    stdscr.timeout(1000)
 
     rows, cols = gStdscr.getmaxyx()
-    if cols < BOX_WIDTH or rows < PAGE_HEIGHT:
+    if not check_min_size(cols, rows):
       # restore usual display
       curses.nocbreak()
       curses.echo()
       curses.endwin()
-      print( f"Error: The terminal must have a minimum size of {BOX_WIDTH}x{PAGE_HEIGHT}, you have {cols}x{rows}, CTRL-C may be required to end all threads")
+      print( f"Error: The terminal must have a minimum size of {MIN_BOX_WIDTH}x{PAGE_HEIGHT}, you have {cols}x{rows}, CTRL-C may be required to end all threads")
       sys.exit( 2)
 
-    # Initialize color pairs
+    # use the full width of the terminal
+    compute_layout(cols)
+
+    # Initialize color pairs - this MUST happen before any drawing (cls(),
+    # update_display(), etc.), otherwise the first paint references color
+    # pairs that don't have colors assigned to them yet
     curses.init_pair(TIME_BOX, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(COPY_BOX, curses.COLOR_BLACK, curses.COLOR_GREEN)
     curses.init_pair(DISK_BOX, curses.COLOR_BLACK, curses.COLOR_BLUE)
     curses.init_pair(MSG_BOX, curses.COLOR_WHITE, curses.COLOR_RED)
+
+    # re-pad the placeholder lines created at import time (before we knew
+    # the real terminal width) so they match the new width
+    cls()
 
     status_copydata(
         "",
@@ -393,8 +549,10 @@ def curses_display(stdscr):
     )
 
     while True:
-        show_time( last_keep_alive)
-        time.sleep(1)
+        ch = gStdscr.getch()
+        if ch == curses.KEY_RESIZE:
+            handle_resize()
+        show_time()
 
 # ----------------------------------------------------------------------------
 def thread_curses():
@@ -411,17 +569,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=f"Display gnarlypi status using curses"
     )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        # the following makes it a boolean flag
-        action="store_true",
-        help="Increase level of logging",
-    )
-    args = parser.parse_args()
-    LOGLEVEL = os.environ.get("LOGLEVEL", "WARNING").upper()
-    logLevel = "INFO" if (args.verbose) else LOGLEVEL
-    setLogLevel(logLevel)
 
     main = threading.Thread(target=thread_curses)
     main.start()
