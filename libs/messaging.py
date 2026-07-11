@@ -27,19 +27,23 @@ class Messaging:
         self.loop_started = False
 
     # ----------------------------------------------------------------------------
-    def on_disconnect(self, client, userdata, rc, properties):
+    def on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties):
         """
-        MQTT on_disconnect callback for MQTT v5.
+        MQTT on_disconnect callback for MQTT v5 / Paho API VERSION2.
+        Updated signature to accept disconnect_flags and reason_code.
         """
         self.connected = False
-        if rc == 0:
+        if reason_code == 0:
             logger.info("MQTT disconnected normally")
         else:
-            logger.warning("Unexpected MQTT disconnection (%s). Will auto-reconnect", rc)
+            logger.warning("Unexpected MQTT disconnection (%s). Will auto-reconnect", reason_code)
 
 
-    def on_disconnect_retry(self, client, userdata, rc, properties):
-        logger.info("Disconnected with result code: %s", rc)
+    def on_disconnect_retry(self, client, userdata, disconnect_flags, reason_code, properties):
+        """
+        Updated signature to match VERSION2 API.
+        """
+        logger.info("Disconnected with result code: %s", reason_code)
         reconnect_count, reconnect_delay = 0, FIRST_RECONNECT_DELAY
         while reconnect_count < MAX_RECONNECT_COUNT:
             logger.info("Reconnecting in %d seconds...", reconnect_delay)
@@ -214,5 +218,3 @@ class Messaging:
         """
         if self.connected:
             self.client.disconnect()
-
-
