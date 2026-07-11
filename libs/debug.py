@@ -43,6 +43,54 @@ class DebugLogger:
 
 
 
+def setLogFile(logfile, name=None):
+    """Point logging at the given file, replacing any handlers already set
+    up (e.g. by Debug()'s default stdout StreamHandler), so output only goes
+    to the new file rather than continuing to also go to the old destination.
+
+    Uses the same rotate-nightly-keep-5-backups policy and message format as
+    Debug(). Call this any time after Debug() to redirect logging - handy for
+    switching a console-based tool from printing to stdout to writing to a
+    file instead (e.g. when stdout is unusable, such as under curses).
+    Creates the log file's parent directory if it doesn't already exist.
+    If 2 processes logging to the same file name, at midnight, there is a 
+    chance of one writing to 'yesterday' and the other writing to 'today'
+
+    @params:
+        logfile - Required : path to the log file to write to (Str)
+        name    - Optional : logger name to configure; defaults to the root
+                  logger, which is what Debug()'s basicConfig-based setup
+                  attaches to (Str or None)
+    """
+    target_logger = logging.getLogger(name) if name else logging.getLogger()
+
+    formatter = logging.Formatter(
+        fmt="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # TimedRotatingFileHandler (like FileHandler) won't create missing
+    # parent directories itself - it just raises FileNotFoundError - so do
+    # that first
+    log_dir = os.path.dirname(logfile)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
+    # remove existing handlers first, so we don't end up logging to both the
+    # old destination (e.g. stdout) and the new file at the same time
+    for old_handler in list(target_logger.handlers):
+        target_logger.removeHandler(old_handler)
+        old_handler.close()
+
+    handler = TimedRotatingFileHandler(
+        logfile, when="midnight", interval=1, backupCount=5
+    )
+    handler.setFormatter(formatter)
+    target_logger.addHandler(handler)
+
+    return logfile
+
+
 def Debug(name, logfile=None, level="INFO"):
     """Initialize logging for the application."""
 
@@ -91,4 +139,3 @@ def Debug(name, logfile=None, level="INFO"):
         print("no logfile set")
         
     return logger
-    
