@@ -524,7 +524,6 @@ def copyFromDevice(device, useTheForce):
         logger.warning(f"no mount point {mount_point}")
 
 def insert_sd_msg():
-    status.clear()
     update_drive_stats()
     status.ready(INSERT_SD_MSG)
 
@@ -537,6 +536,7 @@ def wait_drive_inserted(lock):
     # insert_sd_msg()
     lock_status = lock.isLocked()
     update_counter = 0
+    status.clear()
 
     while True:
         # lets update the display every few seconds, incase some 
@@ -551,6 +551,7 @@ def wait_drive_inserted(lock):
             if lock_status:
                 logger.debug("lock released, waiting for device to be inserted")
                 lock_status = False
+                status.clear()
                 insert_sd_msg()
             # logger.debug("waiting for device to be inserted")
 
