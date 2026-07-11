@@ -332,7 +332,9 @@ def status_copydata(topic, data):
     elapsed = 0
 
     def safe_ratio(numerator, denominator):
-        return numerator / denominator if denominator else 0
+        if not denominator:
+            return 0
+        return max(0.0, min(1.0, numerator / denominator))
 
     # assumption is that if size is 0, then rsync or similar is happening
     # and we are not getting per file copy updates, so we won't show it
