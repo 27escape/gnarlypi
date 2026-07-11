@@ -6,8 +6,17 @@ import sys
 import time
 from datetime import datetime
 
-sys.path.insert( 0, '../')
+sys.path.insert(0, "../")
 from libs.messaging import Messaging
+from libs.config import Config
+from libs.debug import Debug
+
+APP_NAME = "status_basic"
+# get config from default location $GNARLYPI_CONFIG
+config = Config()
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+USER = os.environ.get("USER", "unknown")
+logger.setLogFile(f"/tmp/$USER/gnarlypi/{APP_NAME}.log")
 
 BLOCK_SIZE = 1024 * 1024 * 1024
 ONE_MINUTE = 60
@@ -152,7 +161,8 @@ if __name__ == "__main__":
     # Keep a persistent MQTT session so retained messages are available after reconnects.
     msg.connect(
         handlers,
-        client_id="gnarly-status-basic",
+        # uniq id, so we can have multiple gnarly_status_basic running
+        client_id=f"{APP_NAME}-{uuid.uuid4().hex[:8]}",
         clean_session=False,
         subscribe_qos=1,
     )
