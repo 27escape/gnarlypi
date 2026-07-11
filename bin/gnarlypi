@@ -473,8 +473,17 @@ def getDevices():
 # loop with a small delay until all devices are no longer registered
 def wait_remove_all_devices():
     update_drive_stats()
-    status.waitremove()
+    # status.waitremove()
+    update_counter = 0
+    
     while True:
+        # lets update the display every few seconds, incase some 
+        # status programs such as web connect later on        
+        if not update_counter:
+            status.waitremove()
+            update_counter = 3
+        update_counter -= 1
+        
         devices = getDevices()
         if not len(devices):
             break
@@ -502,9 +511,6 @@ def copyFromDevice(device, useTheForce):
             if os.path.isdir(camera_dir):
                 # and we only copy the DCIM files
                 rCopy(camera_dir, FILES_DIR, useTheForce)
-                # sonyVideo_dir = os.path.join(mount_point, "PRIVATE", "M4ROOT", "CLIP")
-                # rCopy(camera_dir, FILES_DIR, useTheForce)
-                # sonyVideo_dir = os.path.join(mount_point, "PRIVATE", "SONY", "AVCHD")
             else:
                 logger.debug("drive does not contain photo files")
             # Unmount the drive
@@ -528,10 +534,18 @@ def wait_drive_inserted(lock):
     # if we are running this after we have copied files
     #  we need to get rid of the sd percentage bar
 
-    insert_sd_msg()
+    # insert_sd_msg()
     lock_status = lock.isLocked()
+    update_counter = 0
 
     while True:
+        # lets update the display every few seconds, incase some 
+        # status programs such as web connect later on
+        if not update_counter:
+            update_counter = 3 
+            insert_sd_msg()
+        update_counter -= 1
+        
         if not lock.isLocked():
             #  if another process had the lock, then refresh the display
             if lock_status:
@@ -546,7 +560,7 @@ def wait_drive_inserted(lock):
         else:
             lock_status = True
         #     logger.debug("waiting for lock to be released")
-        wait_time(1)
+        wait_time(1)     
 
     logger.info(f"device inserted {devices}")
     status.ready( "Processing...")
@@ -691,4 +705,3 @@ if __name__ == "__main__":
         logger.error(f"Error: {e}")
         print(f"Error: {e}")
         sys.exit(1)
-1
