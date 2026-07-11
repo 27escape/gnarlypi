@@ -278,15 +278,20 @@ def run_rsync_with_progress(source, destination, complete_command=""):
 
                     logger.info(f"{transferred_count}/{expected_total}  {current_file}")
 
+                    # NOTE: Status.copydata()'s signature is
+                    # (fromfile, tofile, filesize, bytes_copied, files_copied,
+                    # file_count, bps, rsync) - keyword args used here so the
+                    # values always land in the right field regardless of
+                    # local variable naming/order.
                     status.copydata(
-                        current_file,
-                        current_file,
-                        0,                   # bytes copied so far (starting)
-                        current_file_size,   # total size of this file
-                        transferred_count,
-                        expected_total,
-                        0,                   # speed (not yet known)
-                        True
+                        fromfile=current_file,
+                        tofile=current_file,
+                        filesize=current_file_size,   # total size of this file
+                        bytes_copied=0,                # bytes copied so far (starting)
+                        files_copied=transferred_count,
+                        file_count=expected_total,
+                        bps=0,                         # speed (not yet known)
+                        rsync=True,
                     )
                 continue
 
@@ -323,14 +328,14 @@ def run_rsync_with_progress(source, destination, complete_command=""):
                     logger.info(f"completed {transferred_count}/{expected_total}  {current_file}")
 
                 status.copydata(
-                    current_file,
-                    current_file,
-                    bytes_copied,
-                    current_file_size,
-                    transferred_count,
-                    expected_total,
-                    bps,
-                    True
+                    fromfile=current_file,
+                    tofile=current_file,
+                    filesize=current_file_size,
+                    bytes_copied=bytes_copied,
+                    files_copied=transferred_count,
+                    file_count=expected_total,
+                    bps=bps,
+                    rsync=True,
                 )
 
         # ------------------------------------------------------------------
