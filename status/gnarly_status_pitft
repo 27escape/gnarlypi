@@ -17,6 +17,11 @@ from libs.config import Config
 from libs.debug import Debug
 
 APP_NAME = "pitft"
+# get config from default location $GNARLYPI_CONFIG
+config = Config()
+logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+USER = os.environ.get("USER", "unknown")
+logger.setLogFile(f"/tmp/$USER/gnarlypi/{APP_NAME}.log")
 
 # ----------------------------------------------------------------------------
 # these are the defaults for the mini_pitft, ensuring things work even if config not read
@@ -450,7 +455,7 @@ def mqtt_listener():
     # Keep a persistent MQTT session so retained messages are available after reconnects.
     msg.connect(
         handlers,
-        client_id="gnarly-status-pitft",
+        client_id=APP_NAME,
         clean_session=False,
         subscribe_qos=1,
     )
@@ -459,10 +464,6 @@ def mqtt_listener():
 # ----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    # get config from default location $GNARLYPI_CONFIG
-    config = Config()
-    logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
-
     # print(f"Config file: {config.get('status.pitft')}")
     # get display settings from config or use defaults
     ROTATION = config.get("status.pitft.rotation", ROTATION)
