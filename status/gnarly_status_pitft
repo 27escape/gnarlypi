@@ -20,8 +20,6 @@ APP_NAME = "pitft"
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
 logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
-USER = os.environ.get("USER", "unknown")
-logger.setLogFile(f"/tmp/$USER/gnarlypi/{APP_NAME}.log")
 
 # ----------------------------------------------------------------------------
 # these are the defaults for the mini_pitft, ensuring things work even if config not read
