@@ -11,7 +11,7 @@ Interaction:
 
 Other Cameras:
 - check where other cameras keep files, 
-  - [ ] SONY RX100 keeps video files in `/PRIVATE/M4ROOT/CLIP/C*.MP4` ignore other files, though `/PRIVATE/M4ROOT/THMBNL` holds a thumbnail for the video which could be handy for the indexer
+  - [x] SONY RX100 keeps video files in `/PRIVATE/M4ROOT/CLIP/C*.MP4` ignore other files, though `/PRIVATE/M4ROOT/THMBNL` holds a thumbnail for the video which could be handy for the indexer
 
 During index process:
 - extract image thumbnails for 
@@ -29,17 +29,16 @@ Management:
 - initial startup QR code for access to initial hotspot to config system
   - also default hotspot so devices that do not have big displays can still be configured
 
-
-
-
 Getting files off device:
 - [ ] investigate USB Gadget mode for Pi Zero 2
   - allows personal devices to connect to samba/photo album for edit/sharing images
+- [x] Rsync over ssh
+- [ ] Rsync over samba
 
 Device improvements:
 - [ ] power button for non PI 5 devices?
   - For devices that do not provide an off switch (nice shutdown), we will need to investigate options to replicate that, either with buttons provided by any display choice or by adding our own switch, this is especially important for the PI's without a power button, check out https://howchoo.com/pi/how-to-add-a-power-button-to-your-raspberry-pi/ for a solution to that issue 
-  - the [OnOff SHIM](https://thepihut.com/products/onoff-shim) _may_ be a solution but button placement is not ideal, a secondary button will need soldering, intial trials show it may conflict with the adafruit PiTFT displays
+  - the [OnOff SHIM](https://thepihut.com/products/onoff-shim) _may_ be a solution but button placement is not ideal, a secondary button will need soldering, initial trials show it may conflict with the adafruit PiTFT displays
 
 - [ ] CFexpress? My cameras don't use these cards, so this would only be added if anyone else needs it, ideally its just another USB device and should read and copy fine, without any code changes
 

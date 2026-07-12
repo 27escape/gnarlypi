@@ -1,12 +1,12 @@
 # gnarlypi
 
-A simple replacement for the Gnarbox (RIP). 
+A simple replacement for the [Gnarrbox 2.0](https://www.kickstarter.com/projects/gnarbox/gnarbox-20-ssd-rugged-backup-device-for-your-camer?ref=discovery&term=camera%20backup&total_hits=13&category_id=333) (RIP). 
 
-This is to replicate some of the functions of that device, ideally to run on different iterations of the Raspberry PI and to have output displayed on a range of modules, LEDs and displays as I have them and develop the code.
+This project is to replicate some of the functions of that device, ideally to run on different iterations of the Raspberry PI and to have output displayed on a range of modules, LEDs and displays as I have them and develop the code.
 
-Currently there is an alternative for the [Gnarrbox 2.0](https://www.kickstarter.com/projects/gnarbox/gnarbox-20-ssd-rugged-backup-device-for-your-camer?ref=discovery&term=camera%20backup&total_hits=13&category_id=333) doing the rounds on Kickstarter etc, this is the UnifyDrive UT2, earlybird price is 399 USD without any storage addded see [UnifyDrive UT2 - Kickstarter](https://www.kickstarter.com/projects/1945743381/ut2-redefining-portable-storage-solutions). A 2TB NVME drive is likely about 150 USD, so looking at 550 USD or possibly a lot more after launch. Other alternative devices can be found in [docs/alternatives](./docs/alternatives.md)
+Alternative options can be found in [docs/alternatives](./docs/alternatives.md)
 
-This project then is to provide a _much_ cheaper alternative to that, though maybe without a nice box to put it in, and no battery either. But, we can create it with Raspberry PI's, storage and display options that fit in our budgets!
+This project then is to provide a _much_ cheaper alternative to those alternatives, though maybe without a nice box to put it in, and no battery either. But, we can create it with Raspberry PI's, storage and display options that fit in our budgets!
 
 To be clear, my intention is to create a small low cost device, that I can use to backup my photos and videos while travelling and then when returning home, can copy those photos either onto my computer or my NAS for editing. Everything else is a bonus. 
 
@@ -34,7 +34,6 @@ For the status output, I have the following and have tried to get them to work
 - [ ] [Waveshare 1.28" Round Touchscreen LCD Display](https://thepihut.com/products/1-28-round-touchscreen-lcd-display-module) - _cannot get this to work with 64 bit OS_
 
 - [x] [LED shim](https://thepihut.com/products/led-shim) - basic LED only display, 24 LEDs
-
 
 ## System Design
 
@@ -88,11 +87,13 @@ On the Raspberry Pi Zero, its much slower, I get 12MB/s via USB2 SD card reader 
 
 The system uses SAMBA to provide file sharing, allowing you to retrieve previously stored files. On your home network, you should be able to connect to using the host name of the system you created when building the system
 
-I have not given much thought to documenting this step but you will need to connect as a registered user, with the username of your raspberrypi and the password you created during installation.
+I have not given much thought to documenting this step but you will need to connect as a registered user, with the username of your raspberrypi and the samba password you created during installation.
 
 - Windows - [How to connect to Linux Samba shares from Windows](https://www.supportyourtech.com/articles/how-to-connect-to-smb-share-windows-11-a-step-by-step-guide/)
 - Mac/OSX [How to Connect Your macOS Device to an SMB Share](https://www.techrepublic.com/article/how-to-connect-your-macos-device-to-an-smb-share/)
 - Linux - given the range of options for file managers etc, I am not going to provide a link, you are competent enough to search the internet yourself 
+
+If you run linux/mac systems, then you can make use of the inbuilt rsync service, this will attempt to sync to your home server/NAS every 10 minutes (configurable), which is super convenient, get home from trip, plug in pi, go to bed, everything copied over ready for working on in the morning.
 
 ## Configuring the system
 
