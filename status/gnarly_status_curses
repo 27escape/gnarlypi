@@ -226,10 +226,34 @@ def cls():
     with display_lock:
         for i, line in enumerate(msg_area):
             msg_area[i] = empty_line()
-        for i, line in enumerate(file_copy_area):
-            file_copy_area[i] = empty_line()
-        for i, line in enumerate(disk_status_area):
-            disk_status_area[i] = empty_line()
+
+            for i, line in enumerate(file_copy_area):
+                file_copy_area[i] = empty_line()
+            # status_copydata(
+            #     "",
+            #     {
+            #         "fromfile": "",
+            #         "tofile": "",
+            #         "size": 0,
+            #         "copied": 0,
+            #         "files_copied": 0,
+            #         "files_total": 0,
+            #     },
+            # )
+            if last_devicedata:
+                status_devicedata(
+                    "",
+                    {
+                        "sd_size": 0,
+                        "sd_free": 0,
+                        "hd_size": last_devicedata["hd_size"],
+                        "hd_free": last_devicedata["hd_free"],
+                    },
+                )
+            else:
+                for i, line in enumerate(disk_status_area):
+                    disk_status_area[i] = empty_line()
+
 
     update_display()
 
@@ -292,7 +316,7 @@ def status_ready(topic, data):
     """status_ready"""
     global last_status_time
 
-    cls()
+    # cls()
     if data and "msg" in data:
         # if last_status_time == 0 or last_status_time + ONE_MINUTE < data["_epoch"]:
         print_msg(f" {data['msg']}", 2)
@@ -532,26 +556,26 @@ def curses_display(stdscr):
     # the real terminal width) so they match the new width
     cls()
 
-    status_copydata(
-        "",
-        {
-            "fromfile": "",
-            "tofile": "",
-            "size": 0,
-            "copied": 0,
-            "files_copied": 0,
-            "files_total": 0,
-        },
-    )
-    status_devicedata(
-        "",
-        {
-            "sd_size": 10,
-            "sd_free": 1,
-            "hd_size": 100,
-            "hd_free": 50,
-        },
-    )
+    # status_copydata(
+    #     "",
+    #     {
+    #         "fromfile": "",
+    #         "tofile": "",
+    #         "size": 0,
+    #         "copied": 0,
+    #         "files_copied": 0,
+    #         "files_total": 0,
+    #     },
+    # )
+    # status_devicedata(
+    #     "",
+    #     {
+    #         "sd_size": 0,
+    #         "sd_free": 0,
+    #         "hd_size": 0,
+    #         "hd_free": 0,
+    #     },
+    # )
 
     while True:
         ch = gStdscr.getch()

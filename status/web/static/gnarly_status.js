@@ -41,7 +41,7 @@ function basename(path) {
 function cls() {
   for (let line = 0; line <= DISPLAY_ROWS; line++) {
     const lineid = `line${line}`;
-    ele = document.getElementById(lineid);
+    const ele = document.getElementById(lineid);
     if (ele) {
       ele.style.backgroundColor = BLACK;
       ele.innerHTML = "&nbsp;";
@@ -60,7 +60,7 @@ function print_line(
   justify = "left",
 ) {
   const lineid = `line${line}`;
-  ele = document.getElementById(lineid);
+  const ele = document.getElementById(lineid);
   if (ele) {
     ele.style.color = color;
     ele.style.backgroundColor = bg;
@@ -174,6 +174,15 @@ function show_hd(percent, line = 4) {
 }
 
 // ----------------------------------------------------------------------------
+// mirrors pitft's show_rsync(): both use line 4, the same line as show_hd -
+// this is an existing quirk inherited from the pitft display (whichever of
+// the two fires last "wins" that line), kept here for visual parity rather
+// than introduced fresh.
+function show_rsync(line = 4) {
+  center_line("RSYNC", line, BLACK, CYAN);
+}
+
+// ----------------------------------------------------------------------------
 function show_file_stats(filenum, total) {
   print_line("&nbsp;&nbsp;File", 6, WHITE, `${filenum} / ${total}`);
 }
@@ -199,23 +208,32 @@ function show_remain_stats(left) {
 
 // ----------------------------------------------------------------------------
 function status_error(topic, data) {
-  cls();
-
+  // NOTE: no cls() here, matching pitft - an error overlays lines 2/3/4
+  // rather than clearing the whole display. Also note lines 0 and 1 are
+  // deliberately avoided: line 0 is always overwritten by update_display()'s
+  // clock on every call, so writing the error header there (as this used to)
+  // meant it was drawn and then immediately clobbered in the same call.
   let msg = "Error";
   if ("level" in data) {
     msg += `:${data.level}`;
   }
-  center_line(msg, 0, WHITE, RED);
-  center_line(data.msg, 1, WHITE);
+  center_line(msg, 2, WHITE, RED);
+  center_line(data.msg, 3, WHITE, RED);
   if ("msg2" in data && data.msg2 && data.msg2.length) {
-    center_line(data.msg2, 3, RED);
+    center_line(data.msg2, 4, WHITE, RED);
   }
   update_display(data._epoch);
 }
 
 // ----------------------------------------------------------------------------
 function status_ready(topic, data) {
-  center_line("Insert SD card", 2, GREEN);
+  // use the actual message from the payload, matching pitft, instead of a
+  // hardcoded string that ignored whatever was actually published
+  if (data && data.msg) {
+    center_line(data.msg, 2, BLACK, YELLOW);
+  } else {
+    center_line("", 2, WHITE, GREEN);
+  }
   update_display(data._epoch);
 }
 
@@ -242,11 +260,12 @@ function status_copydata(topic, data) {
   show_files(data.files_copied / data.files_total);
 
   if (data.rsync) {
-    const left = data.files_total - data.files_copied;
-    show_remain_stats(left);
-  } else {
-    show_file_stats(data.files_copied, data.files_total);
+    show_rsync();
   }
+  //   const left = data.files_total - data.files_copied;
+  //   show_remain_stats(left);
+  // } else {
+  show_file_stats(data.files_copied, data.files_total);
 
   if (!data.copied) {
     start_copy_time = Date.now() / 1000;
@@ -284,7 +303,9 @@ function status_devicedata(topic, data) {
 
 // ----------------------------------------------------------------------------
 function status_diskfull(topic, data) {
-  // cls();
+  // restored: was previously commented out, leaving stale content behind
+  // the "HD disk full" banner instead of clearing the display first
+  cls();
   center_line("HD disk full", 2, WHITE, RED);
   update_display(data._epoch);
 }

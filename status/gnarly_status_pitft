@@ -21,6 +21,15 @@ APP_NAME = "pitft"
 config = Config()
 logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 
+
+# test display width if using pitft
+REMOVE_SD_MSG = "Remove SD Card / Camera"
+pitft = config.get("status.pitft", {})
+if pitft["display_width"] and pitft["font_size"]:
+    chars = pitft["display_width"] / pitft["font_size"]
+    if chars < 12:
+        REMOVE_SD_MSG = "Remove SD"
+
 # ----------------------------------------------------------------------------
 # these are the defaults for the mini_pitft, ensuring things work even if config not read
 FONT_SIZE = 14
@@ -58,6 +67,19 @@ HD_COLOR = CYAN
 LAST_DISPLAY_UPDATE_TIME = 0
 DISPLAY_UPDATE_MIN_INTERVAL = 0.1  # minimum 100ms between hardware updates
 LAST_DISPLAYED_TIME_STRING = ""
+
+# Draw-side throttling: on slower boards (e.g. Pi Zero 2 W), the Pillow
+# drawing work itself (not just the SPI push) can't keep up with a burst of
+# rapid MQTT copydata/devicedata messages. Without this, drawing keeps
+# falling further behind real time since every message does full Pillow
+# rendering even though most of those frames would just be discarded by the
+# push throttle above anyway. Throttling the draw itself, not just the
+# push, keeps the display roughly in step with reality instead of lagging
+# further and further behind as a copy progresses.
+LAST_COPYDATA_DRAW_TIME = 0
+COPYDATA_MIN_DRAW_INTERVAL = DISPLAY_UPDATE_MIN_INTERVAL
+LAST_DEVICEDATA_DRAW_TIME = 0
+DEVICEDATA_MIN_DRAW_INTERVAL = DISPLAY_UPDATE_MIN_INTERVAL
 
 
 # ----------------------------------------------------------------------------
@@ -328,13 +350,21 @@ start_copy_time = 0
 # ----------------------------------------------------------------------------
 def status_copydata(topic, data):
     """status_copydata"""
-    global start_copy_time
+    global start_copy_time, LAST_COPYDATA_DRAW_TIME
     elapsed = 0
 
+    # Draw-side throttle: on slower boards, the Pillow rendering below can't
+    # keep up with a fast burst of copydata messages. Skip the (relatively
+    # expensive) drawing entirely if we've drawn a copydata frame too
+    # recently - a newer message will supersede this one shortly anyway, and
+    # status_endcopy always runs regardless so the final state is never lost.
+    now = time.time()
+    if now - LAST_COPYDATA_DRAW_TIME < COPYDATA_MIN_DRAW_INTERVAL:
+        return
+    LAST_COPYDATA_DRAW_TIME = now
+
     def safe_ratio(numerator, denominator):
-        if not denominator:
-            return 0
-        return max(0.0, min(1.0, numerator / denominator))
+        return numerator / denominator if denominator else 0
 
     # assumption is that if size is 0, then rsync or similar is happening
     # and we are not getting per file copy updates, so we won't show it
@@ -371,7 +401,7 @@ def status_copydata(topic, data):
 # ----------------------------------------------------------------------------
 def status_waitremove(topic, data):
     """status_waitremove"""
-    center_line("Remove SD Card / Camera", 2, WHITE, PURPLE)
+    center_line(REMOVE_SD_MSG, 2, WHITE, PURPLE)
     update_display(data["_epoch"])
 
 
@@ -383,6 +413,14 @@ def quick_perc(free, size):
 # ----------------------------------------------------------------------------
 def status_devicedata(topic, data):
     """status_devicedata"""
+    global LAST_DEVICEDATA_DRAW_TIME
+
+    # Same draw-side throttle as status_copydata, for the same reason: this
+    # topic can also arrive faster than a slower board can usefully draw it.
+    now = time.time()
+    if now - LAST_DEVICEDATA_DRAW_TIME < DEVICEDATA_MIN_DRAW_INTERVAL:
+        return
+    LAST_DEVICEDATA_DRAW_TIME = now
 
     # get the used sizes from the size and free values
     # get used (size-free) over size
