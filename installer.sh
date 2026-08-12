@@ -16,7 +16,6 @@
 # and this is fine on a raspberry pi where there is only one user and
 # we may(!) know what we are doing
 
-
 REBOOT_REQUIRED=0
 FIRMWARE_FILE="/boot/firmware/config.txt"
 SPI_OVERLAY="dtoverlay=spi0-0cs"
@@ -32,7 +31,8 @@ function system_upgrade() {
 # ----------------------------------------------------------------------------
 # install tools that we will likely require
 function install_tools() {
-    sudo apt install -y git jq build-essential python3-pip cmake mosquitto mosquitto-clients
+    sudo apt install -y git jq build-essential python3-pip cmake \
+      mosquitto mosquitto-clients ffmpeg dcraw exiftool
 }
 
 # ----------------------------------------------------------------------------
@@ -73,6 +73,9 @@ function install_device_mini_pitft() {
 FIRMWARE_FILE="/boot/firmware/config.txt"
 SPI_OVERLAY="dtoverlay=spi0-0cs"
     echo "Installing mini_pitft"
+    # we need this to support image drawing in the pillow library
+    sudo apt install -y python3-numpy
+
     # 0 means ON
     sudo raspi-config nonint do_i2c 0
     sudo raspi-config nonint do_spi 0
@@ -95,6 +98,7 @@ function install_samba() {
 #======================= Global Settings =======================
 
 [global]
+  min protocol = SMB2
    workgroup = WORKGROUP
 
    log file = /var/log/samba/log.%m
@@ -128,6 +132,9 @@ function install_samba() {
 
   sudo apt install -y samba samba-common-bin
 
+  echo "Remember the following password, you will need it when connecting
+to this pi using samba/SMB/windows file sharing"
+
   # create samba user for current linux user
   sudo smbpasswd -a "$USER"
 
@@ -140,9 +147,7 @@ function install_samba() {
     echo "smb.conf has previously been created, I will sample config in /tmp/smb.conf"
     echo "$smbconf" > "/tmp/smb.conf"
   fi
-
 }
-
 
 # ----------------------------------------------------------------------------
 # install be_gnarly into crontab
