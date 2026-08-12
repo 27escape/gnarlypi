@@ -198,6 +198,7 @@ def run_rsync_with_progress(source, destination, complete_command=""):
         current_file_size = 0
         transferred_count = 0   # files whose data was actually moved this run
         current_file_done = False
+        reset_display = True
 
         # ------------------------------------------------------------------
         # Pre-scan: find out how many files will transfer so we have an
@@ -277,6 +278,11 @@ def run_rsync_with_progress(source, destination, complete_command=""):
                         current_file_size = 0
 
                     logger.info(f"{transferred_count}/{expected_total}  {current_file}")
+
+                    if reset_display:
+                        # when we have info about files to to copy
+                        status.clear()
+                        reset_display = False
 
                     # NOTE: Status.copydata()'s signature is
                     # (fromfile, tofile, filesize, bytes_copied, files_copied,
@@ -412,11 +418,12 @@ if __name__ == "__main__":
             lock = Lock()
             lock.waitLock()
 
-            status.ready("running rsync...")
             complete_command = config.get('rsync.complete_command', "")
             logger.debug(f"complete command: '{complete_command}'")
+
             run_rsync_with_progress(source, target, complete_command)
-            status.ready("")
+
+            status.clear()
             lock.releaseLock()
 
     except Exception as e:
