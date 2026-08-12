@@ -19,17 +19,24 @@ from libs.debug import Debug
 from libs.locking import Lock
 from libs.status import Status
 
-VERSION = "0.5.0"
-APP_NAME = os.path.basename(__file__) 
+VERSION = "0.6.0"
+APP_NAME = os.path.basename(__file__)
 CREATOR = "27escape"
 COPYRIGHT = "©️2025"
-INSERT_SD_MSG = "Insert SD card / Connect Camera"
 
 status = None
 
 # get config from default location $GNARLYPI_CONFIG
 config = Config()
 logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+
+# test display width if using pitft
+INSERT_SD_MSG = "Insert SD card / Connect Camera"
+pitft = config.get("status.pitft", {})
+if pitft["display_width"] and pitft["font_size"]:
+    chars = pitft["display_width"] / pitft["font_size"]
+    if chars < 12:
+        INSERT_SD_MSG = "Insert SD"
 
 # ----------------------------------------------------------------------------
 
@@ -332,7 +339,7 @@ def rCopy(src, dst, force):
     pending_copies = []
 
     logger.debug(f"scanning {src} for files")
-    status.fivelines(("", "", "Scanning for files", "", ""))
+    # status.fivelines(("", "", "Scanning for files", "", ""))
 
     # find files to copy
     for dirpath, dirnames, filenames in os.walk(src):
@@ -475,15 +482,15 @@ def wait_remove_all_devices():
     update_drive_stats()
     # status.waitremove()
     update_counter = 0
-    
+
     while True:
-        # lets update the display every few seconds, incase some 
-        # status programs such as web connect later on        
+        # lets update the display every few seconds, incase some
+        # status programs such as web connect later on
         if not update_counter:
             status.waitremove()
             update_counter = 3
         update_counter -= 1
-        
+
         devices = getDevices()
         if not len(devices):
             break
@@ -530,41 +537,34 @@ def insert_sd_msg():
 
 # ----------------------------------------------------------------------------
 def wait_drive_inserted(lock):
-    # if we are running this after we have copied files
-    #  we need to get rid of the sd percentage bar
-
-    # insert_sd_msg()
     lock_status = lock.isLocked()
     update_counter = 0
     status.clear()
 
     while True:
-        # lets update the display every few seconds, incase some 
-        # status programs such as web connect later on
-        if not update_counter:
-            update_counter = 3 
-            insert_sd_msg()
-        update_counter -= 1
-        
         if not lock.isLocked():
-            #  if another process had the lock, then refresh the display
+            if not update_counter:
+                update_counter = 3
+                insert_sd_msg()
+            update_counter -= 1
+
             if lock_status:
                 logger.debug("lock released, waiting for device to be inserted")
                 lock_status = False
                 status.clear()
                 insert_sd_msg()
-            # logger.debug("waiting for device to be inserted")
 
             devices = getDevices()
             if len(devices) != 0:
                 break
         else:
             lock_status = True
-        #     logger.debug("waiting for lock to be released")
-        wait_time(1)     
+            update_counter = 0  # so we announce promptly, not up to 3s late, once it's free
+
+        wait_time(1)
 
     logger.info(f"device inserted {devices}")
-    status.ready( "Processing...")
+    status.ready("Processing...")
 
 
 # ----------------------------------------------------------------------------
@@ -668,12 +668,12 @@ if __name__ == "__main__":
 
         start_apps()
         logger.debug("started apps")
-        
+
         # Cleanly disconnect before the fork destroys the network thread
         if status and status.msg:
             status.msg.client_disconnect()
             status.msg.connected = False # Forces the next publish() to reconnect
-        
+
         daemonise()
         logger.debug("daemonised")
         wait_time(3)
