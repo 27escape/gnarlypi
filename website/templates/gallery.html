@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GnarlyPi - Gallery</title>
+    <meta name="theme-color" content="#1e1e1e">
+    <link rel="stylesheet" href="/static/gnarly_style.css">
+</head>
+<body class="gallery-layout">
+    <aside id="sidebar">
+        <h3>Archives</h3>
+        <div id="tree-container">Loading...</div>
+    </aside>
+
+    <main id="main-content">
+        <header class="common-header">
+            <div class="common-header-left">
+                <a href="/" class="back-btn">&larr; Home</a>
+                <span id="current-view-title" class="header-title">Select a Date</span>
+            </div>
+            <div class="controls">
+                <button id="btn-thumb" class="active" onclick="setGridSize('thumb')">Thumbnails</button>
+                <button id="btn-medium" onclick="setGridSize('medium')">Medium</button>
+            </div>
+        </header>
+        <div id="gallery-grid" class="grid-thumb"></div>
+    </main>
+
+    <div id="lightbox">
+        <div class="lightbox-controls">
+            <a id="download-link" href="#" download class="lightbox-btn">Download Original</a>
+            <button class="lightbox-btn" onclick="closeLightbox()" title="Close (Esc)">X</button>
+        </div>
+        
+        <div id="lightbox-media-container"></div>
+        
+        <div id="lightbox-nav">
+            <button class="nav-btn" onclick="navigateLightbox(-1)">&lt;</button>
+            <button class="nav-btn" onclick="navigateLightbox(1)">&gt;</button>
+        </div>
+    </div>
+
+    <script>
+        let galleryData = {};
+        let currentGridClass = 'grid-thumb';
+        let currentDayFiles = [];
+        let currentMediaIndex = 0;
+        
+        const BASE_USB_PATH = '/home/kevinmu/usb_data/';
+
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (!img.src) {
+                        img.src = img.dataset.src;
+                        img.onload = () => img.classList.add('loaded');
+                    }
+                    observer.unobserve(img);
+                }
+            });
+        }, { 
+            rootMargin: '300px 0px 300px 0px',
+            threshold: 0.01
+        });
+
+        function getWebPath(absolutePath) {
+            if (!absolutePath) return '';
+            return absolutePath.replace(BASE_USB_PATH, '/media/');
+        }
+
+        async function fetchGalleryTree() {
+            try {
+                const response = await fetch('/api/gallery/tree');
+                galleryData = await response.json();
+                renderSidebar();
+            } catch (err) {
+                document.getElementById('tree-container').innerText = 'Error loading gallery.';
+                console.error(err);
+            }
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById('tree-container');
+            container.innerHTML = '';
+            
+            const years = Object.keys(galleryData).sort((a, b) => b - a);
+            
+            years.forEach(year => {
+                const yearBlock = document.createElement('div');
+                yearBlock.innerHTML = `<div class="year-title" onclick="toggleYear(this)">&#9662; ${year}</div>`;
+                
+                const dayList = document.createElement('ul');
+                const days = Object.keys(galleryData[year]).sort((a, b) => new Date(b) - new Date(a));
+                
+                days.forEach(day => {
+                    const li = document.createElement('li');
+                    li.className = 'day-item';
+                    li.innerText = day;
+                    li.onclick = () => renderGrid(year, day);
+                    dayList.appendChild(li);
+                });
+                
+                yearBlock.appendChild(dayList);
+                container.appendChild(yearBlock);
+            });
+        }
+
+        function toggleYear(element) {
+            const list = element.nextElementSibling;
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function setGridSize(size) {
+            const grid = document.getElementById('gallery-grid');
+            document.getElementById('btn-thumb').classList.remove('active');
+            document.getElementById('btn-medium').classList.remove('active');
+            
+            if (size === 'thumb') {
+                grid.className = 'grid-thumb';
+                currentGridClass = 'grid-thumb';
+                document.getElementById('btn-thumb').classList.add('active');
+            } else {
+                grid.className = 'grid-medium';
+                currentGridClass = 'grid-medium';
+                document.getElementById('btn-medium').classList.add('active');
+            }
+        }
+
+        function renderGrid(year, day) {
+            currentDayFiles = galleryData[year][day];
+            
+            const itemCount = currentDayFiles.length;
+            const itemLabel = itemCount === 1 ? 'item' : 'items';
+            document.getElementById('current-view-title').innerText = `${day} (${itemCount}${itemLabel})`;
+            
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = '';
+            
+            currentDayFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'media-item';
+                
+                const img = document.createElement('img');
+                img.loading = 'lazy'; 
+                
+                const quality = currentGridClass === 'grid-medium' ? 'medium' : 'thumb';
+                const targetPath = file.thumbs[quality] || file.thumbs.thumb;
+                
+                img.dataset.src = getWebPath(targetPath);
+                item.onclick = () => openLightbox(index);
+                item.appendChild(img);
+                
+                if (file.type === 'video') {
+                    const icon = document.createElement('div');
+                    icon.className = 'video-icon';
+                    icon.innerText = '🎥';
+                    item.appendChild(icon);
+                }
+                
+                grid.appendChild(item);
+                imageObserver.observe(img);
+            });
+        }
+
+        function openLightbox(index) {
+            currentMediaIndex = index;
+            const file = currentDayFiles[currentMediaIndex];
+            
+            const lightbox = document.getElementById('lightbox');
+            const container = document.getElementById('lightbox-media-container');
+            const downloadBtn = document.getElementById('download-link');
+            
+            container.innerHTML = '';
+            downloadBtn.href = getWebPath(file.source);
+            
+            if (file.type === 'video') {
+                const video = document.createElement('video');
+                video.id = 'lightbox-content';
+                video.controls = true;
+                video.autoplay = true;
+                video.src = getWebPath(file.source); 
+                container.appendChild(video);
+            } else {
+                const img = document.createElement('img');
+                img.id = 'lightbox-content';
+                img.src = getWebPath(file.thumbs.full);
+                container.appendChild(img);
+            }
+            
+            lightbox.classList.add('active');
+        }
+
+        function navigateLightbox(direction) {
+            if (!currentDayFiles.length) return;
+            
+            currentMediaIndex += direction;
+            
+            if (currentMediaIndex < 0) {
+                currentMediaIndex = currentDayFiles.length - 1;
+            } else if (currentMediaIndex >= currentDayFiles.length) {
+                currentMediaIndex = 0;
+            }
+            
+            openLightbox(currentMediaIndex);
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            const container = document.getElementById('lightbox-media-container');
+            container.innerHTML = ''; 
+        }
+
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') {
+                closeLightbox();
+            } else if (e.key === 'ArrowLeft') {
+                navigateLightbox(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigateLightbox(1);
+            }
+        });
+
+        const lightboxElement = document.getElementById('lightbox');
+
+        lightboxElement.addEventListener('click', (e) => {
+            if (e.target === lightboxElement || e.target.id === 'lightbox-media-container') {
+                closeLightbox();
+            }
+        });
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const swipeThreshold = 50; 
+        
+        lightboxElement.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        lightboxElement.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            if (!lightboxElement.classList.contains('active')) return;
+            const swipeDistance = touchEndX - touchStartX;
+            
+            if (swipeDistance < -swipeThreshold) {
+                navigateLightbox(1);
+            } else if (swipeDistance > swipeThreshold) {
+                navigateLightbox(-1);
+            }
+        }
+
+        fetchGalleryTree();
+    </script>
+</body>
+</html>

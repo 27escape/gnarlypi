@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GnarlyPi - MQTT Monitor</title>
+    <meta name="theme-color" content="#1e1e1e">
+    <link rel="stylesheet" href="/static/gnarly_style.css">
+</head>
+<body class="page-layout">
+    <header class="common-header">
+        <div class="common-header-left">
+            <a href="/" class="back-btn">&larr; Home</a>
+            <span class="header-title">MQTT Monitor</span>
+        </div>
+    </header>
+    
+    <main id="terminal" class="terminal-wrapper">System Ready. Waiting for MQTT messages...<br></main>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const MAX_MESSAGES = 50;
+        
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        function connectSSE() {
+            const eventSource = new EventSource('/stream');
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const msg = data.message;
+                
+                // Preserve the "Clear Screen" gold feature
+                if (msg.topic.endsWith('/cls')) {
+                    terminal.innerHTML = '';
+                    return;
+                }
+
+                const payloadText = typeof msg.payload === 'string'
+                    ? msg.payload
+                    : JSON.stringify(msg.payload, null, 2);
+
+                const line = document.createElement('div');
+                
+                const timeEl = document.createElement('span');
+                timeEl.className = 'topic';
+                timeEl.textContent = `[${getFormattedTimestamp()}] `;
+
+                const topicEl = document.createElement('span');
+                topicEl.className = 'topic';
+                topicEl.textContent = `[${msg.topic}] `;
+
+                const payloadEl = document.createElement('span');
+                payloadEl.textContent = payloadText;
+
+                line.appendChild(timeEl);
+                line.appendChild(topicEl);
+                line.appendChild(payloadEl);
+                terminal.appendChild(line);
+
+                // Enforce the strict 50-message rolling window
+                const messageLines = terminal.querySelectorAll('div');
+                if (messageLines.length > MAX_MESSAGES) {
+                    // Remove the oldest message from the top of the DOM
+                    messageLines[0].remove();
+                }
+
+                // Auto-scroll to bottom
+                terminal.scrollTop = terminal.scrollHeight;
+            };
+
+            eventSource.onerror = function(err) {
+                console.error("SSE Connection dropped. Reconnecting...", err);
+                eventSource.close();
+                setTimeout(connectSSE, 3000);
+            };
+        }
+
+        connectSSE();
+    </script>
+</body>
+</html>

@@ -8,15 +8,18 @@ import queue
 import signal
 import argparse
 import threading
-from flask import Flask, render_template, Response
+import shutil
+from flask import Flask, render_template, Response, send_from_directory, jsonify, request
 
-# ----------------------------------------------------------------------------
+# ============================================================================
+# Because gnarly_web is now in gnarlypi/bin/, traversing up one level ('../')
+# correctly targets the main gnarlypi directory where libs/ resides.
 sys.path.insert( 0, '../')
 from libs.messaging import Messaging
 from libs.config import Config
 from libs.debug import Debug
 
-# ----------------------------------------------------------------------------
+# ============================================================================
 USER = os.getenv("USER")
 HOME = os.getenv("HOME")
 APP_NAME = os.path.basename(__file__)
@@ -25,29 +28,223 @@ APP_NAME = os.path.basename(__file__)
 config = Config()
 logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 # get web port from config with a default of 8027
-WEBPORT = config.get('status_web.port', 8027)
+WEBPORT = config.get('website.port', 8027)
+
+# BASE_DIR evaluates to /home/kevinmu/gnarlypi/bin
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ----------------------------------------------------------------------------
+# Resolve the absolute path to the new website directory: /home/kevinmu/gnarlypi/website
+WEBSITE_DIR = os.path.abspath(os.path.join(BASE_DIR, '../website'))
+
+# Gallery Database Configuration
+THUMBNAILS = config.get('indexer.thumbnails', '')
+THUMBNAIL_JSON_DB = THUMBNAILS + "/db.json"
+FILES = config.get('indexer.files', '')
+INDEXES = config.get('indexer.index', '')
+
+# Security Configuration: Parse PIN and strictly limit to 6 characters
+DELETE_PIN = str(config.get('website.pin', ''))[:6]
+
+# Explicitly define the allowed media root to bypass Flask's symlink security blocks
+MEDIA_ROOT = config.get('website.media_root', f"{HOME}/usb_data")
+
+# Enforce a hard minimum of 300 seconds to protect hardware resources.
+# Strict int() casting applied to prevent configuration parsing crashes.
+try:
+    configured_sync = int(config.get('website.db_sync', 300))
+except ValueError:
+    logger.error("Invalid db_sync configuration value. Defaulting to 300.")
+    configured_sync = 300
+
+DB_JSON_SYNC = max(configured_sync, 300)
+
+# In-memory storage for the parsed gallery to ensure high-performance API delivery
+gallery_flat_data = {}
+gallery_tree_data = {}
+gallery_lock = threading.Lock()
+last_db_mtime = 0
+
+# ============================================================================
+def load_gallery_database():
+    """Reads the JSON DB and builds a hierarchical Year -> Day tree."""
+    global gallery_flat_data, gallery_tree_data, last_db_mtime
+    
+    if not os.path.exists(THUMBNAIL_JSON_DB):
+        logger.error(f"Gallery database not found at: {THUMBNAIL_JSON_DB}")
+        return
+
+    logger.info(f"Loading gallery database from: {THUMBNAIL_JSON_DB}")
+    try:
+        # Capture mtime before reading to avoid a race condition 
+        # where the file is modified during the read operation.
+        current_mtime = os.path.getmtime(THUMBNAIL_JSON_DB)
+        
+        with open(THUMBNAIL_JSON_DB, 'r') as f:
+            raw_data = json.load(f)
+
+        new_tree = {}
+        
+        # Build the hierarchy
+        for filepath, meta in raw_data.items():
+            date_str = meta.get('indexed_date')
+            if not date_str:
+                continue
+                
+            year = date_str.split('-')[0]
+            
+            if year not in new_tree:
+                new_tree[year] = {}
+            if date_str not in new_tree[year]:
+                new_tree[year][date_str] = []
+                
+            new_tree[year][date_str].append(meta)
+
+        # Apply Atomic Update using the lock
+        with gallery_lock:
+            gallery_flat_data = raw_data
+            gallery_tree_data = new_tree
+            last_db_mtime = current_mtime
+            
+        logger.info("Gallery database loaded and structured successfully.")
+        
+    except Exception as e:
+        logger.error(f"Failed to parse gallery database: {e}")
+
+def thread_database_sync():
+    """Background daemon to monitor db.json for modifications and reload it."""
+    logger.info(f"Starting database sync thread, checking every {DB_JSON_SYNC} seconds.")
+    while True:
+        time.sleep(DB_JSON_SYNC)
+        try:
+            if os.path.exists(THUMBNAIL_JSON_DB):
+                current_mtime = os.path.getmtime(THUMBNAIL_JSON_DB)
+                if current_mtime > last_db_mtime:
+                    logger.info("Detected modifications to db.json. Reloading into memory.")
+                    load_gallery_database()
+        except Exception as e:
+            logger.error(f"Error checking database modification time: {e}")
+
+# ============================================================================
 def signal_handler(sig, frame):
     """ """
     logger.info(f"Exit requested for {APP_NAME} by signal {sig}")
     sys.exit(1)
 
-# ----------------------------------------------------------------------------
+# ============================================================================
+# Helper: Empty a directory without deleting the root folder itself
+def clear_directory(folder_path):
+    if not folder_path or not os.path.exists(folder_path):
+        return
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            logger.error(f"Failed to delete {file_path}. Reason: {e}")
+
+# ============================================================================
 # Flask App starts here
 
 app = Flask(__name__,
-    template_folder=os.path.join(BASE_DIR, 'web/templates'),
-    static_folder=os.path.join(BASE_DIR, 'web/static'),
+    template_folder=os.path.join(WEBSITE_DIR, 'templates'),
+    static_folder=os.path.join(WEBSITE_DIR, 'static'),
     static_url_path='/static' )
 
-#Flask Routes
+# Flask Routes
 @app.route('/')
 def index():
-    """Serves the main HTML page."""
-    logger.debug("Index endpoint hit")
+    """Serves the main navigation landing page."""
+    logger.debug("New Index endpoint hit")
     return render_template('index.html')
+
+@app.route('/status')
+def status():
+    """Serves the MQTT photo import status page."""
+    logger.debug("Status endpoint hit")
+    return render_template('status.html')
+
+
+@app.route('/mqtt')
+def mqtt_monitor():
+    """Serves the MQTT monitoring page."""
+    logger.debug("MQTT endpoint hit")
+    return render_template('mqtt_monitor.html')
+
+
+@app.route('/gallery')
+def gallery():
+    """Serves the main gallery application interface."""
+    logger.debug("Gallery endpoint hit")
+    return render_template('gallery.html')
+
+@app.route('/wipe')
+def wipe():
+    """Serves the data wipe confirmation interface."""
+    logger.debug("Wipe endpoint hit")
+    # Pass the boolean requirement down to the frontend template
+    return render_template('wipe.html', requires_pin=bool(DELETE_PIN))
+
+# --- Backend API Routes ---
+
+@app.route('/api/gallery/tree')
+def api_gallery_tree():
+    """Returns the pre-processed hierarchical gallery structure as JSON."""
+    with gallery_lock:
+        return jsonify(gallery_tree_data)
+
+@app.route('/media/<path:filename>')
+def serve_media(filename):
+    """
+    Securely serves media files from the base USB drive path.
+    This explicit route is required because Flask's built-in web server 
+    intentionally blocks symlinks that point outside the static directory.
+    """
+    return send_from_directory(MEDIA_ROOT, filename)
+
+@app.route('/api/wipe', methods=['POST'])
+def api_wipe():
+    """Safely wipes all user data and resets the gallery state."""
+    logger.info("Initiating full media wipe operation.")
+    
+    # Enforce PIN checking if configured
+    if DELETE_PIN:
+        data = request.get_json(silent=True) or {}
+        provided_pin = str(data.get('pin', ''))[:6]
+        if provided_pin != DELETE_PIN:
+            logger.warning("Wipe operation rejected: Invalid PIN.")
+            return jsonify({"status": "error", "message": "Invalid PIN provided."}), 401
+            
+    try:
+        clear_directory(THUMBNAILS)
+        clear_directory(FILES)
+        clear_directory(INDEXES)
+
+        # Safely clear the in-memory database
+        global gallery_flat_data, gallery_tree_data, last_db_mtime
+        with gallery_lock:
+            gallery_flat_data = {}
+            gallery_tree_data = {}
+            last_db_mtime = 0
+            
+        logger.info("Media wipe completed successfully.")
+        return jsonify({"status": "success", "message": "All media wiped successfully."})
+        
+    except Exception as e:
+        logger.error(f"Wipe operation failed: {e}")
+        return jsonify({"status": "error", "message": "Failed to complete the wipe operation."}), 500
+
+# --- End API Routes ---
+
+# @app.after_request
+# def after(response):
+#     # todo with response
+#     logger.debug(response.status)
+#     logger.debug(response.headers)
+#     logger.debug(response.get_data())
+#     return response
 
 @app.route('/stream')
 def stream():
@@ -63,17 +260,9 @@ def stream():
     def generate_messages():
         try:
             while True:
-                # block until a message is available - this already paces
-                # delivery correctly, so no extra sleep() is needed here. An
-                # artificial sleep would just throttle delivery below what
-                # the client can actually receive, causing a backlog that
-                # gets silently evicted by the MAX_HISTORY trim below during
-                # any burst of rapid messages (e.g. copydata during a copy).
                 message = q.get()
-                # logger.info("Sending message to client: %s", message)
                 yield f"data: {json.dumps({'message': message})}\n\n"
         finally:
-            # remove queue when client disconnects
             with clients_lock:
                 if q in client_queues:
                     client_queues.remove(q)
@@ -85,40 +274,17 @@ def stream():
     response.headers["Access-Control-Allow-Origin"] = "*"
     return response
 
-#Flask Routes
-@app.route('/status')
-def status():
-    """Serves a status page."""
-    logger.debug("Status endpoint hit")
-    return "status ok"
-
-
-# @app.after_request
-# def after(response):
-#     # todo with response
-#     logger.debug(response.status)
-#     logger.debug(response.headers)
-#     logger.debug(response.get_data())
-#     return response
-
-
 # maintain one queue per connected SSE client
-client_queues = []               # list of queue.Queue instances
-clients_lock = threading.Lock()  # protects client_queues
-MAX_HISTORY = 20                 # keep only the last N messages per client
-
-# handle all the photo messages; broadcast to every connected queue
-# each queue is trimmed to MAX_HISTORY before inserting a new item
+client_queues = []               
+clients_lock = threading.Lock()  
+MAX_HISTORY = 20                 
 
 def status_all(topic, data):
     """status_all"""
     msg = {"topic": topic, "payload": data}
-    # logger.debug(f"status_all received topic: {topic} data: {data}")
     with clients_lock:
-        # iterate over a copy to avoid modification during send
         for q in list(client_queues):
             try:
-                # if the queue is already full, drop oldest entry
                 if q.qsize() >= MAX_HISTORY:
                     try:
                         q.get_nowait()
@@ -126,16 +292,13 @@ def status_all(topic, data):
                         pass
                 q.put_nowait(msg)
             except Exception:
-                # if a queue is bad, we'll drop it later when its generator exits
                 pass
 
 # setup connection to MQTT
 msg = Messaging()
 
 def thread_subscriptions():
-
     logger.info("Starting MQTT subscriptions thread")
-    # Define a dictionary to map topics to handling functions
     handlers = {
         # we need to define all the topics as msg.connect does not handle wildcards 
         # "/photos/#": status_all,
@@ -152,15 +315,12 @@ def thread_subscriptions():
         "/photos/cls": status_all 
     }
 
-    # Keep a persistent MQTT session so retained messages are available after
-    # reconnects, matching the curses/pitft displays' connection settings.
     msg.connect(
         handlers,
         client_id=APP_NAME,
         clean_session=False,
         subscribe_qos=1,
     )
-
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
@@ -171,19 +331,18 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
+    # Pre-load the gallery database into memory before handling requests
+    load_gallery_database()
+
+    # Start database synchronization thread
+    db_sync_thread = threading.Thread(target=thread_database_sync, daemon=True)
+    db_sync_thread.start()
+
     # Start MQTT client in a separate thread
     sub = threading.Thread(target=thread_subscriptions)
     sub.start()
-    time.sleep(2)  # Give MQTT client time to connect
+    time.sleep(2) 
 
     # Start Flask web server
     logger.info("Starting Flask web server...")
-    # threaded=True is required: without it, Flask's dev server handles one
-    # request at a time, and the /stream endpoint's generator blocks for as
-    # long as that browser tab stays connected - meaning a single open SSE
-    # connection would hang every other request (a second client, or even
-    # the page's own static assets) until it closes.
-    # debug=False: the Werkzeug interactive debugger allows arbitrary code
-    # execution on an unhandled exception: fine for local development, not
-    # for anything reachable on the network (host='0.0.0.0' below).
     app.run(debug=False, use_reloader=False, threaded=True, host='0.0.0.0', port=WEBPORT)

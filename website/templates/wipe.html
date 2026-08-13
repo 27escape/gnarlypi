@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GnarlyPi - Wipe System</title>
+    <meta name="theme-color" content="#1e1e1e">
+    <link rel="stylesheet" href="/static/gnarly_style.css">
+</head>
+<body class="page-layout">
+    <header class="common-header">
+        <div class="common-header-left">
+            <a href="/" class="back-btn">&larr; Home</a>
+            <span class="header-title">System Wipe Configuration</span>
+        </div>
+    </header>
+
+    <main class="center-wrapper">
+        <div class="content-container">
+            <h1 class="danger">Destructive Action</h1>
+            <p>You are about to permanently delete all indexed data on this system.</p>
+            
+            <div class="warning-box">
+                This action will permanently delete all:
+                <ul>
+                    <li>Original photograph and video files</li>
+                    <li>System thumbnails and generated medium files</li>
+                    <li>Indexing databases and JSON structures</li>
+                </ul>
+            </div>
+
+            <label class="checkbox-container">
+                <input type="checkbox" id="confirm-check">
+                <span>I confirm that there are no ongoing import operations and I wish to permanently delete all media files.</span>
+            </label>
+
+            <div class="btn-group">
+                <a href="/" class="btn secondary">Cancel</a>
+                <button id="wipe-btn" class="btn primary" disabled onclick="handleWipeRequest()">Proceed & Wipe</button>
+            </div>
+            
+            <div id="status-msg"></div>
+        </div>
+    </main>
+
+    <!-- PIN Authentication Modal -->
+    <div id="pin-modal" class="modal">
+        <div class="modal-content" id="pin-modal-content">
+            <h2>Authentication</h2>
+            <p>Please enter your 6-digit PIN to authorise deletion.</p>
+            <div id="pin-error"></div>
+            
+            <input type="password" inputmode="numeric" pattern="[0-9]*" id="pin-input" maxlength="6" placeholder="******">
+            
+            <div class="btn-group">
+                <button class="btn secondary" onclick="abortToHome()">Cancel</button>
+                <button class="btn primary" onclick="submitPin()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const requiresPin = {{ 'true' if requires_pin else 'false' }};
+        let failedAttempts = 0;
+        
+        const checkbox = document.getElementById('confirm-check');
+        const wipeBtn = document.getElementById('wipe-btn');
+        const statusMsg = document.getElementById('status-msg');
+        
+        const pinModal = document.getElementById('pin-modal');
+        const pinInput = document.getElementById('pin-input');
+        const pinError = document.getElementById('pin-error');
+
+        checkbox.addEventListener('change', (e) => {
+            wipeBtn.disabled = !e.target.checked;
+        });
+
+        function handleWipeRequest() {
+            if (!checkbox.checked) return;
+            
+            if (requiresPin) {
+                pinModal.classList.add('active');
+                pinInput.value = '';
+                pinError.innerText = '';
+                pinInput.focus();
+            } else {
+                executeWipe('');
+            }
+        }
+
+        function submitPin() {
+            const pinValue = pinInput.value.trim();
+            if (!pinValue) {
+                pinError.innerText = "Please enter a PIN.";
+                return;
+            }
+            pinInput.disabled = true;
+            executeWipe(pinValue);
+        }
+
+        function abortToHome() {
+            window.location.href = '/';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && pinModal.classList.contains('active')) {
+                abortToHome();
+            }
+        });
+
+        pinModal.addEventListener('click', (e) => {
+            if (e.target === pinModal) {
+                abortToHome();
+            }
+        });
+
+        pinInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                submitPin();
+            }
+        });
+
+        async function executeWipe(pinStr) {
+            if (requiresPin) {
+                pinError.innerText = "Verifying...";
+            } else {
+                wipeBtn.disabled = true;
+                wipeBtn.innerText = "Wiping...";
+                statusMsg.style.color = "var(--text)";
+                statusMsg.innerText = "Please wait, clearing directories...";
+            }
+            
+            try {
+                const response = await fetch('/api/wipe', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: pinStr })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (requiresPin) {
+                        pinModal.classList.remove('active');
+                    }
+                    statusMsg.style.color = "var(--accent)";
+                    statusMsg.innerText = result.message + " Redirecting...";
+                    setTimeout(() => window.location.href = "/", 2000);
+                } else if (response.status === 401 && requiresPin) {
+                    failedAttempts++;
+                    pinInput.disabled = false;
+                    pinInput.value = '';
+                    pinInput.focus();
+                    
+                    if (failedAttempts >= 3) {
+                        abortToHome();
+                    } else {
+                        pinError.innerText = `Invalid PIN. ${3 - failedAttempts} attempts remaining.`;
+                    }
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                if (requiresPin) {
+                    pinModal.classList.remove('active');
+                }
+                statusMsg.style.color = "var(--danger)";
+                statusMsg.innerText = "Error: " + error.message;
+                wipeBtn.disabled = false;
+                wipeBtn.innerText = "Proceed & Wipe";
+            }
+        }
+    </script>
+</body>
+</html>

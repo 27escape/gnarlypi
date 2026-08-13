@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <!-- Ensures proper scaling on mobile devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GnarlyPi - Home</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- Theme colour for the browser UI / Status bar -->
+    <meta name="theme-color" content="#1e1e1e">
+    
+    <!-- Standard Favicon -->
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+
+    <!-- iOS Specific PWA Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GnarlyPi">
+    <link rel="apple-touch-icon" href="/static/icon.svg">
+
+    <!-- Your existing CSS links would remain here -->
+    <!-- <link rel="stylesheet" href="/static/style.css"> -->
+</head>
+<body>
+    <header>
+        <h1>GnarlyPi System</h1>
+        <nav>
+            <ul>
+                <li><a href="/status">MQTT Import Status</a></li>
+                <li><a href="/gallery">Photo Gallery</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Welcome to GnarlyPi</h2>
+        <p>Select a destination from the navigation menu.</p>
+    </main>
+
+    <!-- Your existing JavaScript for the SSE stream would remain in your status.html -->
+</body>
+</html>

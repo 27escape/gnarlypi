@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Large Background Circle -->
+  <circle cx="256" cy="256" r="230" fill="#2c3e50" />
+  
+  <!-- Tripod Legs -->
+  <g stroke="#ecf0f1" stroke-width="24" stroke-linecap="round">
+    <!-- Centre Leg -->
+    <line x1="256" y1="320" x2="256" y2="460" />
+    <!-- Left Leg -->
+    <line x1="230" y1="320" x2="140" y2="460" />
+    <!-- Right Leg -->
+    <line x1="282" y1="320" x2="372" y2="460" />
+  </g>
+
+  <!-- Tripod Mount / Head -->
+  <rect x="236" y="270" width="40" height="30" rx="5" fill="#95a5a6" />
+
+  <!-- Camera Body -->
+  <rect x="146" y="150" width="220" height="130" rx="15" fill="#ecf0f1" />
+  
+  <!-- Camera Flash / Top Viewfinder -->
+  <rect x="216" y="120" width="80" height="40" rx="8" fill="#bdc3c7" />
+
+  <!-- Camera Lens Outer -->
+  <circle cx="256" cy="215" r="55" fill="#34495e" />
+  
+  <!-- Camera Lens Inner -->
+  <circle cx="256" cy="215" r="35" fill="#1abc9c" />
+  
+  <!-- Lens Reflection / Highlight -->
+  <circle cx="268" cy="203" r="12" fill="#ffffff" opacity="0.6" />
+</svg>
