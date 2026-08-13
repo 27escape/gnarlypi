@@ -16,7 +16,6 @@ status:
     # - gnarly_status_curses
     # - gnarly_status_ledshim
     - gnarly_status_pitft
-    - gnarly_status_web
   pitft:
     rotation: 0
     font_size: 24
@@ -34,13 +33,17 @@ gnarlypi:
   apps:
     - gnarly_indexer
     - gnarly_rsync
+    - gnarly_web
 
 indexer:
   files: "$(gnarlypi.store)/files"
   index: "$(gnarlypi.store)/index"
 
-status_web:
+website:
   port: 8027
+  db_sync: 300
+  pin: 1234
+  media_root: "$(gnarlypi.store)"
 
 rsync:
   source: "$(indexer.index)"
@@ -55,7 +58,6 @@ In this example, we can see that all of the status devices are commented out exc
 **devices** this is an array of the device status programs to start when the main gnarlypi application starts, these can be found in the `status` directory, only start the ones that are relevant to the devices that you have connected to your rPI.
 
 - `gnarly_status_pitft` - uses either the 135x240 or 240x240 Adafruit MiniTFT display (https://thepihut.com/products/adafruit-mini-pitft-135x240-color-tft-add-on-for-raspberry-pi-ada4393 or https://thepihut.com/products/adafruit-mini-pitft-1-3-240x240-tft-add-on-for-raspberry-pi)
-- `gnarly_status_web` - runs a webserver that your computer browser can connect to
 - `gnarly_status_ledshim` - uses the basic light bar https://thepihut.com/products/led-shim
 - `gnarly_status_blinkt` - uses the extra basic light bar https://thepihut.com/products/blinkt
 - `gnarly_status_curses` - should not be run via gnarlypi as it reports to the console
@@ -104,7 +106,7 @@ and for the 240x240 display the section is
 
 **loglevel** what level of debug is needed, default to "debug", the usual levels can be used, "info", "warn", "error" etc.
 
-**apps** - this is an array of the other gnarlypi applications that should be started up when the main gnarlypi application starts, these applications reside in the `bin` directory. Currently `gnarly_rsync` and `gnarly_indexer` are the only programs available
+**apps** - this is an array of the other gnarlypi applications that should be started up when the main gnarlypi application starts, these applications reside in the `bin` directory. Currently `gnarly_rsync`,  `gnarly_indexer` and `gnarly_web` are the only programs available
 
 ### indexer section
 
@@ -113,6 +115,8 @@ If the indexer application has been declared as one of the apps to run from the 
 **files** this is where the files are read from
 
 **index** this is where symlinks to the original files will be created, symlinks are valid on linux drives (ext2, ext3 and ext4) and use very little space, these symlinks will be available either when connecting to the system over Samba or may be used when copying to a remote system, such as a NAS.
+
+**thumbails** the indexer extracts JPOG thumbnails of various sizes from imported photos, this is where they will be saved
 
 ### rsync section
 
@@ -125,12 +129,17 @@ The example reads the files linked in the index on a date basis, however, if you
 
 **sleep** This is the time in seconds before rsync backup attempts. If the system is not connected to a network, then nothing happens with the rsync. If it is connected to a network, such as when you are at home, then its useful for this to be a shortish value such as **300** i.e. 5 minutes, so that your images will be backed up quite quickly after you have copied them from your SD card.
 
-### status_web section
+### website section
 
-If using the web status reporter, it is possible to define the port that the web server is listening on
+When using the website
 
 **port** This is the port number, in this config example we are using port 8027. You would connect to it from your browser as `http://devicename:8027/` replacing device name with either the name that your system knows the gnarlypi as or its IP address e.g. `http://192.168.0.128:8027/`
 
+**db_sync** the website will read the JSON database that the indexer creates, is the number of seconds when it is checked for changes. The minimum value allowed is 300s
+
+**pin** to perform wipe of all photos, we ask for confirmation and if there is a PIN then we ask for that too
+
+**media_root** this is where the website will link the photos from, this should match "$(gnarlypi.store)"
 
 ## Improving rsync speeds
 
