@@ -3,7 +3,6 @@ name: gnarlypi
 status:
   devices:
     - gnarly_status_pitft
-    - gnarly_status_web
     # - gnarly_status_blinkt
     # - gnarly_status_ledshim
     # these should only be run via the console
@@ -40,7 +39,8 @@ gnarlypi:
 indexer:
   files: "$(gnarlypi.store)/files"
   index: "$(gnarlypi.store)/index"
-  
+  thumbnails: "$(gnarlypi.store)/thumbnails"
+
 rsync:
   sleep: 300
   source: "$(indexer.index)"
@@ -49,11 +49,6 @@ rsync:
 
 status_web:
   port: 8027
+  db_sync: 300
+  pin: 1234
 
-# hotspot:
-#   name: "gnarly
-#   password: "gnarlypassword"
-
-# wifi:
-#   name: "home"
-#   password: "homepassword"
