@@ -32,7 +32,7 @@ function system_upgrade() {
 # install tools that we will likely require
 function install_tools() {
     sudo apt install -y git jq build-essential python3-pip cmake \
-      mosquitto mosquitto-clients ffmpeg dcraw exiftool
+      mosquitto mosquitto-clients ffmpeg dcraw exiftool imagemagick nginx
 }
 
 # ----------------------------------------------------------------------------
@@ -191,6 +191,8 @@ function link_usbdata() {
       mkdir "/home/$USER/usb_data"
     fi
     sudo ln -s "/mnt/usb_data" "/home/$USER/usb_data"
+    # we need a link for the website too
+
   fi
 }
 
@@ -209,6 +211,22 @@ persistence_location /var/lib/mosquitto/" | sudo tee -a /etc/mosquitto/mosquitto
   fi
 }
 
+function config_nginx() {
+  echo "Configuring nginx"
+  # 1. Ensure the default site is removed to free up port 80
+  sudo rm -f /etc/nginx/sites-enabled/default
+
+  # 2. symlink the new configuration
+  sudo ln -s "$HOME"/gnarlypi/website/gnarlypi-nginx.conf /etc/nginx/sites-enabled/gnarlypi.conf
+
+  # 3. Test the Nginx configuration for any syntax errors
+  sudo nginx -t
+
+  # 4. Reload Nginx to apply the proxy routing
+  sudo systemctl reload nginx
+}
+
+
 # ----------------------------------------------------------------------------
 
 system_upgrade
@@ -223,6 +241,7 @@ install_device_mini_pitft
 install_samba
 install_gnarly
 check_mosquitto_persistence
+config_nginx
 
 ./bin/display_config.sh
 
