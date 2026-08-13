@@ -1,6 +1,6 @@
 # gnarlypi
 
-A simple replacement for the [Gnarrbox 2.0](https://www.kickstarter.com/projects/gnarbox/gnarbox-20-ssd-rugged-backup-device-for-your-camer?ref=discovery&term=camera%20backup&total_hits=13&category_id=333) (RIP). 
+A simple replacement for the [Gnarrbox 2.0](https://www.kickstarter.com/projects/gnarbox/gnarbox-20-ssd-rugged-backup-device-for-your-camer?ref=discovery&term=camera%20backup&total_hits=13&category_id=333) (RIP).
 
 This project is to replicate some of the functions of that device, ideally to run on different iterations of the Raspberry PI and to have output displayed on a range of modules, LEDs and displays as I have them and develop the code.
 
@@ -8,13 +8,13 @@ Alternative options can be found in [docs/alternatives](./docs/alternatives.md)
 
 This project then is to provide a _much_ cheaper alternative to those alternatives, though maybe without a nice box to put it in, and no battery either. But, we can create it with Raspberry PI's, storage and display options that fit in our budgets!
 
-To be clear, my intention is to create a small low cost device, that I can use to backup my photos and videos while travelling and then when returning home, can copy those photos either onto my computer or my NAS for editing. Everything else is a bonus. 
+To be clear, my intention is to create a small low cost device, that I can use to backup my photos and videos while travelling and then when returning home, can copy those photos either onto my computer or my NAS for editing. Everything else is a bonus.
 
 I could carry a small laptop but I have enough weight in my bag with cameras/lenses, tablet etc and I also do not want to have to create an application that I can run on my phone/tablet to perform this function. TBH a pocket laptop like those created by GPD may be suitable if I could add 2TB of NVME storage to them but they are still pretty pricy as are the linux phones that are available.
 
 ## My Setup
 
-I am developing this against a Raspberry PI 5, this has a [NVME NANO](https://thepihut.com/products/hatdrive-nano-for-raspberry-pi-5) along with a [WD Black 2TB SN770M   NVME drive 2230 M.2](https://www.amazon.co.uk/dp/B0CN17F7XC), its packed into the standard [Raspberry Pi 5 Case](https://thepihut.com/products/raspberry-pi-5-case), though this needed some modification to allow the fan to work. I did not use the [active cooler fan](https://thepihut.com/products/active-cooler-for-raspberry-pi-5), as there were some reports of this fan being sub-optimal in this case, though my construction may be even more sub-optimal! To read from SD an micro SD cards I use an [Anker 2-in-1 USB 3.0 SD Card Reader](https://www.amazon.co.uk/gp/product/B00LFIXC8I). 
+I am developing this against a Raspberry PI 5, this has a [NVME NANO](https://thepihut.com/products/hatdrive-nano-for-raspberry-pi-5) along with a [WD Black 2TB SN770M   NVME drive 2230 M.2](https://www.amazon.co.uk/dp/B0CN17F7XC), its packed into the standard [Raspberry Pi 5 Case](https://thepihut.com/products/raspberry-pi-5-case), though this needed some modification to allow the fan to work. I did not use the [active cooler fan](https://thepihut.com/products/active-cooler-for-raspberry-pi-5), as there were some reports of this fan being sub-optimal in this case, though my construction may be even more sub-optimal! To read from SD an micro SD cards I use an [Anker 2-in-1 USB 3.0 SD Card Reader](https://www.amazon.co.uk/gp/product/B00LFIXC8I).
 Finally I Use [Right Angle USB C Male to Female Adapters](https://www.amazon.co.uk/dp/B0BLMSDYWD) to keep the power cable tidy.
 
 ![My PI 5 in PiHut layer case, mini_pitft display, pineboards NVME nano with 2TB WD NVME, with USB SD card reader and a camera cable connected](docs/mypiv2.jpg)
@@ -37,7 +37,7 @@ For the status output, I have the following and have tried to get them to work
 
 ## System Design
 
-The main code (gnarlypi) is to run at boot from cron, it will auto mount inserted SD cards (or cameras via USB) that appear to contain photos by having a **DCIM** directory at the top level of the device. 
+The main code (gnarlypi) is to run at boot from cron, it will auto mount inserted SD cards (or cameras via USB) that appear to contain photos by having a **DCIM** directory at the top level of the device.
 
 My setup has an attached NVME drive which will hold the copied photos but the code will copy to the directory **usb_data** in the users home directory. You can mount any USB or NVME drive to this directory. This will be noted later in the installation instructions.
 
@@ -53,7 +53,7 @@ Head over to [Raspberry PI](https://www.raspberrypi.com/software/) and grab the 
 Build your Raspberry PI, adding any required drives etc, I have some notes in [Hardware setup](docs/hardware_setup.md)
 
 
-## Installing the gnarlypi software 
+## Installing the gnarlypi software
 
 Hopefully this is the straight forwards bit, clone this repo onto your pi, into your home directory, then `cd` into the `gnarypi` directory and run the installer
 
@@ -67,7 +67,7 @@ Hopefully that will do everything needed and the system will reboot and it will 
 
 ## Using the system
 
-Rebooting the system when it has been installed, will have the system up and running. 
+Rebooting the system when it has been installed, will have the system up and running.
 
 Then either connect a camera (in storage mode) via USB or a suitable SD Card reader, such as the [Anker 2-in-1 USB 3.0 SD Card Reader](https://www.amazon.co.uk/gp/product/B00LFIXC8I) which also has micro SD card slots, using an SD card read is MUCH faster than connecting to a camera directly.
 
@@ -91,7 +91,7 @@ I have not given much thought to documenting this step but you will need to conn
 
 - Windows - [How to connect to Linux Samba shares from Windows](https://www.supportyourtech.com/articles/how-to-connect-to-smb-share-windows-11-a-step-by-step-guide/)
 - Mac/OSX [How to Connect Your macOS Device to an SMB Share](https://www.techrepublic.com/article/how-to-connect-your-macos-device-to-an-smb-share/)
-- Linux - given the range of options for file managers etc, I am not going to provide a link, you are competent enough to search the internet yourself 
+- Linux - given the range of options for file managers etc, I am not going to provide a link, you are competent enough to search the internet yourself
 
 If you run linux/mac systems, then you can make use of the inbuilt rsync service, this will attempt to sync to your home server/NAS every 10 minutes (configurable), which is super convenient, get home from trip, plug in pi, go to bed, everything copied over ready for working on in the morning.
 
