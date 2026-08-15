@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
     // Define a constant key for our SharedPreferences
     private val PREFS_NAME = "GnarlyPrefs"
     private val KEY_GNARLY_URL = "gnarly_url"
-    private val DEFAULT_URL = "http://photos.local"
+    private val DEFAULT_URL = "http://gnarlypi.local"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {

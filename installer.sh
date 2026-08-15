@@ -226,6 +226,13 @@ function config_nginx() {
   sudo systemctl reload nginx
 }
 
+# ---------------------------------------------------------------------------
+# standardise the hostname to gnarlypi, this is what the android app expects
+function set_hostname() {
+  echo "Setting hostname to gnarlypi"
+  sudo raspi-config nonint do_hostname gnarlypi
+}
+
 
 # ----------------------------------------------------------------------------
 
@@ -242,6 +249,7 @@ install_samba
 install_gnarly
 check_mosquitto_persistence
 config_nginx
+set_hostname
 
 ./bin/display_config.sh
 

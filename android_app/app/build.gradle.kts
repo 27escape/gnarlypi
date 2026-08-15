@@ -26,8 +26,8 @@ android {
         targetSdk = 34
 
         // INCREMENT THESE FOR EVERY NEW DEPLOYMENT
-        versionCode = 4
-        versionName = "1.4"
+        versionCode = 5
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
