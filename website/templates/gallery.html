@@ -4,8 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GnarlyPi - Gallery</title>
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e1e1e">
     <link rel="stylesheet" href="/static/gnarly_style.css">
+    
+    <!-- Lightbox Layout Overrides for Mobile Optimisation -->
+    <style>
+        /* Reclaim horizontal space: Dates are YYYY-MM-DD, so 150px is ample on desktop/tablet */
+        @media (min-width: 769px) {
+            #sidebar {
+                width: 150px !important;
+            }
+        }
+
+        /* Maximise the image container to use 100% of the viewport */
+        #lightbox-media-container {
+            height: 100% !important;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Prevent native scrolling when panning */
+        }
+        
+        #lightbox-content {
+            max-height: 100vh !important;
+            width: 100%;
+            object-fit: contain;
+            /* Instructs the mobile browser to surrender all default gesture handling to our JavaScript */
+            touch-action: none; 
+            /* Ensures scaling transforms originate from the exact centre of the image */
+            transform-origin: center center; 
+        }
+
+        /* Float the top controls above the image to prevent vertical space consumption */
+        .lightbox-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1002;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 5px;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Lightbox Image Counter Overlay */
+        #lightbox-counter {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 1002;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text, #e0e0e0);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            pointer-events: none; /* Prevents the counter from blocking touch gestures */
+        }
+
+        /* Standardise the SVG icon sizing and inherit the parent button colour */
+        .icon-svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            display: block;
+        }
+
+        /* Highlight the currently selected date in the sidebar */
+        .day-item.active {
+            background-color: var(--accent);
+            color: #000 !important;
+            border-radius: 4px;
+            padding: 0.3rem 0.5rem;
+            margin-left: -0.5rem; /* Offsets the padding to keep text aligned with unselected items */
+            font-weight: bold;
+        }
+
+        /* 
+         * Dual-Trigger Protection: 
+         * Hide the manual navigation buttons ONLY if the user is on a touch device.
+         * Desktop users with a mouse will still see the buttons.
+         */
+        @media (hover: none) and (pointer: coarse) {
+            #lightbox-nav {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body class="gallery-layout">
     <aside id="sidebar">
@@ -28,9 +117,20 @@
     </main>
 
     <div id="lightbox">
+        <!-- Progress Indicator Overlay -->
+        <div id="lightbox-counter"></div>
+
         <div class="lightbox-controls">
-            <a id="download-link" href="#" download class="lightbox-btn">Download Original</a>
-            <button class="lightbox-btn" onclick="closeLightbox()" title="Close (Esc)">X</button>
+            <a id="download-link" href="#" download class="lightbox-btn" title="Download Original">
+                <svg class="icon-svg" viewBox="0 0 24 24">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                </svg>
+            </a>
+            <button class="lightbox-btn" onclick="closeLightbox()" title="Close (Esc)">
+                <svg class="icon-svg" viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
         </div>
         
         <div id="lightbox-media-container"></div>
@@ -98,13 +198,25 @@
                     const li = document.createElement('li');
                     li.className = 'day-item';
                     li.innerText = day;
-                    li.onclick = () => renderGrid(year, day);
+                    
+                    li.onclick = () => {
+                        document.querySelectorAll('.day-item').forEach(el => el.classList.remove('active'));
+                        li.classList.add('active');
+                        renderGrid(year, day);
+                    };
+                    
                     dayList.appendChild(li);
                 });
                 
                 yearBlock.appendChild(dayList);
                 container.appendChild(yearBlock);
             });
+
+            // Auto-initialise: Simulate a click on the most recent date to load the initial gallery view
+            const firstDateEntry = container.querySelector('.day-item');
+            if (firstDateEntry) {
+                firstDateEntry.click();
+            }
         }
 
         function toggleYear(element) {
@@ -133,7 +245,7 @@
             
             const itemCount = currentDayFiles.length;
             const itemLabel = itemCount === 1 ? 'item' : 'items';
-            document.getElementById('current-view-title').innerText = `${day} (${itemCount}${itemLabel})`;
+            document.getElementById('current-view-title').innerText = `${day} (${itemCount} ${itemLabel})`;
             
             const grid = document.getElementById('gallery-grid');
             grid.innerHTML = '';
@@ -171,9 +283,21 @@
             const lightbox = document.getElementById('lightbox');
             const container = document.getElementById('lightbox-media-container');
             const downloadBtn = document.getElementById('download-link');
+            const counterElement = document.getElementById('lightbox-counter');
             
+            // Push a temporary state to the history stack to intercept hardware back swipes
+            if (location.hash !== '#lightbox') {
+                history.pushState({ lightbox: true }, "", "#lightbox");
+            }
+
             container.innerHTML = '';
             downloadBtn.href = getWebPath(file.source);
+            
+            if (counterElement && currentDayFiles.length > 0) {
+                counterElement.innerText = `${currentMediaIndex + 1} / ${currentDayFiles.length}`;
+            }
+            
+            resetZoom();
             
             if (file.type === 'video') {
                 const video = document.createElement('video');
@@ -206,11 +330,26 @@
             openLightbox(currentMediaIndex);
         }
 
-        function closeLightbox() {
+        // Accepts a flag to differentiate hardware back events from manual UI clicks
+        function closeLightbox(fromHistory = false) {
             document.getElementById('lightbox').classList.remove('active');
             const container = document.getElementById('lightbox-media-container');
             container.innerHTML = ''; 
+            
+            // If closed via UI (X button, background click, Esc key), clean up the history stack
+            if (!fromHistory && location.hash === '#lightbox') {
+                history.back();
+            }
         }
+
+        // Listen for hardware back gestures or OS back button presses
+        window.addEventListener('popstate', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            // If the back button is pressed while the lightbox is active, close it and stay on the gallery page
+            if (lightbox.classList.contains('active') && location.hash !== '#lightbox') {
+                closeLightbox(true);
+            }
+        });
 
         document.addEventListener('keydown', (e) => {
             const lightbox = document.getElementById('lightbox');
@@ -225,7 +364,51 @@
             }
         });
 
+        // ----------------------------------------------------------------------------
+        // Multi-Touch Gesture Engine with Focal Point Zoom
+        // ----------------------------------------------------------------------------
         const lightboxElement = document.getElementById('lightbox');
+        
+        let touchStartX = 0, touchEndX = 0;
+        const swipeThreshold = 50; 
+        
+        let currentScale = 1;
+        let initialPinchDistance = 0;
+        let isPinching = false;
+        
+        let panStartX = 0, panStartY = 0;
+        let translateX = 0, translateY = 0;
+        let prevTranslateX = 0, prevTranslateY = 0;
+        let lastTapTime = 0;
+
+        function getPinchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // Calculates the mathematical centre point between two fingers
+        function getPinchCenter(touches) {
+            return {
+                x: (touches[0].clientX + touches[1].clientX) / 2,
+                y: (touches[0].clientY + touches[1].clientY) / 2
+            };
+        }
+
+        function resetZoom() {
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            prevTranslateX = 0;
+            prevTranslateY = 0;
+            
+            const content = document.getElementById('lightbox-content');
+            if (content && content.tagName === 'IMG') {
+                content.style.transform = `translate(0px, 0px) scale(1)`;
+                content.style.transition = 'transform 0.2s ease-out';
+                setTimeout(() => { if(content) content.style.transition = 'none'; }, 200);
+            }
+        }
 
         lightboxElement.addEventListener('click', (e) => {
             if (e.target === lightboxElement || e.target.id === 'lightbox-media-container') {
@@ -233,17 +416,97 @@
             }
         });
 
-        let touchStartX = 0;
-        let touchEndX = 0;
-        const swipeThreshold = 50; 
-        
         lightboxElement.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
+            if (e.touches.length === 2) {
+                isPinching = true;
+                initialPinchDistance = getPinchDistance(e.touches);
+            } else if (e.touches.length === 1) {
+                touchStartX = e.touches[0].screenX;
+                panStartX = e.touches[0].clientX;
+                panStartY = e.touches[0].clientY;
+            }
         }, { passive: true });
 
+        lightboxElement.addEventListener('touchmove', e => {
+            const content = document.getElementById('lightbox-content');
+            if (!content || content.tagName !== 'IMG') return; 
+
+            if (isPinching && e.touches.length === 2) {
+                e.preventDefault(); 
+                const currentDistance = getPinchDistance(e.touches);
+                const scaleMultiplier = currentDistance / initialPinchDistance;
+                
+                const newScale = Math.max(1, Math.min(currentScale * scaleMultiplier, 6)); 
+                // Calculate the true scaling factor post-clamping
+                const actualMultiplier = newScale / currentScale; 
+                
+                // Calculate distance from screen centre to focal pinch point
+                const centre = getPinchCenter(e.touches);
+                const dx = centre.x - (window.innerWidth / 2);
+                const dy = centre.y - (window.innerHeight / 2);
+                
+                // Adjust translations dynamically to keep the focal point directly beneath the user's fingers
+                translateX -= (dx - translateX) * (actualMultiplier - 1);
+                translateY -= (dy - translateY) * (actualMultiplier - 1);
+                
+                // Snap back to absolute mathematical centre if fully zoomed out
+                if (newScale === 1) {
+                    translateX = 0;
+                    translateY = 0;
+                }
+                
+                currentScale = newScale; 
+                initialPinchDistance = currentDistance; 
+                
+                content.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+                
+            } else if (!isPinching && e.touches.length === 1 && currentScale > 1) {
+                e.preventDefault(); 
+                const dx = e.touches[0].clientX - panStartX;
+                const dy = e.touches[0].clientY - panStartY;
+                
+                translateX = prevTranslateX + dx;
+                translateY = prevTranslateY + dy;
+                
+                content.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            }
+        }, { passive: false });
+
         lightboxElement.addEventListener('touchend', e => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+            
+            if (tapLength < 300 && tapLength > 0 && currentScale > 1) {
+                resetZoom();
+                lastTapTime = currentTime;
+                return;
+            }
+            lastTapTime = currentTime;
+
+            // Seamless Hand-Off: If a user lifts one finger from a pinch, transition into single-finger panning
+            if (isPinching && e.touches.length < 2) {
+                isPinching = false;
+                prevTranslateX = translateX;
+                prevTranslateY = translateY;
+                
+                if (e.touches.length === 1) {
+                    panStartX = e.touches[0].clientX;
+                    panStartY = e.touches[0].clientY;
+                    // Reset swipe anchor so lifting a finger doesn't immediately trigger a false swipe
+                    touchStartX = e.touches[0].screenX; 
+                }
+                return;
+            }
+
+            if (e.changedTouches.length === 1) {
+                touchEndX = e.changedTouches[0].screenX;
+                prevTranslateX = translateX;
+                prevTranslateY = translateY;
+
+                if (currentScale === 1) {
+                    handleSwipe();
+                }
+            }
         }, { passive: true });
 
         function handleSwipe() {

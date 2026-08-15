@@ -28,7 +28,7 @@ APP_NAME = os.path.basename(__file__)
 config = Config()
 logger = Debug( APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
 # get web port from config with a default of 8027
-WEBPORT = config.get('website.port', 8027)
+WEBPORT = config.get('status_web.port', 8027)
 
 # BASE_DIR evaluates to /home/kevinmu/gnarlypi/bin
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,15 +43,15 @@ FILES = config.get('indexer.files', '')
 INDEXES = config.get('indexer.index', '')
 
 # Security Configuration: Parse PIN and strictly limit to 6 characters
-DELETE_PIN = str(config.get('website.pin', ''))[:6]
+DELETE_PIN = str(config.get('status_web.pin', ''))[:6]
 
 # Explicitly define the allowed media root to bypass Flask's symlink security blocks
-MEDIA_ROOT = config.get('website.media_root', f"{HOME}/usb_data")
+MEDIA_ROOT = config.get('status_web.media_root', '/home/kevinmu/usb_data')
 
 # Enforce a hard minimum of 300 seconds to protect hardware resources.
 # Strict int() casting applied to prevent configuration parsing crashes.
 try:
-    configured_sync = int(config.get('website.db_sync', 300))
+    configured_sync = int(config.get('status_web.db_sync', 300))
 except ValueError:
     logger.error("Invalid db_sync configuration value. Defaulting to 300.")
     configured_sync = 300
@@ -98,6 +98,15 @@ def load_gallery_database():
                 new_tree[year][date_str] = []
                 
             new_tree[year][date_str].append(meta)
+
+        # Sort the daily arrays chronologically by the 'utc' timestamp (newest first).
+        # Chained .get() gracefully handles case variations in the JSON schema.
+        for year in new_tree:
+            for date_str in new_tree[year]:
+                new_tree[year][date_str].sort(
+                    key=lambda x: str(x.get('utc', x.get('UTC', ''))), 
+                    reverse=True
+                )
 
         # Apply Atomic Update using the lock
         with gallery_lock:
@@ -166,13 +175,11 @@ def status():
     logger.debug("Status endpoint hit")
     return render_template('status.html')
 
-
 @app.route('/mqtt')
 def mqtt_monitor():
     """Serves the MQTT monitoring page."""
     logger.debug("MQTT endpoint hit")
     return render_template('mqtt_monitor.html')
-
 
 @app.route('/gallery')
 def gallery():
@@ -186,6 +193,27 @@ def wipe():
     logger.debug("Wipe endpoint hit")
     # Pass the boolean requirement down to the frontend template
     return render_template('wipe.html', requires_pin=bool(DELETE_PIN))
+
+# --- PWA Routes ---
+
+@app.route('/sw.js')
+def serve_sw():
+    """Serves the Service Worker from the root to ensure global scope control."""
+    response = send_from_directory(WEBSITE_DIR, 'sw.js')
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+@app.route('/manifest.json')
+def serve_manifest():
+    """
+    Serves the manifest directly from Flask to force the correct 
+    'application/manifest+json' MIME type required by Chrome's local standalone fallback.
+    """
+    # Note: We pull the physical file from the static folder on disk, but serve it at the root URL
+    response = send_from_directory(os.path.join(WEBSITE_DIR, 'static'), 'manifest.json')
+    response.headers['Content-Type'] = 'application/manifest+json'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 # --- Backend API Routes ---
 

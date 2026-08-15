@@ -4,31 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GnarlyPi - Home</title>
-    <link rel="manifest" href="/static/manifest.json">
+    
+    <!-- PWA Manifest routed through Flask to guarantee application/manifest+json -->
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e1e1e">
+    <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+    
+    <!-- iOS Specific PWA Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="GnarlyPi">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="/static/icon-512.png">
+    
+    <!-- Unified Styling -->
     <link rel="stylesheet" href="/static/gnarly_style.css">
 </head>
 <body class="page-layout">
     <header class="common-header">
         <div class="common-header-left">
-            <!-- Home button omitted here as this is the Home view -->
             <span class="header-title">GnarlyPi System</span>
         </div>
     </header>
 
     <main class="center-wrapper">
         <div class="content-container">
-            <nav>
-                <a href="/gallery" class="btn">Photo Gallery</a>
+            <!-- Restructured into the newly defined 2x2 grid -->
+            <nav class="module-grid">
                 <a href="/status" class="btn">Status</a>
+                <a href="/gallery" class="btn">Photo Gallery</a>
                 <a href="/mqtt" class="btn">MQTT Monitor</a>
                 <a href="/wipe" class="btn primary">Wipe all Photos</a>
             </nav>
+            
+            <br>
+            <h3>Tools</h3>
+            
+            <nav class="tools-container">
+                <!-- Native APK Download Link updated to always point to the latest deployment -->
+                <a href="/static/gnarlypi.latest.apk" download class="btn secondary">Download Android App</a>
+            </nav>
         </div>
     </main>
+
+    <!-- Service Worker Registration for PWA Installation -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

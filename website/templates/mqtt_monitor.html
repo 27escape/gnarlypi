@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GnarlyPi - MQTT Monitor</title>
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e1e1e">
     <link rel="stylesheet" href="/static/gnarly_style.css">
 </head>
@@ -41,7 +42,6 @@
                 const data = JSON.parse(event.data);
                 const msg = data.message;
                 
-                // Preserve the "Clear Screen" gold feature
                 if (msg.topic.endsWith('/cls')) {
                     terminal.innerHTML = '';
                     return;
@@ -69,14 +69,11 @@
                 line.appendChild(payloadEl);
                 terminal.appendChild(line);
 
-                // Enforce the strict 50-message rolling window
                 const messageLines = terminal.querySelectorAll('div');
                 if (messageLines.length > MAX_MESSAGES) {
-                    // Remove the oldest message from the top of the DOM
                     messageLines[0].remove();
                 }
 
-                // Auto-scroll to bottom
                 terminal.scrollTop = terminal.scrollHeight;
             };
 
