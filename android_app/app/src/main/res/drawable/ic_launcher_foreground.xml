@@ -1,0 +1,62 @@
+<!--
+  ~ Copyright (C) 2026 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <path
+      android:pathData="M256,256m-230,0a230,230 0,1 1,460 0a230,230 0,1 1,-460 0"
+      android:fillColor="#2c3e50"/>
+  <path
+      android:fillColor="#FF000000"
+      android:pathData="M256,320L256,460"
+      android:strokeWidth="24"
+      android:strokeColor="#ecf0f1"
+      android:strokeLineCap="round"/>
+  <path
+      android:fillColor="#FF000000"
+      android:pathData="M230,320L140,460"
+      android:strokeWidth="24"
+      android:strokeColor="#ecf0f1"
+      android:strokeLineCap="round"/>
+  <path
+      android:fillColor="#FF000000"
+      android:pathData="M282,320L372,460"
+      android:strokeWidth="24"
+      android:strokeColor="#ecf0f1"
+      android:strokeLineCap="round"/>
+  <path
+      android:pathData="M241,270L271,270A5,5 0,0 1,276 275L276,295A5,5 0,0 1,271 300L241,300A5,5 0,0 1,236 295L236,275A5,5 0,0 1,241 270z"
+      android:fillColor="#95a5a6"/>
+  <path
+      android:pathData="M161,150L351,150A15,15 0,0 1,366 165L366,265A15,15 0,0 1,351 280L161,280A15,15 0,0 1,146 265L146,165A15,15 0,0 1,161 150z"
+      android:fillColor="#ecf0f1"/>
+  <path
+      android:pathData="M224,120L288,120A8,8 0,0 1,296 128L296,152A8,8 0,0 1,288 160L224,160A8,8 0,0 1,216 152L216,128A8,8 0,0 1,224 120z"
+      android:fillColor="#bdc3c7"/>
+  <path
+      android:pathData="M256,215m-55,0a55,55 0,1 1,110 0a55,55 0,1 1,-110 0"
+      android:fillColor="#34495e"/>
+  <path
+      android:pathData="M256,215m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0"
+      android:fillColor="#1abc9c"/>
+  <path
+      android:pathData="M268,203m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"
+      android:strokeAlpha="0.6"
+      android:fillColor="#ffffff"
+      android:fillAlpha="0.6"/>
+</vector>

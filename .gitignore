@@ -1,9 +1,95 @@
-.vscode
-old
-launch.json
-libs/__pycache__/
-sync.sh
-off
-z
-status/__pycache__/
-tmp
+# ============================================================================
+# GnarlyPi - Unified Hybrid Repository .gitignore
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 1. Security & Credentials (GOLD PROTECTION)
+# ----------------------------------------------------------------------------
+# Prevents accidental commits of cryptographic keys and local environment variables
+*.jks
+*.keystore
+local.properties
+.env
+secret.key
+
+# ----------------------------------------------------------------------------
+# 2. Android & Gradle Build Artifacts
+# ----------------------------------------------------------------------------
+# Ignores all compiled binaries and temporary build directories
+.gradle/
+build/
+*/build/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Android Studio / IntelliJ Configuration
+.idea/
+*.iml
+.navigation/
+.cxx/
+*.hprof
+
+# ----------------------------------------------------------------------------
+# 3. Python Environment & Build Artifacts
+# ----------------------------------------------------------------------------
+# Ignores compiled byte-code and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+
+# Python Distribution / Packaging
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ----------------------------------------------------------------------------
+# 4. OS Generated & Log Files
+# ----------------------------------------------------------------------------
+# Ignores operating system metadata and runtime logs
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log
+gnarlypi.log
+.vscode/
+tmp/android_app/app/release/
+
+# Built application files and artifacts
+*.apk
+*.ap_
+*.aab
+
+# Local configuration file (protects your keystore passwords)
+local.properties
+
+# Gradle and local build output folders
+/build
+/*/build
+/app/release/
+.gradle
