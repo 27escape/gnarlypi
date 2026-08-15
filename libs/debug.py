@@ -92,12 +92,19 @@ def setLogFile(logfile, name=None):
 
 
 def Debug(name, logfile=None, level="INFO"):
-    """Initialize logging for the application."""
+    """Initialize logging for the application.
 
-    # logger = logging.getLogger(name=__file__)      
-    logger = logging.getLogger(name=name)      
-    # debugger = DebugLogger( logger)     
-      
+    Configures the named logger directly (handler + level + no propagation)
+    rather than via logging.basicConfig(), which only ever configures the
+    root logger and is a no-op on any call after the first. That meant two
+    processes/modules calling Debug() with different names, logfiles, or
+    levels in the same interpreter would silently collide - the second
+    call's logfile/level would be ignored, and both loggers would end up
+    sharing whichever config basicConfig() applied first.
+    """
+
+    logger = logging.getLogger(name=name)
+
     match level.lower():
         case "debug" | logging.DEBUG:
             loglevel = logging.DEBUG
@@ -114,28 +121,38 @@ def Debug(name, logfile=None, level="INFO"):
         case _:
             loglevel = logging.NOTSET
 
-    if logfile: 
-            # filename=logfile,
-            # "filemode": "a",
-        logging_params = {
-            "encoding": "utf-8",
-            "format": "%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
-            "level": loglevel,
-            # Set up a rotating file handler for logging
-            # rotates daily, keeping a maximum of 7 backups
-            "handlers": [TimedRotatingFileHandler(logfile, when='midnight', interval=1, backupCount=5)]            
-        }
-              
-        logging.basicConfig( **logging_params)
-        # debugger.info("Started")
+    formatter = logging.Formatter(
+        fmt="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # remove any handlers from a previous Debug() call against this same
+    # logger name, so repeated calls (or a call after setLogFile()) don't
+    # stack up duplicate handlers and duplicate log lines
+    for old_handler in list(logger.handlers):
+        logger.removeHandler(old_handler)
+        old_handler.close()
+
+    if logfile:
+        # TimedRotatingFileHandler (like FileHandler) won't create missing
+        # parent directories itself - it just raises FileNotFoundError
+        log_dir = os.path.dirname(logfile)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+
+        # rotates daily, keeping a maximum of 5 backups
+        handler = TimedRotatingFileHandler(logfile, when="midnight", interval=1, backupCount=5)
     else:
-        if loglevel != logging.NOTSET:
-            logging.basicConfig(
-                level=loglevel,
-                format="%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
-            )
+        handler = logging.StreamHandler()
         print("no logfile set")
-        
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(loglevel)
+    # don't also hand records up to the root logger's handlers - this
+    # logger is now fully self-configured, and without this two Debug()
+    # loggers writing to different files could each also emit to the
+    # other's handler via the root logger
+    logger.propagate = False
+
     return logger
