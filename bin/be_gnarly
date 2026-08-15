@@ -40,6 +40,10 @@ function kill_processes() {
 
   if [ -n "$pids" ]; then
     echo "Failed to kill some processes for '$proc_name': $pids"
+    echo "trying to force kill them..."
+    for pid in $pids; do
+      kill -9 "$pid" 2>/dev/null || true
+    done
   fi
 }
 
