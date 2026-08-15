@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+"""
+gnarly_thumbnailer
+
+Walks SOURCE_DIR directly (rather than trusting the symlink index in
+INDEX_DIR) generating full/medium/thumb JPEGs and a db.json entry for every
+photo/video, for later use by a gallery website.
+
+Walking SOURCE_DIR rather than INDEX_DIR is deliberate: MQTT messages can be
+lost if the Pi loses power before the persistent queue is synced to disk, in
+which case gnarly_indexer never symlinked (or even saw) the affected file.
+Since this script scans the source tree itself, it doesn't depend on that
+symlink having been created - and while it's there, it also creates any
+missing date symlink itself (self-healing for the same failure mode).
+
+Runs as a long-lived process: each full pass is independently resumable
+(already-generated thumbnails and known-good symlinks are skipped), so a
+power-off mid-pass just means the next run picks up where it left off. Use
+--once for a single pass (e.g. if you'd rather drive this from cron/systemd
+timer instead of leaving it running).
+"""
+
+import os
+import sys
+import time
+import signal
+import argparse
+from datetime import datetime
+
+sys.path.insert(0, "../")
+from libs.config import Config
+from libs.debug import Debug
+from libs import gnarly_common as gc
+
+VERSION = "0.1.0"
+APP_NAME = os.path.basename(__file__)
+CREATOR = "27escape"
+COPYRIGHT = "©️2025"
+
+DEFAULT_INTERVAL_SECONDS = 5 * 60  # 5 minutes between passes
+
+config = Config()
+logger = Debug(APP_NAME, config.get("gnarlypi.logfile"), config.get("gnarlypi.loglevel", "none"))
+
+USER = os.getenv("USER")
+
+SOURCE_DIR = ""
+INDEX_DIR = ""
+THUMB_DIR = ""
+
+stop_requested = False
+
+
+# ----------------------------------------------------------------------------
+def signal_handler(sig, frame):
+    """
+    Request a graceful stop rather than exiting immediately, so we don't
+    abandon a half-written thumbnail or db.json update mid-file.
+    """
+    global stop_requested
+    gc.log_info("Stop requested, will exit after the current file/pass completes...")
+    stop_requested = True
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+
+# ----------------------------------------------------------------------------
+def run_pass(max_attempts, force):
+    """
+    One full walk of SOURCE_DIR: self-heal any missing date symlink, then
+    generate thumbnails + db.json entry for anything not already done.
+    Returns a dict of stats for the summary log line.
+    """
+    stats = {
+        "scanned": 0,
+        "symlinks_created": 0,
+        "thumbs_ok": 0,
+        "thumbs_failed": 0,
+    }
+
+    # build the set of already-indexed source files once per pass, rather
+    # than re-scanning INDEX_DIR/yyyy/yyyy-mm-dd per file
+    indexed_targets = gc.build_indexed_targets_set()
+    gc.log_debug(f"run_pass: {len(indexed_targets)} files already symlinked in {INDEX_DIR}")
+
+    for dirpath, dirnames, filenames in os.walk(SOURCE_DIR):
+        if stop_requested:
+            break
+        for filename in filenames:
+            if stop_requested:
+                break
+
+            file_path = os.path.join(dirpath, filename)
+            if not gc.is_valid_extension(file_path, gc.EXTENSIONS):
+                continue
+
+            stats["scanned"] += 1
+            tags, utc = gc.date_and_utc_for_file(file_path)
+
+            # self-heal: create the date symlink if it's missing, e.g.
+            # because gnarly_indexer never saw this file (lost MQTT message)
+            try:
+                real_path = os.path.realpath(file_path)
+            except OSError:
+                real_path = file_path
+
+            if real_path not in indexed_targets:
+                gc.log_info(f"missing symlink for {file_path}, creating one")
+                gc.index_by_date(file_path, utc)
+                indexed_targets.add(real_path)
+                stats["symlinks_created"] += 1
+
+            if gc.extract_and_register(file_path, tags, utc, max_attempts=max_attempts, force=force):
+                stats["thumbs_ok"] += 1
+            else:
+                stats["thumbs_failed"] += 1
+
+    return stats
+
+
+# ----------------------------------------------------------------------------
+def sleep_with_early_exit(seconds):
+    """sleep in small increments so a stop request is honoured promptly"""
+    slept = 0
+    while slept < seconds and not stop_requested:
+        chunk = min(5, seconds - slept)
+        time.sleep(chunk)
+        slept += chunk
+
+
+# ----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    if USER == "root":
+        logger.info(
+            f"Do not run this script as root, run is as one of your users, give a user permisison to mount drives with this command:  sudo usermod -aG disk {os.getenv('SUDO_USER')}"
+        )
+        sys.exit(1)
+
+    try:
+        SOURCE_DIR = config.get("indexer.files")
+        SOURCE_DIR = SOURCE_DIR.replace("//", "/")
+        INDEX_DIR = config.get("indexer.index")
+        INDEX_DIR = INDEX_DIR.replace("//", "/")
+        THUMB_DIR = config.get("indexer.thumbnails")
+        THUMB_DIR = THUMB_DIR.replace("//", "/")
+
+        parser = argparse.ArgumentParser(
+            description=(
+                f"walks {SOURCE_DIR} generating gallery thumbnails + db.json in {THUMB_DIR}, "
+                f"and self-healing any missing symlinks in {INDEX_DIR}. "
+                f"Runs forever by default, doing a full pass every N seconds."
+            )
+        )
+        parser.add_argument(
+            "-1",
+            "--once",
+            action="store_true",
+            help="Do a single pass and exit, instead of looping forever (useful if driven by cron/systemd timer)",
+        )
+        parser.add_argument(
+            "-i",
+            "--interval",
+            type=int,
+            default=DEFAULT_INTERVAL_SECONDS,
+            help=f"Seconds to sleep between passes when looping (default: {DEFAULT_INTERVAL_SECONDS})",
+        )
+        parser.add_argument(
+            "--max-attempts",
+            type=int,
+            default=gc.MAX_THUMB_ATTEMPTS,
+            help=f"How many times to retry a file that fails to generate thumbnails before giving up on it (default: {gc.MAX_THUMB_ATTEMPTS})",
+        )
+        parser.add_argument(
+            "-f",
+            "--force",
+            action="store_true",
+            help="Retry files previously marked as failed, ignoring the attempt limit",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="Use debug-level logging for this run (overrides gnarlypi.loglevel)",
+        )
+
+        args = parser.parse_args()
+
+        if args.verbose:
+            # re-create the logger at debug level so this run's output goes
+            # through the same Debug instance/config as everything else,
+            # rather than a separate ad-hoc console-print path
+            logger = Debug(APP_NAME, config.get("gnarlypi.logfile"), "debug")
+
+        gc.configure(
+            source_dir=SOURCE_DIR,
+            index_dir=INDEX_DIR,
+            thumb_dir=THUMB_DIR,
+            logger_instance=logger,
+        )
+        gc.check_required_tools()
+
+        gc.log_info(f"gnarly_thumbnailer starting: source={SOURCE_DIR} index={INDEX_DIR} thumbs={THUMB_DIR}")
+
+        while True:
+            start = datetime.now()
+            stats = run_pass(max_attempts=args.max_attempts, force=args.force)
+            elapsed = (datetime.now() - start).total_seconds()
+            gc.log_info(
+                f"pass complete in {elapsed:.1f}s: scanned={stats['scanned']} "
+                f"symlinks_created={stats['symlinks_created']} "
+                f"thumbs_ok={stats['thumbs_ok']} thumbs_failed={stats['thumbs_failed']}"
+            )
+
+            if args.once or stop_requested:
+                break
+
+            gc.log_debug(f"sleeping {args.interval}s before next pass")
+            sleep_with_early_exit(args.interval)
+            if stop_requested:
+                break
+
+        gc.log_info("gnarly_thumbnailer exiting")
+        sys.exit(0)
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        print(f"Error: {e}")
+        sys.exit(1)

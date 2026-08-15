@@ -1,0 +1,868 @@
+#!/usr/bin/env python3
+"""
+Shared helpers for gnarly_indexer (MQTT symlink-by-date service) and
+gnarly_thumbnailer (SOURCE_DIR walker that generates full/medium/thumb
+JPEGs + db.json for the gallery). Keeping this logic in one place means
+fixes/tuning (RAW preview tag order, ImageMagick detection, EXIF field
+mapping, etc.) only need to happen once.
+"""
+
+import os
+import re
+import shutil
+import threading
+import subprocess
+import tempfile
+import json
+from datetime import datetime, timedelta, timezone
+import piexif
+
+# ----------------------------------------------------------------------------
+# extensions
+# ----------------------------------------------------------------------------
+
+# picked extensions from https://www.file-extensions.org/filetype/extension/name/digital-camera-raw-files
+EXTENSIONS = [
+    "DNG",
+    "CIB",
+    "NEF", "NRW",
+    "JPG", "JPEG",
+    "ORF", "OIF",
+    "CR2", "CR3",
+    "RAW", "RW2",
+    "FFF", "3PR", "3FR",
+    "ARW", "SR2", "SRF", "CRAW",
+    "RWL",
+    "RAF",
+    "SRW",
+    "AVI",
+    "MP4", ".M4V",
+    "MOV",
+]
+
+# how the extensions above are grouped for the purposes of thumbnail/preview
+# extraction - which tool(s) we reach for depends on which bucket a file
+# falls into
+JPG_EXTENSIONS = ["JPG", "JPEG"]
+VIDEO_EXTENSIONS = ["AVI", "MP4", "M4V", "MOV"]
+# everything else in EXTENSIONS that isn't a jpg/video is treated as RAW
+
+REQUIRED_TAGS = [
+    "DateTimeOriginal",
+    "OffsetTimeOriginal",
+]
+
+# JpgFromRaw/PreviewImage/ThumbnailImage aren't equally reliable across
+# formats - trying the tag that's actually likely to exist first avoids
+# paying for guaranteed-to-fail exiftool calls on every single file.
+RAW_PREVIEW_TAG_ORDER = {
+    "CR2":  ["-PreviewImage", "-ThumbnailImage"],
+    "CR3":  ["-PreviewImage", "-ThumbnailImage"],
+    "CRAW": ["-PreviewImage", "-ThumbnailImage"],
+    "CIB":  ["-PreviewImage", "-ThumbnailImage"],
+    "ORF":  ["-PreviewImage", "-ThumbnailImage"],
+    "OIF":  ["-PreviewImage", "-ThumbnailImage"],
+    "DNG":  ["-PreviewImage", "-JpgFromRaw", "-ThumbnailImage"],
+    "RWL":  ["-PreviewImage", "-JpgFromRaw", "-ThumbnailImage"],
+    "NEF":  ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"],
+    "NRW":  ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"],
+    "RW2":  ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"],
+    "RAF":  ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"],
+    "SRW":  ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"],
+    "ARW":  ["-PreviewImage", "-JpgFromRaw", "-ThumbnailImage"],
+    "SR2":  ["-PreviewImage", "-JpgFromRaw", "-ThumbnailImage"],
+    "SRF":  ["-PreviewImage", "-JpgFromRaw", "-ThumbnailImage"],
+    "FFF":  ["-PreviewImage", "-ThumbnailImage"],
+    "3PR":  ["-PreviewImage", "-ThumbnailImage"],
+    "3FR":  ["-PreviewImage", "-ThumbnailImage"],
+    "RAW":  ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"],
+}
+DEFAULT_PREVIEW_TAG_ORDER = ["-JpgFromRaw", "-PreviewImage", "-ThumbnailImage"]
+# minimum acceptable width (px) for an embedded preview before we bother
+# with it - anything smaller isn't worth using over a full RAW decode
+MIN_PREVIEW_WIDTH = 1000
+
+# long-edge target sizes (px) for the three generated derivatives
+THUMB_SIZES = {
+    "full": 1920,
+    "medium": 800,
+    "thumb": 250,
+}
+
+# how many times the thumbnailer will retry a file that fails to generate
+# thumbnails before marking it "failed" and leaving it alone (until --force)
+MAX_THUMB_ATTEMPTS = 3
+
+# EXIF tags (as reported by `exiftool -n`) we care about for RAW/video files,
+# and the field name we store them under in db.json
+RAW_EXIF_TAG_MAP = {
+    "DateTimeOriginal": "datetime_original",
+    "OffsetTimeOriginal": "offset_time_original",
+    "FNumber": "aperture",
+    "ExposureTime": "shutter",
+    "ISO": "iso",
+    "FocalLength": "focal_length",
+    "FocalLengthIn35mmFormat": "focal_length_35mm",
+    "GPSLatitude": "gps_lat",
+    "GPSLongitude": "gps_lon",
+}
+
+# piexif Exif/GPS tag names -> field name we store them under in db.json
+JPG_EXIF_TAG_MAP = {
+    "ApertureValue": "aperture",
+    "FNumber": "aperture",
+    "ExposureTime": "shutter",
+    "ISOSpeedRatings": "iso",
+    "FocalLength": "focal_length",
+    "FocalLengthIn35mmFilm": "focal_length_35mm",
+}
+
+# ----------------------------------------------------------------------------
+# module state - each script calls configure() once at startup
+# ----------------------------------------------------------------------------
+
+SOURCE_DIR = ""
+INDEX_DIR = ""
+THUMB_DIR = ""
+DB_FILE = ""
+logger = None
+
+# guards db.json read-modify-write against concurrent access
+db_lock = threading.Lock()
+
+# ImageMagick 6 only has `convert`/`identify`; ImageMagick 7 replaces them
+# with a single `magick` binary. Detected once at startup.
+IM_CONVERT_CMD = ["convert"]
+IM_IDENTIFY_CMD = ["identify"]
+
+
+def configure(source_dir=None, index_dir=None, thumb_dir=None, logger_instance=None):
+    """Set up shared module state. Call once from each script's __main__."""
+    global SOURCE_DIR, INDEX_DIR, THUMB_DIR, DB_FILE, logger
+    if source_dir is not None:
+        SOURCE_DIR = source_dir.replace("//", "/")
+    if index_dir is not None:
+        INDEX_DIR = index_dir.replace("//", "/")
+    if thumb_dir is not None:
+        THUMB_DIR = thumb_dir.replace("//", "/")
+        DB_FILE = os.path.join(THUMB_DIR, "db.json")
+    logger = logger_instance
+    detect_imagemagick()
+
+
+# ----------------------------------------------------------------------------
+# logging helpers - thin wrappers around the shared Debug instance (same
+# logger passed in from gnarly_indexer/gnarly_thumbnailer), so all three
+# files go through the one logging path/config (gnarlypi.logfile/loglevel)
+# ----------------------------------------------------------------------------
+
+def log_debug(msg):
+    if logger:
+        logger.debug(msg)
+
+
+def log_info(msg):
+    if logger:
+        logger.info(msg)
+
+
+def log_error(msg):
+    if logger:
+        logger.error(msg)
+
+
+# ----------------------------------------------------------------------------
+# ImageMagick 6/7 + tool detection
+# ----------------------------------------------------------------------------
+
+def detect_imagemagick():
+    """work out whether this system has IM7's `magick` or only IM6's `convert`/`identify`"""
+    global IM_CONVERT_CMD, IM_IDENTIFY_CMD
+    if shutil.which("magick"):
+        IM_CONVERT_CMD = ["magick"]
+        IM_IDENTIFY_CMD = ["magick", "identify"]
+    elif shutil.which("convert"):
+        IM_CONVERT_CMD = ["convert"]
+        IM_IDENTIFY_CMD = ["identify"]
+    else:
+        IM_CONVERT_CMD = None
+        IM_IDENTIFY_CMD = None
+
+
+def check_required_tools():
+    """
+    Log (and print, if verbose) whether exiftool/ImageMagick/dcraw/ffmpeg are
+    actually on PATH, so a missing tool shows up immediately instead of as a
+    silent per-file failure buried in the logs.
+    """
+    detect_imagemagick()
+    checks = {
+        "exiftool": shutil.which("exiftool") is not None,
+        "ImageMagick (magick or convert/identify)": IM_CONVERT_CMD is not None,
+        "dcraw or dcraw_emu": (shutil.which("dcraw") or shutil.which("dcraw_emu")) is not None,
+        "ffmpeg": shutil.which("ffmpeg") is not None,
+    }
+    for name, found in checks.items():
+        msg = f"tool check: {name} {'OK' if found else 'NOT FOUND'}"
+        if found:
+            log_debug(msg)
+        else:
+            log_error(msg)
+
+
+# ----------------------------------------------------------------------------
+# filesystem / extension helpers
+# ----------------------------------------------------------------------------
+
+def make_dest(dest):
+    """make destination directory, set ownership to that of parent directory"""
+    os.makedirs(dest, exist_ok=True)
+    parent = os.path.dirname(dest)
+    stat = os.stat(parent)
+    os.chown(dest, stat.st_uid, stat.st_gid)
+
+
+def is_valid_extension(filename, extensions):
+    """Validates if the filename has an extension from the provided list."""
+    return any(filename.lower().endswith(ext.lower()) for ext in extensions)
+
+
+def classify_file(filename):
+    """
+    Work out which extraction path a file needs.
+    Returns "jpg", "video", "raw" or None (not a recognised media file).
+    """
+    ext = os.path.splitext(filename)[1].lstrip(".").upper()
+    if not is_valid_extension(filename, EXTENSIONS):
+        return None
+    if ext in JPG_EXTENSIONS:
+        return "jpg"
+    if ext in VIDEO_EXTENSIONS:
+        return "video"
+    return "raw"
+
+
+# ----------------------------------------------------------------------------
+# date / EXIF (lightweight - used to decide the symlink/thumb destination)
+# ----------------------------------------------------------------------------
+
+def UTC_from_exif(original, offset):
+    """
+    Calculates UTC time from EXIF DateTimeOriginal and EXIF OffsetTimeOriginal.
+
+    Args:
+      original: String original datetime "YYYY:MM:DD HH:MM:SS"
+      offset:   String   time offset "HH:MM:SS"
+
+    Returns:
+      UTC time "YYYY-MM-DD HH:MM:SS+00:00"
+    """
+    try:
+        dt_obj = datetime.strptime(original, "%Y:%m:%d %H:%M:%S")
+        if not offset:
+            offset = "00:00"
+
+        offset_hours, offset_minutes = map(int, offset.split(':'))
+        offset_timedelta = timedelta(hours=offset_hours, minutes=offset_minutes)
+
+        utc_time = dt_obj - offset_timedelta
+        utc_time = utc_time.replace(tzinfo=timezone.utc)
+
+        return utc_time.strftime("%Y-%m-%d %H:%M:%S%z")
+
+    except ValueError:
+        log_error(f"ValueError: Invalid datetime or offset format: {original}, {offset}, reseting to 1970")
+        dt_obj = datetime.strptime("1970:01:01 00:00:00", "%Y:%m:%d %H:%M:%S")
+        return dt_obj.strftime("%Y-%m-%d %H:%M:%S%z")
+    except Exception as err:
+        log_error(f"{type(err).__name__} was raised: {err}")
+        dt_obj = datetime.strptime("1970:01:01 00:00:00", "%Y:%m:%d %H:%M:%S")
+        return dt_obj.strftime("%Y-%m-%d %H:%M:%S%z")
+
+
+def get_file_ctime(file_path):
+    """Get the creation date of a file, formatted like EXIF DateTimeOriginal."""
+    try:
+        stat_info = os.stat(file_path)
+        creation_time = datetime.fromtimestamp(stat_info.st_ctime)
+        return creation_time.strftime("%Y:%m:%d %H:%M:%S")
+    except Exception as e:
+        log_error(f"Error getting creation date: {e}")
+        return None
+
+
+def extract_exif(file_path):
+    """
+    Extracts EXIF data from an image file and filters it based on REQUIRED_TAGS.
+    piexif only reliably reads JPEG; for RAW/video it will typically fail and
+    we fall back to the file's ctime, same as before.
+
+    Returns:
+        dict: A dictionary containing the required EXIF tags and their values.
+    """
+    info = {}
+    try:
+        exif_data = piexif.load(file_path)
+
+        for ifd_name in exif_data:
+            if ifd_name == "Exif":
+                for tag in exif_data[ifd_name]:
+                    tag_name = piexif.TAGS[ifd_name].get(tag, {}).get("name", None)
+                    if tag_name in REQUIRED_TAGS:
+                        tag_value = exif_data[ifd_name][tag]
+                        info[tag_name] = tag_value.decode('utf-8', errors='replace') if isinstance(tag_value, bytes) else tag_value
+                    else:
+                        info[tag_name] = ""
+    except Exception:
+        info["DateTimeOriginal"] = get_file_ctime(file_path)
+        info["OffsetTimeOriginal"] = "00:00"
+
+    # some cameras set a partially empty time offset
+    if re.match(r"^\s*:", info.get("OffsetTimeOriginal", "")):
+        info["OffsetTimeOriginal"] = "00:00"
+
+    return info
+
+
+def date_and_utc_for_file(file_path):
+    """
+    Convenience wrapper used by both scripts: extract EXIF, compute UTC,
+    falling back to file ctime on any failure or on files that have no
+    DateTimeOriginal at all (e.g. a valid JPEG with no Exif IFD - piexif
+    won't raise in that case, it just returns nothing usable). Always
+    passes the chosen datetime through UTC_from_exif so the result is
+    consistently dash-formatted regardless of which path was taken.
+
+    Returns (tags, utc).
+    """
+    try:
+        tags = extract_exif(file_path)
+    except Exception as e:
+        log_error(f"Error extracting EXIF data for {file_path}: {e}")
+        tags = {}
+
+    original = tags.get("DateTimeOriginal")
+    if not original:
+        original = get_file_ctime(file_path)
+        tags = {"DateTimeOriginal": original, "OffsetTimeOriginal": "00:00"}
+
+    offset = tags.get("OffsetTimeOriginal", "00:00")
+    utc = UTC_from_exif(original, offset)
+    return tags, utc
+
+
+# ----------------------------------------------------------------------------
+# symlink indexing
+# ----------------------------------------------------------------------------
+
+def _symlink_with_mtime(target_file, symlink_name):
+    """
+    Low-level symlink creation: creates the link and copies over the target
+    file's atime/mtime. Raises on failure rather than swallowing errors, so
+    create_unique_symlink() can react to a FileExistsError race - use
+    create_symlink() below instead if you just want errors logged and
+    swallowed.
+    """
+    target_stat = os.stat(target_file)
+    atime = target_stat.st_atime
+    mtime = target_stat.st_mtime
+
+    os.symlink(target_file, symlink_name)
+    os.utime(symlink_name, (atime, mtime), follow_symlinks=False)
+
+
+def create_symlink(target_file, symlink_name):
+    """
+    Creates a symbolic link and sets its access and modification times to
+    match those of the target file, logging (rather than raising) on
+    failure. For race-aware creation with automatic renaming on collision,
+    use create_unique_symlink() instead.
+    """
+    try:
+        _symlink_with_mtime(target_file, symlink_name)
+    except FileNotFoundError:
+        log_error(f"Error: Target file '{target_file}' not found.")
+    except FileExistsError:
+        log_error(f"Error: Symlink '{symlink_name}' already exists.")
+    except Exception as e:
+        log_error(f"An unexpected error occurred: {e}")
+
+
+def create_unique_symlink(src_file, target_dir):
+    """
+    Create a symlink to src_file in target_dir, appending -1/-2/... on a
+    basename collision. Uses os.symlink()'s own atomicity (attempt-then-react
+    to FileExistsError) rather than check-then-act, since gnarly_indexer
+    (MQTT) and gnarly_thumbnailer (self-healing sweep) run as separate
+    processes and can both reach for the same symlink path at once.
+
+    On a FileExistsError we check whether the existing symlink already
+    points at src_file - if so, a concurrent process just won the same race
+    for the same file and there's nothing left to do. Only a genuine
+    different-file collision gets the incremented suffix.
+    """
+    symlink_name = os.path.basename(src_file)
+    base, ext = os.path.splitext(symlink_name)
+    try:
+        src_real = os.path.realpath(src_file)
+    except OSError:
+        src_real = src_file
+    i = 0
+
+    while True:
+        symlink_path = os.path.join(target_dir, symlink_name)
+        try:
+            _symlink_with_mtime(src_file, symlink_path)
+            return
+        except FileExistsError:
+            try:
+                if os.path.islink(symlink_path) and os.path.realpath(symlink_path) == src_real:
+                    log_debug(f"{symlink_path} already links to {src_file} (created by a concurrent process), nothing to do")
+                    return
+            except OSError:
+                pass
+            i += 1
+            symlink_name = f"{base}-{i}{ext}"
+            log_debug(f"Symlink name collision at {symlink_path} (different file), retrying as {symlink_name}")
+        except FileNotFoundError:
+            log_error(f"Error: Target file '{src_file}' not found.")
+            return
+        except Exception as e:
+            log_error(f"An unexpected error occurred creating symlink for {src_file}: {e}")
+            return
+
+
+def index_by_date(filename, imgdate):
+    """index symlink file by date in image metadata"""
+    imgdate = imgdate.split(' ')[0]
+    yyyy, mm, dd = imgdate.split('-')
+    destdir = os.path.join(INDEX_DIR, yyyy, imgdate)
+    make_dest(destdir)
+    create_unique_symlink(filename, destdir)
+
+
+def build_indexed_targets_set():
+    """
+    Walk INDEX_DIR once and return the set of realpath()s of every symlink's
+    target. Used by the thumbnailer to cheaply check "has this source file
+    already been symlinked?" without re-scanning a directory per file.
+    """
+    targets = set()
+    if not os.path.isdir(INDEX_DIR):
+        return targets
+    for dirpath, dirnames, filenames in os.walk(INDEX_DIR):
+        for filename in filenames:
+            link_path = os.path.join(dirpath, filename)
+            if os.path.islink(link_path):
+                try:
+                    targets.add(os.path.realpath(link_path))
+                except OSError:
+                    continue
+    return targets
+
+
+# ----------------------------------------------------------------------------
+# db.json
+# ----------------------------------------------------------------------------
+
+def load_db():
+    """load db.json, returning an empty dict if it doesn't exist yet or is corrupt"""
+    try:
+        with open(DB_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_db(db):
+    """atomically write db.json so a crash mid-write never corrupts it"""
+    make_dest(THUMB_DIR)
+    tmp_path = f"{DB_FILE}.tmp"
+    with open(tmp_path, "w") as f:
+        json.dump(db, f, indent=2, default=str)
+    os.replace(tmp_path, DB_FILE)
+
+
+def update_db_entry(file_path, entry):
+    """
+    Read-modify-write a single entry into db.json, guarded by db_lock so
+    concurrent callers can't race each other.
+    """
+    with db_lock:
+        db = load_db()
+        db[file_path] = entry
+        save_db(db)
+
+
+def get_db_entry(file_path):
+    """look up a single db.json entry without loading+holding the whole file open"""
+    with db_lock:
+        db = load_db()
+        return db.get(file_path)
+
+
+# ----------------------------------------------------------------------------
+# external tool wrapper
+# ----------------------------------------------------------------------------
+
+def run_cmd(args):
+    """
+    Run an external tool, returning (returncode, stdout_bytes, stderr_bytes).
+    Never raises - callers check the returncode / output themselves.
+    """
+    try:
+        result = subprocess.run(args, capture_output=True)
+        if result.returncode != 0:
+            log_debug(f"cmd failed ({result.returncode}): {' '.join(args)} :: {result.stderr.decode(errors='replace').strip()}")
+        return result.returncode, result.stdout, result.stderr
+    except Exception as e:
+        log_error(f"Failed to run {' '.join(args)}: {e}")
+        return 1, b"", str(e).encode()
+
+
+def image_width(image_path):
+    """returns the width in pixels of an image, or 0 if it can't be determined"""
+    if IM_IDENTIFY_CMD is None:
+        log_error("No ImageMagick identify/magick command available - cannot check preview width")
+        return 0
+    code, out, err = run_cmd(IM_IDENTIFY_CMD + ["-format", "%w", image_path])
+    if code != 0:
+        return 0
+    try:
+        return int(out.decode().strip())
+    except ValueError:
+        return 0
+
+
+# ----------------------------------------------------------------------------
+# source image extraction (RAW preview / dcraw / video frame)
+# ----------------------------------------------------------------------------
+
+def extract_raw_preview(raw_path, out_path):
+    """
+    Try to pull a usable full-size JPEG preview straight out of a RAW file's
+    embedded EXIF data, in format-appropriate tag order. Returns True and
+    leaves a valid jpg at out_path on success.
+    """
+    ext = os.path.splitext(raw_path)[1].lstrip(".").upper()
+    tags = RAW_PREVIEW_TAG_ORDER.get(ext, DEFAULT_PREVIEW_TAG_ORDER)
+    log_debug(f"extract_raw_preview: {raw_path} ext={ext} trying tags {tags}")
+
+    for tag in tags:
+        run_cmd(["exiftool", "-quiet", "-m", "-b", tag, "-W", out_path, raw_path])
+        try:
+            if not os.path.isfile(out_path) or os.path.getsize(out_path) < 5000:
+                log_debug(f"{tag}: no usable output for {raw_path}")
+                continue
+            with open(out_path, "rb") as f:
+                header = f.read(2)
+            if header != b"\xff\xd8":
+                log_debug(f"{tag}: output for {raw_path} is not a JPEG (header {header!r})")
+                os.remove(out_path)
+                continue
+            width = image_width(out_path)
+            if width >= MIN_PREVIEW_WIDTH:
+                log_debug(f"Extracted preview ({width}px) via {tag} from {raw_path}")
+                return True
+            log_debug(f"Preview from {tag} too small ({width}px), discarding {raw_path}")
+            os.remove(out_path)
+        except Exception as e:
+            log_debug(f"Could not process preview candidate for {raw_path}: {e}")
+    log_debug(f"extract_raw_preview: no usable embedded preview found for {raw_path}")
+    return False
+
+
+def decode_raw_with_dcraw(raw_path, out_path):
+    """
+    Fully decode a RAW file to a TIFF using dcraw, for when there's no usable
+    embedded preview. Returns True on success.
+    """
+    for tool in ("dcraw", "dcraw_emu"):
+        if shutil.which(tool) is None:
+            continue
+        try:
+            result = subprocess.run([tool, "-c", "-w", "-T", raw_path], capture_output=True)
+            if result.returncode == 0 and len(result.stdout) > 5000:
+                with open(out_path, "wb") as f:
+                    f.write(result.stdout)
+                log_debug(f"Decoded RAW with {tool}: {raw_path}")
+                return True
+            else:
+                log_debug(f"{tool} returned code {result.returncode} for {raw_path}: {result.stderr.decode(errors='replace').strip()}")
+        except Exception as e:
+            log_debug(f"{tool} failed on {raw_path}: {e}")
+    if shutil.which("dcraw") is None and shutil.which("dcraw_emu") is None:
+        log_error("Neither dcraw nor dcraw_emu found on PATH - cannot fall back to full RAW decode")
+    return False
+
+
+def grab_video_frame(video_path, out_path):
+    """
+    Grab a single representative frame from a video with ffmpeg, to use as
+    the source image for full/medium/thumb generation. Seeks 1 second in (or
+    to the start, for very short clips) to avoid a black opening frame.
+    """
+    code, out, err = run_cmd([
+        "ffmpeg", "-y", "-ss", "1", "-i", video_path,
+        "-frames:v", "1", "-q:v", "2", out_path,
+    ])
+    if code == 0 and os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+        return True
+
+    log_debug(f"ffmpeg -ss 1 produced no frame for {video_path}, retrying from start")
+    code, out, err = run_cmd([
+        "ffmpeg", "-y", "-i", video_path,
+        "-frames:v", "1", "-q:v", "2", out_path,
+    ])
+    return code == 0 and os.path.isfile(out_path) and os.path.getsize(out_path) > 0
+
+
+def get_source_image(file_path, file_type, tmp_dir):
+    """
+    Produce a single decoded/extracted image on disk that ImageMagick can use
+    as the input for generating full/medium/thumb derivatives, regardless of
+    whether the original was a JPG, RAW file or video.
+
+    Returns the path to that source image, or None if one couldn't be made.
+    """
+    if file_type == "jpg":
+        return file_path
+
+    base = re.sub(r"[^a-zA-Z0-9]", "_", os.path.basename(file_path))
+
+    if file_type == "video":
+        frame_path = os.path.join(tmp_dir, f"frame_{base}.jpg")
+        if grab_video_frame(file_path, frame_path):
+            log_debug(f"got video frame for {file_path} -> {frame_path}")
+            return frame_path
+        log_error(f"Could not extract a frame from video: {file_path}")
+        return None
+
+    # RAW: try embedded preview first, fall back to a full dcraw decode
+    preview_path = os.path.join(tmp_dir, f"preview_{base}.jpg")
+    if extract_raw_preview(file_path, preview_path):
+        return preview_path
+
+    decoded_path = os.path.join(tmp_dir, f"decoded_{base}.tiff")
+    if decode_raw_with_dcraw(file_path, decoded_path):
+        return decoded_path
+
+    log_error(f"No usable preview or RAW decode available for: {file_path}")
+    return None
+
+
+def generate_thumbnails(source_image, dest_dir, source_type):
+    """
+    Generate full/medium/thumb JPEGs from source_image into dest_dir using
+    ImageMagick, skipping any size whose output already exists.
+
+    Returns a dict of {size_name: absolute_path} for every size that exists
+    on disk afterwards (freshly generated or pre-existing).
+    """
+    if IM_CONVERT_CMD is None:
+        log_error("No ImageMagick 'magick' or 'convert' command found on PATH - cannot generate thumbnails")
+        return {}
+
+    make_dest(dest_dir)
+    results = {}
+    log_debug(f"generate_thumbnails: source={source_image} dest_dir={dest_dir}")
+
+    for size_name, long_edge in THUMB_SIZES.items():
+        out_path = os.path.join(dest_dir, f"{size_name}.jpg")
+
+        if os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+            log_debug(f"{size_name}.jpg already exists, skipping: {out_path}")
+            results[size_name] = out_path
+            continue
+
+        magick_args = IM_CONVERT_CMD + [
+            source_image,
+            "-auto-orient",
+            "-resize", f"{long_edge}x{long_edge}>",
+            "-strip",
+            out_path,
+        ]
+        code, out, err = run_cmd(magick_args)
+        if code == 0 and os.path.isfile(out_path) and os.path.getsize(out_path) > 0:
+            log_debug(f"generated {size_name}.jpg for {source_image}")
+            results[size_name] = out_path
+        else:
+            log_error(f"failed generating {size_name} for {source_image}: {err.decode(errors='replace').strip()}")
+
+    return results
+
+
+def thumbs_exist(dest_dir):
+    """True if full/medium/thumb are all already present and non-empty in dest_dir"""
+    return all(
+        os.path.isfile(os.path.join(dest_dir, f"{size_name}.jpg"))
+        and os.path.getsize(os.path.join(dest_dir, f"{size_name}.jpg")) > 0
+        for size_name in THUMB_SIZES
+    )
+
+
+# ----------------------------------------------------------------------------
+# EXIF extras (aperture/shutter/iso/focal length/GPS)
+# ----------------------------------------------------------------------------
+
+def _decode_exif_value(value):
+    """normalise a raw piexif tag value (bytes/rational/tuple) into something JSON-safe"""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    if isinstance(value, tuple) and len(value) == 2 and all(isinstance(v, int) for v in value):
+        return value[0] / value[1] if value[1] else 0
+    return value
+
+
+def _gps_to_decimal(dms, ref):
+    """convert piexif's ((d,1),(m,1),(s,100)) GPS rational triple + ref to decimal degrees"""
+    if not dms or not ref:
+        return None
+    try:
+        degrees = dms[0][0] / dms[0][1]
+        minutes = dms[1][0] / dms[1][1]
+        seconds = dms[2][0] / dms[2][1]
+        decimal = degrees + minutes / 60 + seconds / 3600
+        ref = ref.decode() if isinstance(ref, bytes) else ref
+        if ref in ("S", "W"):
+            decimal = -decimal
+        return decimal
+    except (ZeroDivisionError, IndexError, TypeError):
+        return None
+
+
+def get_jpg_exif_extras(file_path):
+    """Pull aperture/shutter/iso/focal-length/GPS out of a JPG's EXIF via piexif."""
+    info = {}
+    try:
+        exif_data = piexif.load(file_path)
+    except Exception as e:
+        log_debug(f"piexif could not read {file_path}: {e}")
+        return info
+
+    for ifd_name in ("Exif", "0th"):
+        ifd = exif_data.get(ifd_name, {})
+        for tag, value in ifd.items():
+            tag_name = piexif.TAGS.get(ifd_name, {}).get(tag, {}).get("name")
+            if tag_name in JPG_EXIF_TAG_MAP:
+                info[JPG_EXIF_TAG_MAP[tag_name]] = _decode_exif_value(value)
+
+    gps_ifd = exif_data.get("GPS", {})
+    if gps_ifd:
+        lat = _gps_to_decimal(gps_ifd.get(piexif.GPSIFD.GPSLatitude), gps_ifd.get(piexif.GPSIFD.GPSLatitudeRef))
+        lon = _gps_to_decimal(gps_ifd.get(piexif.GPSIFD.GPSLongitude), gps_ifd.get(piexif.GPSIFD.GPSLongitudeRef))
+        if lat is not None:
+            info["gps_lat"] = lat
+        if lon is not None:
+            info["gps_lon"] = lon
+
+    return info
+
+
+def get_raw_exif_extras(file_path):
+    """Pull aperture/shutter/iso/focal-length/GPS/datetime out of a RAW or video file via exiftool."""
+    info = {}
+    code, out, err = run_cmd(["exiftool", "-n", "-S", file_path])
+    if code != 0:
+        log_debug(f"exiftool failed on {file_path}: {err.decode(errors='replace')}")
+        return info
+
+    raw_tags = {}
+    for line in out.decode(errors="replace").splitlines():
+        if ":" not in line:
+            continue
+        tag, _, value = line.partition(":")
+        raw_tags[tag.strip()] = value.strip()
+
+    for exif_tag, field_name in RAW_EXIF_TAG_MAP.items():
+        if exif_tag in raw_tags and raw_tags[exif_tag] != "":
+            value = raw_tags[exif_tag]
+            try:
+                info[field_name] = float(value)
+            except ValueError:
+                info[field_name] = value
+
+    return info
+
+
+# ----------------------------------------------------------------------------
+# top-level: generate thumbnails + register in db.json for a single file
+# ----------------------------------------------------------------------------
+
+def extract_and_register(file_path, date_tags, utc, max_attempts=MAX_THUMB_ATTEMPTS, force=False):
+    """
+    Generate full/medium/thumb JPEGs for file_path and record its metadata
+    (EXIF + absolute thumbnail paths) in db.json.
+
+    date_tags is the dict returned by extract_exif() (DateTimeOriginal /
+    OffsetTimeOriginal); utc is the already-computed UTC timestamp string,
+    used so the thumb folder lines up with the same YYYY/YYYY-MM-DD
+    structure as the symlink index.
+
+    Returns True if thumbnails exist afterwards (freshly generated or
+    already present), False otherwise. Tracks attempts/failure status in
+    db.json so callers doing repeated sweeps (the thumbnailer) don't retry
+    a permanently-broken file forever.
+    """
+    file_type = classify_file(file_path)
+    if file_type is None:
+        log_debug(f"extract_and_register: {file_path} did not classify as jpg/raw/video, skipping")
+        return False
+
+    imgdate = utc.split(" ")[0]
+    yyyy = imgdate.split("-")[0]
+    basename = os.path.splitext(os.path.basename(file_path))[0]
+    dest_dir = os.path.join(THUMB_DIR, yyyy, imgdate, basename)
+
+    if thumbs_exist(dest_dir):
+        log_debug(f"thumbnails already exist for {file_path}, skipping generation")
+        return True
+
+    existing = get_db_entry(file_path) or {}
+    attempts = existing.get("thumb_attempts", 0)
+    if not force and existing.get("thumb_status") == "failed" and attempts >= max_attempts:
+        log_debug(f"{file_path} previously failed {attempts} times, skipping (use --force to retry)")
+        return False
+
+    log_info(f"extract_and_register: {file_path} (type={file_type}) -> {dest_dir}")
+
+    with tempfile.TemporaryDirectory(prefix="gnarly_thumb_") as tmp_dir:
+        source_image = get_source_image(file_path, file_type, tmp_dir)
+        if source_image is None:
+            log_error(f"Skipping thumbnail generation, no source image for: {file_path}")
+            thumbs = {}
+        else:
+            log_debug(f"source image for {file_path}: {source_image}")
+            thumbs = generate_thumbnails(source_image, dest_dir, file_type)
+
+    if not thumbs:
+        attempts += 1
+        log_error(f"No thumbnails were generated for: {file_path} (attempt {attempts}/{max_attempts})")
+        entry = existing.copy()
+        entry.update({
+            "source": file_path,
+            "type": file_type,
+            "thumb_status": "failed",
+            "thumb_attempts": attempts,
+        })
+        update_db_entry(file_path, entry)
+        return False
+
+    log_info(f"generated thumbnails for {file_path}: {list(thumbs.keys())}")
+    exif_extras = get_jpg_exif_extras(file_path) if file_type == "jpg" else get_raw_exif_extras(file_path)
+
+    entry = {
+        "source": file_path,
+        "type": file_type,
+        "indexed_date": imgdate,
+        "datetime_original": date_tags.get("DateTimeOriginal", ""),
+        "offset_time_original": date_tags.get("OffsetTimeOriginal", ""),
+        "utc": utc,
+        "exif": exif_extras,
+        "thumbs": thumbs,
+        "thumb_status": "ok",
+        "thumb_attempts": attempts,
+    }
+    update_db_entry(file_path, entry)
+    log_info(f"Registered {file_path} in {DB_FILE}")
+    return True
