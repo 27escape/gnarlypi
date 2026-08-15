@@ -92,4 +92,4 @@ local.properties
 /build
 /*/build
 /app/release/
-.gradle
+.gradletmp/
